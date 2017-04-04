@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+
+<%     
+  //console.dir(result);
+%>
+  <title>Current Temperature and Humidity</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+      
+  <script src="js/echart/echarts-all.js"></script>
+
+  <script type="text/javascript">
+    
+	function setData()
+	{
+	}
+
+  
+	$(document).ready(function(){
+        
+        var StockData = <%- JSON.stringify(result[0])%>;                
+        var stock_info_list = JSON.parse(StockData.data);
+        
+        showStockDailyInfo(stock_info_list);  
+
+        function showStockDailyInfo(stock_info_list)
+        {
+            var temp_html = '';
+            for (stockInfo of stock_info_list)
+            {
+               console.dir(stockInfo);
+               var kimo_link = 'https://tw.stock.yahoo.com/q/ta?s=' + stockInfo.stockInfo.stockId;
+               var type = (stockInfo.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
+               temp_html = '<tr>' + 
+                           '<td><a target=\"_blank\" href=\"' + kimo_link + '\">' + stockInfo.stockInfo.stockId + '</a></td>' + 
+                           '<td>' + stockInfo.stockInfo.stockName + '</td>' + 
+                           '<td>' + stockInfo.stockDailyInfo.CP + '</td>' + 
+                           '<td>' + stockInfo.stockDailyInfo.MA.MA60 + '</td>' + 
+                           '<td>' + stockInfo.stockDailyInfo.MA.MA20 + '</td>' + 
+                           '<td>' + stockInfo.stockDailyInfo.MA.MA10 + '</td>' + 
+                           '<td>' + stockInfo.stockDailyInfo.MA.MA5 + '</td>' + 
+                           '<td>' + Math.round(stockInfo.stockDailyInfo.TV/1000) + '</td>' + 
+                           '<td>' + stockInfo.stockDailyInfo.GS + '</td>' + 
+                           '<td>' + stockInfo.stockDailyInfo.GSP + '%</td>' + 
+                           '<td>' + type + '</td>' + 
+                           '<td>' + stockInfo.stockInfo.YR + '</td>' + 
+                           '<td>' + stockInfo.stockInfo.PRE + '</td>' + 
+                           '<td>' + stockInfo.stockInfo.PBR + '</td>' + 
+                           '</tr>';
+               $('#stock_info_tbl_body').append(temp_html);
+            }
+    		    			      		
+        } /* showStockDailyInfo */
+		
+	});
+
+
+    </script>
+</head>
+<body>
+<div class="row">
+  <div class="col-sm-4">
+  	
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>收盤價</th>
+        <th>MA60</th>
+        <th>MA20</th>
+        <th>MA10</th>
+        <th>MA5</th>
+        <th>成交量</th>
+        <th>漲跌</th>
+        <th>漲跌幅</th>
+        <th>Type</th>
+        <th>殖利率</th>
+        <th>本益比</th>
+        <th>股價淨值比</th>        
+      </tr>
+    </thead>
+    <tbody id='stock_info_tbl_body'>
+      <!-- generate by showStockDailyInfo -->
+    </tbody>
+  </table>
+  </div>
+</div>
+</body>
+</html>

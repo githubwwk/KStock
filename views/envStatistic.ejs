@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+<% 
+    var raw_data = db_data;
+%>
+    <title>DHT11</title>
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="js/echart/echarts-all.js"></script>
+
+    <script type="text/javascript">
+    
+    var raw_data = <%- JSON.stringify(raw_data)%>;    
+
+function init_humi_chart()
+{
+        var chart = document.getElementById('humi_chart');
+        var myChart = echarts.init(chart);
+  
+		option = {
+		    tooltip : {
+		        trigger: 'axis'
+		    },
+		    legend: {
+		        data:['溼度']
+		    },
+		    toolbox: {
+		        show : true,
+		        feature : {
+		            mark : {show: false},
+		            dataView : {show: true, readOnly: false},
+		            magicType : {show: false, type: ['line']},
+		            restore : {show: true},
+		            saveAsImage : {show: true}
+		        }
+		    },
+		    calculable : false,
+		    xAxis : [
+		        {
+		            type : 'category',
+		            boundaryGap : false,
+		            data : []  /* X-axis tag */
+		        }
+		    ],
+		    yAxis : [
+		        {
+		            type : 'value',		
+		            max : '85',            
+                    min : '50',		            
+		        }
+		    ],
+		    series : [
+		        {
+		            name:'溼度',
+		            type:'line',
+		            //stack: '总量',
+		            data:[] /* Value */
+		        },  
+		    ]
+		};
+
+        /* Set value to chart data */
+	    for (item of raw_data)
+	    {
+	        //console.log("Time:" + item.Time + " Humi:" + item.Humi + " Temp:" + item.Temp );
+	        option.xAxis[0].data.push(item.Time);
+	        option.series[0].data.push(item.Humi);
+	    }        
+
+        myChart.setOption(option);  	
+}
+
+function init_temp_chart()
+{
+        var chart = document.getElementById('temp_chart');
+        var myChart = echarts.init(chart);
+  
+		option = {
+		    tooltip : {
+		        trigger: 'axis'
+		    },
+		    legend: {
+		        data:['溫度']
+		    },
+		    toolbox: {
+		        show : true,
+		        feature : {
+		            mark : {show: false},
+		            dataView : {show: true, readOnly: false},
+		            magicType : {show: false, type: ['line']},
+		            restore : {show: true},
+		            saveAsImage : {show: true}
+		        }
+		    },
+		    calculable : false,
+		    xAxis : [
+		        {
+		            type : 'category',
+		            boundaryGap : false,
+		            data : []  /* X-axis tag */
+		        }
+		    ],
+		    yAxis : [
+		        {
+		            type : 'value',
+		            max : '35',
+                    min : '20',
+		        }
+		    ],
+		    series : [
+		        {
+		            name:'溫度',
+		            type:'line',
+		            //stack: '总量',
+		            data:[] /* Value */
+		        },  
+		    ]
+		};
+
+        /* Set value to chart data */
+	    for (item of raw_data)
+	    {
+	        //console.log("Time:" + item.Time + " Humi:" + item.Humi + " Temp:" + item.Temp );
+	        option.xAxis[0].data.push(item.Time);
+	        option.series[0].data.push(item.Temp);
+	    }        
+
+        myChart.setOption(option);  	
+}
+
+$(document).ready(function(){
+  init_temp_chart();
+  init_humi_chart();
+
+});
+    </script>
+</head>
+<body>
+    <div id="temp_chart" style="width: 800px; height: 350px;"></div>
+    <div id="humi_chart" style="width: 800px; height: 350px;"></div>
+
+</body>
+</html>
