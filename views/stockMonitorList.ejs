@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+
+<style type="text/css">
+
+table { 
+  border: 0; 
+  font-family: arial; 
+  font-size:10px; 
+  width: 100%;
+  table-layout: auto;
+  text-align:center;
+} 
+
+th,td,tr {
+  text-align:center;
+}
+
+tr:nth-child(even) {background-color: #f2f2f2}
+</style>
+
+<%     
+  //console.dir(result);
+%>
+  <title>Current Temperature and Humidity</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>      
+  <script src="js/echart/echarts-all.js"></script>
+  <script src="/js/bootbox/bootbox.min.js"></script>
+  <script type="text/javascript">
+    
+	function setData()
+	{
+	}
+
+  
+	$(document).ready(function(){
+        
+        var result = <%- JSON.stringify(result[0]) %>;                
+        var g_stock_info_list = result.monitorList;
+        var g_monitor_list_name = result.name;
+        
+        var g_stock_info_id_dict = showStockDailyInfo(g_stock_info_list);  
+        
+        $(".btn.btn-default.btn-xs").on("click", function () {            
+            //debugger;
+            var stockId = $(this).val();
+            console.log("Remove Stock:" + stockId);
+            var URLs = "remove_stock_monitor";
+
+            //compose.date = g_stock_date;
+            //compose.stockObj = g_stock_info_list[g_stock_info_id_dict[stockId]];
+            bootbox.confirm("移出監看名單?", function(result) {            	
+                if (result == true){
+                	
+                	var compose = {};
+                    compose.stockId = stockId;
+
+		            $.ajax({
+		                url: URLs,
+		                data: JSON.stringify(compose),
+		                type:"POST",
+		                dataType:'json',
+		                contentType: "application/json; charset=utf-8",
+
+		                success: function(msg){
+		                    console.log("POST:" + msg);
+		                    bootbox.alert("Success!");
+		                    location.reload();		                    
+		                },
+		                error:function(xhr, ajaxOptions, thrownError){                         
+		                    bootbox.alert("Fail!" + xhr.status + ' ' + thrownError);                
+		                }
+		            }); /* ajax */
+		        } /* if */    
+		     }); /* bootbox */   
+        }); /*stock_add_btn_xxxx click */
+
+        function showStockDailyInfo(stock_info_list)
+        {
+            var temp_html = '';            
+            var stock_info_id_dict = {};
+            var idx = 0;  
+            for (var stock of stock_info_list)
+            {
+               stock = JSON.parse(stock);	
+               //console.dir(stock);
+               var stockObj = stock.stockObj;
+               var stockId = stock.stockId;               
+               stock_info_id_dict[stockId] = idx;
+
+               /*********************************************/
+               /* Special condition */
+               //debugger;
+               if ((parseFloat(stockObj.stockDailyInfo.TV_times.TV_times)*10) < 13)
+               {
+                  console.log("Skip:" + stockObj.stockInfo.stockName);
+                  console.log("Skip TV times:" + stockObj.stockDailyInfo.TV_times.TV_times);
+                  // Skip
+                  continue;
+               }
+
+               if ((Math.round(stockObj.stockDailyInfo.TV/1000)) < 100)
+               {
+                  console.log("Skip:" + stockObj.stockInfo.stockName);
+                  console.log("Skip TV:" + Math.round(stockObj.stockDailyInfo.TV/1000));
+                  // Skip
+                  continue;
+               }
+               /*********************************************/
+                           
+               var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
+              
+               var type = (stockObj.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
+              
+               var GS = (stockObj.stockDailyInfo.GS < 0) ?
+                        '<font color=\"green\">' + stockObj.stockDailyInfo.GS + '</font>' :
+                        '<font color=\"red\">' + stockObj.stockDailyInfo.GS + '</font>';
+
+               var GSP = (stockObj.stockDailyInfo.GSP < 0) ?
+                        '<font color=\"green\">' + stockObj.stockDailyInfo.GSP + '%</font>' :
+                        '<font color=\"red\">' + stockObj.stockDailyInfo.GSP + '%</font>';
+
+               var remove_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_add_btn_' + stockId + '" value="' + 
+                                 stockId + '"><span class="glyphicon 	glyphicon glyphicon-trash"></span></button>';
+ 
+               temp_html = '<tr>' + 
+                           '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
+                           '<td>' + stockObj.stockInfo.stockName + '</td>' +
+                           '<td>' + stockObj.stockDailyInfo.TV_times.TV_times + '</td>' +  
+                           '<td>' + stockObj.stockDailyInfo.CP + '</td>' + 
+                           '<td>' + stockObj.stockDailyInfo.MA.MA60 + '</td>' + 
+                           '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
+                           '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
+                           '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
+                           '<td>' + Math.round(stockObj.stockDailyInfo.TV/1000) + '</td>' + 
+                           '<td>' + Math.round(stockObj.stockDailyInfo.TV_times.TVMA_05/1000) + '</td>' +                            
+                           '<td>' + GS + '</td>' + 
+                           '<td>' + GSP + '</td>' + 
+                           '<td>' + type + '</td>' + 
+                           '<td>' + stockObj.stockInfo.YR + '</td>' + 
+                           '<td>' + stockObj.stockInfo.PRE + '</td>' + 
+                           '<td>' + stockObj.stockInfo.PBR + '</td>' + 
+                           '<td>' + remove_btn_html + '</td>' + 
+                           '</tr>';
+               $('#stock_info_tbl_body').append(temp_html);
+
+               idx ++;
+            } /* for */
+    		    return stock_info_id_dict;			      		
+        } /* showStockDailyInfo */
+		
+	}); /* document - ready() */
+
+
+    </script>
+</head>
+<body>
+<div class="row">
+  <div class="col-sm-10">
+  	
+  <table class="table">  
+    <thead class="thead-inverse">    
+     <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>成交量比</th>
+        <th>收盤價</th>
+        <th>MA60</th>
+        <th>MA20</th>
+        <th>MA10</th>
+        <th>MA5</th>
+        <th>成交量</th>
+        <th>前五日成交量</th>        
+        <th>漲跌</th>
+        <th>漲跌幅</th>
+        <th>Type</th>
+        <th>殖利率</th>
+        <th>本益比</th>
+        <th>股價淨值比</th>        
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id='stock_info_tbl_body'>
+      <!-- generate by showStockDailyInfo -->
+    </tbody>
+  </table>
+  </div>
+</div>
+</body>
+</html>

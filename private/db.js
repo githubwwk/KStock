@@ -14,6 +14,11 @@ var stockSchema2 = new Schema({
   data: String  
 });
 
+var stockMonitorSchema = new Schema({
+  name: String,  
+  monitorList: [String]
+});
+
 
 var TWSE = mongoose.model('TWSE', stockSchema);
 var FG = mongoose.model('FG', stockSchema);
@@ -21,69 +26,11 @@ var FUT = mongoose.model('FUT', stockSchema);
 var BROKER = mongoose.model('BROKER', stockSchema);
 
 var STOCK_DAILY_INFO = mongoose.model('stockSchema', stockSchema2);
+var STOCK_MONITOR = mongoose.model('stockMonitor', stockMonitorSchema);
 
-
-// create a new user
-/*
-var newUser = User({
-  name: 'Konrad Wei',
-  username: 'Konrad',
-  password: 'password',
-  admin: true
-});
-*/
-// save the user
-/*
-newUser.save(function(err) {
-  if (err) throw err;
-
-  console.log('User created!');
-});
-*/
-exports.dbSave = function(type, dataObj)
-{
-  switch(type)
-{
-    case 'TWSE':
-          var newTWSE = TWSE(dataObj);
-          newTWSE.save(function(err){
-            console.log('TWSE Created Done');
-          });
-    break;
-    case 'FG_MAJOR':
-          var newFG = FG(dataObj);
-          newFG.save(function(err){
-            console.log('FG Created Done');
-          });    
-    break;
-    case 'FUT':
-          var newFUT = FUT(dataObj);
-          newFUT.save(function(err){
-            console.log('FUT Created Done');
-          });      
-    break;
-    case 'BROKER':
-          var newBROKER = BROKER(dataObj);
-          newBROKER.save(function(err){
-            console.log('BROKER Created Done');
-          });      
-    break;
-    default:
-           console.log('New Type:' + type);
-          var StockDB = mongoose.model(type, stockSchema);                  
-          var newStockType = StockDB(dataObj);
-          newStockType.save( function(err){
-            console.log('Created Done: ' + type);
-          });          
-          console.log("Special type:" + type);
-  }
-
-};
 
 exports.stockDailyFind = function(date, callback)
-{
-
-   //STOCK_DAILY_INFO.find({date :date}, function (err, dataObj) {
+{   
      STOCK_DAILY_INFO.find({date :date}).lean().exec(function (err, dataObj) {
         if (dataObj.length){
             console.log('STOCK_DAILY_INFO.find successful!');
@@ -94,3 +41,68 @@ exports.stockDailyFind = function(date, callback)
     });
 };
 
+exports.stockMonitorListFind = function(name, callback)
+{   
+     STOCK_MONITOR.find({name : name}).lean().exec(function (err, dataObj) {
+        if (dataObj.length){
+            console.log('STOCK_MONITOR.find successful!');
+            return callback(null, dataObj);
+        }else{
+            return callback(err);
+        }
+    });
+};
+
+
+exports.stockMonitorUpdate = function(dataObj, callback)
+{
+     STOCK_MONITOR.find({name : dataObj.name}, function (err, docs) {
+            
+        if (docs.length){          
+            console.log('STOCK_MONITOR.find successful!');
+                
+            docs[0].monitorList.push(dataObj.monitorList[0]);
+            docs[0].save(function(err){
+                console.log("STOCK_MONITOR save:" + err);
+                return callback(null, err);
+            });
+            
+        }else{
+            /* New */            
+            var stockMonitor = new STOCK_MONITOR(dataObj);
+            stockMonitor.save(function(err){
+                  console.log('STOCK_MONITOR Created Done');  
+                  console.log("ERROR - " + err);         
+                  return callback(null, err)
+            });                          
+        } /* if-else */
+    });    
+};
+
+exports.stockMonitorRemove = function(name, stockId, callback)
+{
+     STOCK_MONITOR.find({name : name}, function (err, docs) {
+            
+        if (docs.length){          
+            console.log('STOCK_MONITOR.find successful!');
+                 
+            /* Remove stockId in monitorlist */
+            //docs[0].monitorList. items.splice(items.indexOf('c'), 1);
+            for (var i=0 ; i< docs[0].monitorList.length ; i++)
+            {
+                var monitorObj = JSON.parse(docs[0].monitorList[i]);
+                if (monitorObj.stockId == stockId)
+                {
+                    docs[0].monitorList.splice(i, 1);                    
+                }
+
+            }
+            //docs[0].monitorList.push(dataObj.monitorList[0]);
+            docs[0].save(function(err){
+                console.log("STOCK_MONITOR save:" + err);
+                return callback(null, err);
+            });
+            
+        }
+    });   
+};
