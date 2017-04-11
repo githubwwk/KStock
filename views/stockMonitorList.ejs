@@ -4,26 +4,34 @@
 
 <style type="text/css">
 
-table { 
-  border: 0; 
-  font-family: arial; 
-  font-size:10px; 
+table {
+  border: 0;
+  font-family: arial;
+  font-size:10px;
   width: 100%;
   table-layout: auto;
   text-align:center;
-} 
+}
 
-th,td,tr {
-  text-align:center;
+table thead tr{
+    display:block;
+}
+
+table th,table td{
+    width:100px;//fixed width
+}
+
+
+table  tbody{
+  display:block;
+  height:500px;
+  overflow:auto;//set tbody to auto
 }
 
 tr:nth-child(even) {background-color: #f2f2f2}
 </style>
 
-<%     
-  //console.dir(result);
-%>
-  <title>Current Temperature and Humidity</title>
+  <title>KStock Server Monitor List</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">

@@ -25,21 +25,37 @@ var FG = mongoose.model('FG', stockSchema);
 var FUT = mongoose.model('FUT', stockSchema);
 var BROKER = mongoose.model('BROKER', stockSchema);
 
-var STOCK_DAILY_INFO = mongoose.model('stockSchema', stockSchema2);
+var STOCK_DAILY_A02 = mongoose.model('stockDaily_A02', stockSchema2);
+var STOCK_DAILY_A01 = mongoose.model('stockDaily_A01', stockSchema2);
 var STOCK_MONITOR = mongoose.model('stockMonitor', stockMonitorSchema);
 
 
-exports.stockDailyFind = function(date, callback)
+exports.stockDailyA02_Find = function(date, callback)
 {   
-     STOCK_DAILY_INFO.find({date :date}).lean().exec(function (err, dataObj) {
+     STOCK_DAILY_A02.find({date :date}).lean().exec(function (err, dataObj) {
         if (dataObj.length){
-            console.log('STOCK_DAILY_INFO.find successful!');
+            console.log('STOCK_DAILY_A02.find successful!');
             return callback(null, dataObj);
         }else{
-            return callback(err);
+            console.log("ERROR - stockDailyA02_Find fail! " + err);
+            return callback('Not data');
         }
     });
 };
+
+exports.stockDailyA01_Find = function(date, callback)
+{   
+     STOCK_DAILY_A01.find({date :date}).lean().exec(function (err, dataObj) {
+        if (dataObj.length){
+            console.log('STOCK_DAILY_A01.find successful!');
+            return callback(null, dataObj);
+        }else{
+            console.log("ERROR - stockDailyA01_Find fail! " + err);
+            return callback('Not data');
+        }
+    });
+};
+
 
 exports.stockMonitorListFind = function(name, callback)
 {   

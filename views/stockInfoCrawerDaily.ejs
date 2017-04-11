@@ -13,8 +13,19 @@ table {
   text-align:center;
 }
 
-th,td,tr {
-  text-align:center;
+table thead tr{
+    display:block;
+}
+
+table th,table td{
+    width:100px;//fixed width
+}
+
+
+table  tbody{
+  display:block;
+  height:500px;
+  overflow:auto;//set tbody to auto
 }
 
 tr:nth-child(even) {background-color: #f2f2f2}
@@ -23,7 +34,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
 <%
   //console.dir(result);
 %>
-  <title>Current Temperature and Humidity</title>
+  <title> <%=title%></title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
@@ -91,11 +102,11 @@ tr:nth-child(even) {background-color: #f2f2f2}
             var stock_info_id_dict = {};
             var idx = 0;
 
-            /* sort by Gross Spread (漲跌) */            
+            /* sort by Gross Spread (漲跌) */                      
             function compare(a,b) {
-                if (a.stockDailyInfo.GS < b.stockDailyInfo.GS)
+                if (a.stockDailyInfo.GSP < b.stockDailyInfo.GSP)
                   return 1;
-                if (a.stockDailyInfo.GS > b.stockDailyInfo.GS)
+                if (a.stockDailyInfo.GSP > b.stockDailyInfo.GSP)
                   return -1;
                 
                 return 0;
@@ -131,8 +142,8 @@ tr:nth-child(even) {background-color: #f2f2f2}
                console.dir(stockInfo);
                var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
 
-               var type = (stockInfo.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
-
+               //var type = (stockInfo.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
+               var type = (stockInfo.stockDailyInfo.GSP < 0)?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
                var GS = (stockInfo.stockDailyInfo.GS < 0) ?
                         '<font color=\"green\">' + stockInfo.stockDailyInfo.GS + '</font>' :
                         '<font color=\"red\">' + stockInfo.stockDailyInfo.GS + '</font>';
@@ -176,6 +187,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
     </script>
 </head>
 <body>
+<span class="label label-default"><%=description%></span>
 <div class="row">
   <div class="col-sm-10">
 

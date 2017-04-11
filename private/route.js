@@ -33,10 +33,68 @@ exports.default = function(req, res){
 
    var result = {};
        console.log("req.query.current Done");
-       db.stockDailyFind(dateStr, function(err, dataObj){        
+       db.stockDailyA02_Find(dateStr, function(err, dataObj){        
             res.render( 'stockInfoCrawerDaily', {
 	            result : dataObj 
             });	
+       });	                   
+};
+
+exports.stockA01 = function(req, res){
+
+   console.log("route.current()+");
+   
+   var dateStr = '';
+
+   if (req.query.date == '' || req.query.date == undefined){
+       dateStr = '2017-04-05';
+   }else{
+       dateStr = req.query.date;
+   }
+
+   var result = {};
+       console.log("req.query.current Done");
+       db.stockDailyA01_Find(dateStr, function(err, dataObj){  
+             if (err != null)
+            {
+                console.log("ERROR - db.stockDailyA01_Find()" + err);
+                res.send(503);
+            }else {     
+                res.render( 'stockInfoCrawerDaily', {
+                    title : 'KStock Server',
+                    description : '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破所有均線，量過5日1.5倍(價格>30)',
+                    result : dataObj 
+                });	
+            } /* if-else */
+       });	                   
+};
+
+exports.stockA02 = function(req, res){
+
+   console.log("route.current()+");
+   
+   var dateStr = '';
+
+   if (req.query.date == '' || req.query.date == undefined){
+       dateStr = '2017-04-05';
+   }else{
+       dateStr = req.query.date;
+   }
+
+   var result = {};
+       console.log("req.query.current Done");
+       db.stockDailyA02_Find(dateStr, function(err, dataObj){        
+            if (err != null)
+            {
+                console.log("ERROR - db.stockDailyA02_Find()" + err);
+                res.send(503);
+            }else {
+                res.render( 'stockInfoCrawerDaily', {
+                    title : 'KStock Server',
+                    description : '[漲]:突破MA60 [跌]:跌破MA60(價格>30)',
+                    result : dataObj 
+                });	
+            } /* if-else */
        });	                   
 };
 
