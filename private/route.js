@@ -40,6 +40,44 @@ exports.default = function(req, res){
        });	                   
 };
 
+exports.showStockAnalysisDateList = function(req, res){
+   
+   var dbStockdailFind_fn;
+   var description = '';
+
+   switch(req.query.type)
+   {
+        case 'A01':
+            dbStockdailFind_fn = db.stockDailyA01_Find;
+            description = '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破MA5,MA10,MA20均線，量過5日1.5倍(價格>30)';
+        break;
+        case 'A02':
+            dbStockdailFind_fn = db.stockDailyA02_Find;
+            description = '[漲]:突破MA60 [跌]:跌破MA60(價格>30)';
+        break;
+        default:
+            console.log("ERROR - Invalid Type:" + req.query.type);
+            res.send(503);
+        break;
+   }
+  
+   dbStockdailFind_fn('', function(err, dataObj){  
+       if (err != null)
+       {
+           console.log("ERROR - db.stockDailyA01_Find()" + err);
+           res.send(503);
+       }else {     
+           res.render( 'stockInfoCrawerDaily', {
+               title : 'KStock Server',
+               description : description,
+               result : dataObj 
+           });	
+      } /* if-else */
+   });	
+};
+
+
+
 exports.stockA01 = function(req, res){
 
    console.log("route.current()+");
@@ -53,20 +91,20 @@ exports.stockA01 = function(req, res){
    }
 
    var result = {};
-       console.log("req.query.current Done");
-       db.stockDailyA01_Find(dateStr, function(err, dataObj){  
-             if (err != null)
-            {
-                console.log("ERROR - db.stockDailyA01_Find()" + err);
-                res.send(503);
-            }else {     
-                res.render( 'stockInfoCrawerDaily', {
-                    title : 'KStock Server',
-                    description : '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破所有均線，量過5日1.5倍(價格>30)',
-                    result : dataObj 
-                });	
-            } /* if-else */
-       });	                   
+   console.log("req.query.current Done");
+   db.stockDailyA01_Find(dateStr, function(err, dataObj){  
+       if (err != null)
+       {
+           console.log("ERROR - db.stockDailyA01_Find()" + err);
+           res.send(503);
+       }else {     
+           res.render( 'stockInfoCrawerDaily', {
+               title : 'KStock Server',
+               description : '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破所有均線，量過5日1.5倍(價格>30)',
+               result : dataObj 
+           });	
+      } /* if-else */
+   });	                   
 };
 
 exports.stockA02 = function(req, res){
@@ -82,20 +120,20 @@ exports.stockA02 = function(req, res){
    }
 
    var result = {};
-       console.log("req.query.current Done");
-       db.stockDailyA02_Find(dateStr, function(err, dataObj){        
-            if (err != null)
-            {
-                console.log("ERROR - db.stockDailyA02_Find()" + err);
-                res.send(503);
-            }else {
-                res.render( 'stockInfoCrawerDaily', {
-                    title : 'KStock Server',
-                    description : '[漲]:突破MA60 [跌]:跌破MA60(價格>30)',
-                    result : dataObj 
-                });	
-            } /* if-else */
-       });	                   
+   console.log("req.query.current Done");
+   db.stockDailyA02_Find(dateStr, function(err, dataObj){        
+       if (err != null)
+       {
+           console.log("ERROR - db.stockDailyA02_Find()" + err);
+           res.send(503);
+       }else {
+           res.render( 'stockInfoCrawerDaily', {
+               title : 'KStock Server',
+               description : '[漲]:突破MA60 [跌]:跌破MA60(價格>30)',
+               result : dataObj 
+            });	
+        } /* if-else */
+   });	                   
 };
 
 exports.addStockMonitor = function(req, res) {

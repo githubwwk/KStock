@@ -32,7 +32,12 @@ var STOCK_MONITOR = mongoose.model('stockMonitor', stockMonitorSchema);
 
 exports.stockDailyA02_Find = function(date, callback)
 {   
-     STOCK_DAILY_A02.find({date :date}).lean().exec(function (err, dataObj) {
+     var filter = {};
+     if ((date != undefined) && (date != '')) {
+         filter.date = date;
+     }
+
+     STOCK_DAILY_A02.find(filter).lean().exec(function (err, dataObj) {
         if (dataObj.length){
             console.log('STOCK_DAILY_A02.find successful!');
             return callback(null, dataObj);
@@ -44,8 +49,13 @@ exports.stockDailyA02_Find = function(date, callback)
 };
 
 exports.stockDailyA01_Find = function(date, callback)
-{   
-     STOCK_DAILY_A01.find({date :date}).lean().exec(function (err, dataObj) {
+{    
+     var filter = {};
+     if ((date != undefined) && (date != '')) {
+         filter.date = date;
+     }
+
+     STOCK_DAILY_A01.find(filter).lean().exec(function (err, dataObj) {
         if (dataObj.length){
             console.log('STOCK_DAILY_A01.find successful!');
             return callback(null, dataObj);
@@ -76,12 +86,19 @@ exports.stockMonitorUpdate = function(dataObj, callback)
             
         if (docs.length){          
             console.log('STOCK_MONITOR.find successful!');
-                
-            docs[0].monitorList.push(dataObj.monitorList[0]);
-            docs[0].save(function(err){
-                console.log("STOCK_MONITOR save:" + err);
+
+            /* TODO: remove duplicate item */
+            if (docs[0].monitorList.indexOf(dataObj.monitorList[0]) == -1)
+            {  
+                docs[0].monitorList.push(dataObj.monitorList[0]);
+                docs[0].save(function(err){
+                    console.log("STOCK_MONITOR save:" + err);
+                    return callback(null, err);
+                });
+            }else{
+                console.log("Duplicate Item:" + dataObj.monitorList[0]);
                 return callback(null, err);
-            });
+            }
             
         }else{
             /* New */            

@@ -29,8 +29,19 @@ table  tbody{
 }
 
 tr:nth-child(even) {background-color: #f2f2f2}
-</style>
 
+#div_date_select{
+    padding: 20px;  
+}
+
+#div_date_select, #div_stock_list, #div_description {
+     padding: 1px 20px; /*up_down, left_right */
+}
+
+
+div 
+
+</style>
 <%
   //console.dir(result);
 %>
@@ -41,7 +52,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="js/echart/echarts-all.js"></script>
-  <script src="/js/bootbox/bootbox.min.js"></script>
+  <script src="js/bootbox/bootbox.min.js"></script>
 
   <script type="text/javascript">
 
@@ -51,12 +62,16 @@ tr:nth-child(even) {background-color: #f2f2f2}
 
 
   $(document).ready(function(){
+        
+        /* TODO: List all date for user */
 
-        var StockData = <%- JSON.stringify(result[0])%>;
-        var g_stock_info_list = JSON.parse(StockData.data);
-        var g_stock_date = StockData.date;
+        var g_info_description = "<%=description%>";
+        var gStockDateList = <%- JSON.stringify(result)%>;
+        //var StockData = <%- JSON.stringify(result[0])%>;
 
-        var g_stock_info_id_dict = showStockDailyInfo(g_stock_info_list);
+        /* Init HTML Content */  
+        initHtmlContent();
+        /* Init Date Select */        
 
         $(".btn.btn-default.btn-xs").on("click", function () {
             // body...
@@ -91,10 +106,25 @@ tr:nth-child(even) {background-color: #f2f2f2}
                 }/* if */
             });
 
-
-
-
         }); /*stock_add_btn_xxxx click */
+
+
+
+$( "#stock_date_sel" ).change(function() {
+   var sel_date = $( "#stock_date_sel option:selected").text();      
+   debugger;
+   for (var stockData of gStockDateList)
+   {
+      console.log(stockData.date);
+      if (stockData.date == sel_date)break;
+
+   }   
+   var stock_info_list = JSON.parse(stockData.data);
+   var stock_date = stockData.date;
+   var g_stock_info_id_dict = showStockDailyInfo(stock_info_list);
+
+   $('#span_date').html(stockData.date);
+});
 
         function showStockDailyInfo(stock_info_list)
         {
@@ -113,6 +143,9 @@ tr:nth-child(even) {background-color: #f2f2f2}
             }
 
             stock_info_list.sort(compare);
+            
+            /* Clean HTML content */
+            $('#stock_info_tbl_body').empty();
 
             for (stockInfo of stock_info_list)
             {
@@ -139,7 +172,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
                }
                /*********************************************/
 
-               console.dir(stockInfo);
+               //console.dir(stockInfo);
                var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
 
                //var type = (stockInfo.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
@@ -174,6 +207,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
                            '<td>' + stockInfo.stockInfo.PBR + '</td>' +
                            '<td>' + add_btn_html + '</td>' +
                            '</tr>';
+
                $('#stock_info_tbl_body').append(temp_html);
 
                idx ++;
@@ -181,16 +215,61 @@ tr:nth-child(even) {background-color: #f2f2f2}
             return stock_info_id_dict;
         } /* showStockDailyInfo */
 
+        function genDateSelectInfo(stockDateList)
+        {
+            var html = '';
+            for(stockInfo of stockDateList)
+            {                
+                html += '<option>' + stockInfo.date + '</option>';
+            } /* for */
+            $('#stock_date_sel').append(html); 
+        }/* showDateSelectInfo */
+        
+        function initHtmlContent()
+        { 
+          /* Init stock list information */          
+          var stoackDataListLen = gStockDateList.length;
+          var gStockData = gStockDateList[stoackDataListLen-1];  /* default use latest data */
+          var g_stock_info_list = JSON.parse(gStockData.data);
+          var g_stock_date = gStockData.date;
+          var g_stock_info_id_dict = showStockDailyInfo(g_stock_info_list);
+
+           $('#span_description').append(g_info_description);
+           $('#span_date').append(gStockData.date);
+
+           genDateSelectInfo(gStockDateList);
+        } /* initHtmlContent */
   });
 
 
     </script>
 </head>
 <body>
-<span class="label label-default"><%=description%></span>
-<div class="row">
-  <div class="col-sm-10">
+<div class="row" id='div_date_select'>
 
+  <div class="col-sm-3">
+    <div class="form-group">
+      <label for="sel1">Select list:</label>
+      <select class="form-control" id="stock_date_sel">
+        <!-- generate by genDateSelectInfo -->
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- <span class="label label-default" id='span_description'><%=description%></span> -->
+<div class="row" id="div_description">
+
+  <div class="col-sm-10">
+   <span class="label label-info" id='span_date'></span>
+   <p>
+   <span class="label label-success" id='span_description'></span>   
+  </div>
+</div> 
+
+<div class="row" id="div_stock_list">
+
+  <div class="col-sm-10">
   <table class="table">
     <thead class="thead-inverse">
      <tr>
