@@ -1,8 +1,9 @@
 "use strict";
 
-var moment = require('moment'),
-        fs = require('fs'),   
-        db = require('./db.js');
+var moment = require('moment');
+var fs = require('fs');
+var db = require('./db.js');
+var schedulerTask = require('./schedulerTask.js');
 
 //=====================================
 // API
@@ -137,8 +138,7 @@ exports.stockA02 = function(req, res){
 };
 
 exports.addStockMonitor = function(req, res) {
-    console.dir(req.body);
-
+    console.dir(req.body);    
     var stockMonitorObj = {};   
 
     stockMonitorObj.name = 'Konrad Test';    
@@ -150,7 +150,7 @@ exports.addStockMonitor = function(req, res) {
     stockMonitorObj.monitorList.push(stocksInfoObj);
 
 
-    db.stockMonitorUpdate(stockMonitorObj, function(err, result){
+    db.stockMonitor_Update(stockMonitorObj, function(err, result){
         console.log(err);
         res.end(JSON.stringify('{msg: "Success"}'));    
     });          
@@ -158,6 +158,7 @@ exports.addStockMonitor = function(req, res) {
 
 exports.showStockMonitor = function(req, res)
 {
+  console.dir(schedulerTask.gStockRealTimePrice);  
   var monitor_list_name = '';
 
   if (req.query.name == '' || req.query.name == undefined){
@@ -168,7 +169,7 @@ exports.showStockMonitor = function(req, res)
 
    var result = {};
    console.log("req.query.current Done");
-   db.stockMonitorListFind(monitor_list_name, function(err, dataObj){                
+   db.stockMonitorList_Find(monitor_list_name, function(err, dataObj){                
         res.render( 'stockMonitorList', {
 	                 result : dataObj});	                 
    });
@@ -185,7 +186,7 @@ exports.removeStockMonitor = function(req, res)
        monitor_list_name = req.query.name;
    }
 
-    db.stockMonitorRemove(monitor_list_name, reqObj.stockId, function(err, result){
+    db.stockMonitor_Remove(monitor_list_name, reqObj.stockId, function(err, result){
         console.log(err);
         res.end(JSON.stringify('{msg: "Success"}'));    
     });

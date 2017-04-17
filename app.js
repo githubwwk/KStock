@@ -1,8 +1,9 @@
+"use strict"
 var express = require('express');
 var path = require('path');
-var os = require('os');
+//var os = require('os');
 var route = require('./private/route.js');
-var db = require('./private/db.js');
+var schedulerTask = require('./private/schedulerTask.js');
 var bodyParser = require('body-parser');
 
 var app = express();
@@ -28,6 +29,7 @@ app.set('view engine', 'ejs');
 
 /******************/
 //db.init();
+schedulerTask.init();
 /******************/
 
 app.listen(3000);
