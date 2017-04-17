@@ -143,6 +143,7 @@ exports.readStockPrice = function(stockid, callback_readPrice)
     };
 
     let xtime = new moment().format('x'); /* Unix ms timestamp */    
+    //let xtime = new moment('2017-04-17 09:30:00', 'YYYY-MM-DD HH:mm:ss').format('x'); /* Unix ms timestamp */    
     let stockId = stockid;
     let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;
     //var cookie_temp = 'JSESSIONID=3278E47F1E44C7E414FD8FBAC2F6E7E9; _ga=GA1.3.360613230.1488807194; __utma=193825960.360613230.1488807194.1490979469.1491336371.21; __utmz=193825960.1490631663.15.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); JSESSIONID=872CA1FAAF045D62AB589040C5913BD1'; 
@@ -171,7 +172,9 @@ exports.readAllStockPrice = function(stockid_list, callback_readPrice)
     };
 
     let xtime = new moment().format('x'); /* Unix ms timestamp */           
+    //let xtime = new moment('2017-04-17 09:30:00', 'YYYY-MM-DD HH:mm:ss').format('x'); /* Unix ms timestamp, for testing */  
     let cookie_temp = '%COOKIE_STR%; _ga=GA1.3.360613230.1488807194; __utma=193825960.360613230.1488807194.1490979469.1491336371.21; __utmz=193825960.1490631663.15.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); %COOKIE_STR%'; 
+    
 
     function exec(callback_exe)
     {                          

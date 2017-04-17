@@ -65,8 +65,7 @@
         $.ajax({
             url:href,
             type:'GET',
-            success: function(data){
-                debugger;
+            success: function(data){                
                 $('#content').html(data);
             },
             error:function(xhr, ajaxOptions, thrownError){

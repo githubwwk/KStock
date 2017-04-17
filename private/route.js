@@ -171,7 +171,9 @@ exports.showStockMonitor = function(req, res)
    console.log("req.query.current Done");
    db.stockMonitorList_Find(monitor_list_name, function(err, dataObj){                
         res.render( 'stockMonitorList', {
-	                 result : dataObj});	                 
+	                 result : dataObj,
+                      title : 'KStock Server'
+                    });	                 
    });
 };
 
