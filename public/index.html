@@ -44,22 +44,25 @@
         {
             case 'A01':
                 console.log('A01');
-                href = '../show_stock_analysis_date_list?type=A01';
+                href = './show_stock_analysis_date_list?type=A01';
             break;
             case 'A02':
                 console.log('A02');
-                href = '../show_stock_analysis_date_list?type=A02';
+                href = './show_stock_analysis_date_list?type=A02';
             break;
             case 'Monitor':
                 console.log('Monitor');
-                href = '../show_stock_monitor';
+                href = './show_stock_monitor';
             break
-            case 'RealTime':
-                href = 'http://mis.twse.com.tw/stock/fibest.jsp?stock=';
-                var xtime = new moment().format('x');
-                let stockId = '2454';
-    var url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;
+            case 'RealTime':  
+                return;
             break;
+            case '外資八大條件判讀':  
+                console.log('FG 8 Index Check');
+                href = './show_fg8index_check'             
+            break;
+            default:
+                return;
         } /*switch */
                    
         $.ajax({
@@ -102,7 +105,10 @@
                 </li>                
                 <li>
                     <a href="">RealTime</a>
-                </li>                
+                </li>     
+                <li>
+                    <a href="">外資八大條件判讀</a>
+                </li>                                 
             </ul>
         </div>
         <!-- /#sidebar-wrapper -->

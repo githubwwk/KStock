@@ -1,0 +1,165 @@
+﻿<!doctype html>
+<html>
+<head>
+
+<style type="text/css">
+
+table {
+  border: 0;
+  font-family: arial;
+  font-size:10px;
+  width: auto;
+  table-layout: fixed;
+}
+
+
+tr:nth-child(even) {background-color: #f2f2f2}
+
+</style>
+  <title>外資8大指標判讀</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>      
+  <script src="./js_external/echart/echarts-all.js"></script>
+  <script src="./js_external/bootbox/bootbox.min.js"></script>
+  <script type="text/javascript">
+    
+  
+	$(document).ready(function(){
+	}); /* document - ready() */
+
+
+    </script>
+</head>
+<body>
+<div class="row">
+  <div class="col-sm-10">
+  	
+  <table class="table">  
+    <thead class="thead-inverse">    
+     <tr>        
+        <th>No.</th>
+        <th>Name</th>
+        <th>Link</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>   
+     <tr>   
+        <td>1</td>
+        <td>台指期(8:45)</td>
+        <td>
+            <a target="_blank" href="http://www.taifex.com.tw/chinese/3/7_12_3.asp" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>
+        <td>觀察外資留倉資料</td>
+     </tr>   
+     <tr>   
+        <td>2</td>
+        <td>台股VIX</td>
+        <td>
+            <a target="_blank" href="http://info512.taifex.com.tw/Future/VIXQuote_Norl.aspx" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>
+        <td>看昨天收盤與今天開盤的相對關係，VIX關卡為13、15、18</td>
+     </tr>   
+     <tr>   
+        <td>3</td>
+        <td>台幣對美金(8:30)</td>
+        <td>
+            <a target="_blank" href="https://www.google.com/finance?q=USDTWD" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>
+        <td>必看，如果台幣狂升，今天不容易跌，不要放空</td>   
+     </tr>   
+     <tr>   
+        <td>4</td>
+        <td>亞洲股市開盤狀況(日本、韓國 8:00)</td>
+        <td>
+            <a target="_blank" href="http://www.cnyes.com/global/astock/pricechart.aspx?area=JP&code=NKY" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link">日</span></a>
+            <a target="_blank" href="http://www.cnyes.com/global/astock/pricechart.aspx?area=KR&code=KOSPI" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link">韓</span></a>
+        </td>      
+        <td>日韓八點開盤，可先反應事件</td>             
+     </tr>   
+     <tr>   
+        <td>5</td>
+        <td>外資資金匯入資料</td>        
+        <td>
+            <a target="_blank" href="http://research.fsc.gov.tw/fsd/fncl_od.asp?opendata=FSF021" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td> 
+        <td>參考外資是否有匯出</td>   
+     </tr>   
+     <tr>   
+        <td>6</td>
+        <td>台股put call ratio</td>        
+        <td>
+            <a target="_blank" href="http://www.taifex.com.tw/chinese/3/PCRatio.asp" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>  
+        <td>觀察外資動向，數值往下看空，往上看多</td>      
+     </tr>   
+     <tr>   
+        <td>7</td>
+        <td>美國公債殖利率</td>        
+        <td>
+            <a target="_blank" href="http://stockcharts.com/h-sc/ui?s=$UST10Y" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>
+        <td>值越低代表公債價格上漲，值飆高代表有危險</td>
+     </tr>   
+     <tr>   
+        <td>8</td>
+        <td>美股VIX指數</td>
+        <td>
+            <a target="_blank" href="https://www.google.com/finance?q=INDEXCBOE:VIX&ei=evL0WJndCISN0gTT5InQCw" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>           
+        <td>VIX關卡為13、15、18</td>     
+     </tr>   
+     <tr>   
+        <td>*9</td>
+        <td>景氣燈號 </td>
+        <td>
+            <a target="_blank" href="http://index.ndc.gov.tw/n/zh_tw" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>           
+        <td>30分以上不要買、17分以下多買</td>     
+     </tr>         
+     <tr>   
+        <td>*10</td>
+        <td>Apple股價</td>
+        <td>
+            <a target="_blank" href="https://www.google.com/finance?cid=22144" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>           
+        <td>觀察Apple判断蘋果概念股</td>     
+     </tr>              
+     <tr>   
+        <td>*11</td>
+        <td>Tesla股價</td>
+        <td>
+            <a target="_blank" href="https://www.google.com/finance?q=Tesla&ei=5vz0WIDWDcfx0ASRwYqYDw" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>           
+        <td>觀察Tesla股價</td>     
+     </tr>   
+     <tr>   
+        <td>*12</td>
+        <td>S&P 500</td>
+        <td>
+            <a target="_blank" href="https://www.google.com/finance?q=INDEXSP%3A.INX&sq=s%26p%20500&sp=1&ei=Rv30WMGcNYqT0ASh0YKAAg" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>           
+        <td>觀察美股</td>     
+     </tr>              
+    </tbody>
+  </table>
+  </div>
+</div>
+</body>
+</html>

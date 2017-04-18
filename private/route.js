@@ -32,13 +32,9 @@ exports.default = function(req, res){
        dateStr = req.query.date;
    }
 
-   var result = {};
-       console.log("req.query.current Done");
-       db.stockDailyA02_Find(dateStr, function(err, dataObj){        
-            res.render( 'stockInfoCrawerDaily', {
-	            result : dataObj 
-            });	
-       });	                   
+   var result = {};     
+   res.sendfile( './public/index.html');	
+	                   
 };
 
 exports.showStockAnalysisDateList = function(req, res){
@@ -194,4 +190,7 @@ exports.removeStockMonitor = function(req, res)
     });
 };
 
-
+exports.showFG8IndexCheck = function(req, res)
+{
+        res.render( 'FG8IndexCheck', {});	
+}

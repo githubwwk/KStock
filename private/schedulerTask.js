@@ -1,6 +1,6 @@
 "use strict"
 var moment = require('moment');
-var stockRTPirce = require('./stockRealTimePrice.js');
+var stockRTPirce = require('./twStockRealTimePrice.js');
 var twStockTwsePRE = require('./twStockTwsePRE.js');
 var utility = require('./utility.js');
 var db = require('./db.js');
@@ -49,7 +49,7 @@ function getRealtimeAllStockPric(callback)
 
 exports.init = function()
 {        
-    //updateTwStockTwsePRE();
+    updateTwStockTwsePRE();
     
     utility.timestamp('getRealtimeStockPric()+++');
     getRealtimeAllStockPric(function(err, result){        
