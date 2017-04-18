@@ -148,9 +148,8 @@ div
                stock_info_id_dict[stockId] = stockInfo;
 
                /*********************************************/
-               /* Special condition */
-               //debugger;
-               if ((parseFloat(stockInfo.stockDailyInfo.TV_times.TV_times)*10) < 13)
+               /* Special condition */               
+               if ((parseFloat(stockInfo.stockDailyInfo.TV_times.TV_times)*10) < 13)  /* 1.3 times is teacher's experience */
                {
                   console.log("Skip:" + stockInfo.stockInfo.stockName);
                   console.log("Skip TV times:" + stockInfo.stockDailyInfo.TV_times.TV_times);
@@ -183,24 +182,31 @@ div
                var add_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_add_btn_' + stockId + '" value="' +
                                  stockId + '" onclick="btn_add_monitor(this)"><span class="glyphicon glyphicon-eye-open"></span></button>';
 
-               temp_html = '<tr>' +
-                           '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' +
+               var cp_html = (stockInfo.stockDailyInfo.GSP < 0) ?
+                             '<span class="label label-success">' + stockInfo.stockDailyInfo.CP + '</span>':
+                             '<span class="label label-danger">' + stockInfo.stockDailyInfo.CP + '</span>';
+               
+               temp_html = '<tr>' + 
+                           '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
                            '<td>' + stockInfo.stockInfo.stockName + '</td>' +
-                           '<td>' + stockInfo.stockDailyInfo.TV_times.TV_times + '</td>' +
-                           '<td>' + stockInfo.stockDailyInfo.CP + '</td>' +
-                           '<td>' + stockInfo.stockDailyInfo.MA.MA60 + '</td>' +
-                           '<td>' + stockInfo.stockDailyInfo.MA.MA20 + '</td>' +
-                           '<td>' + stockInfo.stockDailyInfo.MA.MA10 + '</td>' +
-                           '<td>' + stockInfo.stockDailyInfo.MA.MA5 + '</td>' +
-                           '<td>' + Math.round(stockInfo.stockDailyInfo.TV/1000) + '</td>' +
-                           '<td>' + Math.round(stockInfo.stockDailyInfo.TV_times.TVMA_05/1000) + '</td>' +
-                           '<td>' + GS + '</td>' +
-                           '<td>' + GSP + '</td>' +
-                           '<td>' + type + '</td>' +
-                           '<td>' + stockInfo.stockInfo.YR + '</td>' +
-                           '<td>' + stockInfo.stockInfo.PRE + '</td>' +
-                           '<td>' + stockInfo.stockInfo.PBR + '</td>' +
-                           '<td>' + add_btn_html + '</td>' +
+                           '<td>' + cp_html + '</td>' + 
+                           '<td>' + GS + '</td>' + 
+                           '<td>' + GSP + '</td>' + 
+                           '<td>' + type + '</td>' +                                                       
+                           '<td>' + stockInfo.stockDailyInfo.MA.MA60 + '</td>' + 
+                           /*
+                           '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
+                           '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
+                           '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
+                           */
+                           '<td><span class="badge">' + stockInfo.stockDailyInfo.TV_times.TV_times + '</span></td>' +  
+                           '<td>' + Math.round(stockInfo.stockDailyInfo.TV/1000) + '</td>' + 
+                           '<td>' + Math.round(stockInfo.stockDailyInfo.TV_times.TVMA_05/1000) + '</td>' +                            
+
+                           '<td>' + stockInfo.stockInfo.YR + '</td>' + 
+                           '<td>' + stockInfo.stockInfo.PRE + '</td>' + 
+                           '<td>' + stockInfo.stockInfo.PBR + '</td>' + 
+                           '<td>' + add_btn_html + '</td>' + 
                            '</tr>';
 
                $('#stock_info_tbl_body').append(temp_html);
@@ -270,20 +276,20 @@ div
      <tr>
         <th>ID</th>
         <th>Name</th>
-        <th>成交量比</th>
-        <th>收盤價</th>
-        <th>MA60</th>
-        <th>MA20</th>
-        <th>MA10</th>
-        <th>MA5</th>
-        <th>成交量</th>
-        <th>前五日成交量</th>
+        <th>收盤價</th>          
         <th>漲跌</th>
         <th>漲跌幅</th>
-        <th>Type</th>
+        <th>Type</th>             
+        <th>MA60</th>
+<!--    <th>MA20</th> -->
+<!--    <th>MA10</th> -->
+<!--    <th>MA5</th> -->
+        <th>成交量比</th>
+        <th>成交量</th>
+        <th>前五日成交量</th>        
         <th>殖利率</th>
         <th>本益比</th>
-        <th>股價淨值比</th>
+        <th>股價淨值比</th>       
         <th>Action</th>
       </tr>
     </thead>
