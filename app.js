@@ -13,8 +13,6 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 })); 
 
 app.get('/', route.default);
-app.get('/stock_a01', route.stockA01);
-app.get('/stock_a02', route.stockA02);
 app.get('/show_stock_analysis_date_list', route.showStockAnalysisDateList);
 app.get('/show_fg8index_check', route.showFG8IndexCheck);
 app.get('/show_stock_monitor', route.showStockMonitor);

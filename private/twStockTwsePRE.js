@@ -77,17 +77,11 @@ function getDatafromWeb(options, callback)
              //console.log(table_html[0]);
             try {
 
-                /* Get table html */
-                utility.timestamp('A');
-                var $ = cheerio.load(table_html[0], {decodeEntities: false});
-                utility.timestamp('A-');
-                //console.log(table_html[0]);
-                utility.timestamp('B');
-                cheerioTableparser($);
-                utility.timestamp('B-');
-                utility.timestamp('C');
-                var data = $('table').parsetable(true, true, true);
-                utility.timestamp('C-');
+                /* Get table html */                
+                var $ = cheerio.load(table_html[0], {decodeEntities: false});                
+                //console.log(table_html[0]);                
+                cheerioTableparser($);                                
+                var data = $('table').parsetable(true, true, true);                
                 //delete data[0];
                 //console.dir(table_html[0]);
                 var organize_data_dict = data_reconstruct(data);                

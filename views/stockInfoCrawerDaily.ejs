@@ -65,13 +65,37 @@ div
       var stockId = item.value;
       console.log("Add Stock:" + stockId);
       var URLs = "add_stock_monitor";
-      var compose = {};
-      compose.stockId = stockId;             
-      compose.date = g_stock_date;
-      compose.stockObj = g_stock_info_id_dict[stockId];
+            
+      let bootbox_prompt_init = {};
+      bootbox_prompt_init.title = "加入監控名單 ";
+      bootbox_prompt_init.inputType = 'select';
+      bootbox_prompt_init.inputOptions = [];
+      let options = {};
+      options.text = '加入新名單...';
+      options.value = 'AddNewMonitorName';
+      bootbox_prompt_init.inputOptions.push(options);
 
-      bootbox.confirm("加入監看名單?", function(result){
-           if(result == true){
+      for (let monitorName of g_monitor_list)
+      {
+           let options = {};
+           options.text = monitorName;
+           options.value = monitorName;
+           bootbox_prompt_init.inputOptions.push(options);
+      } 
+      bootbox_prompt_init.callback = bootbox_Cb;
+
+      function bootbox_Cb(result){
+           console.log("INFO - [Monitor List]:" + result);
+           
+          function __f_send_to_server(monitorName)
+          {
+                var compose = {};
+                compose.stockInfo = {};
+                compose.stockInfo.stockId = stockId;                                         
+                compose.stockInfo.date = g_stock_date;
+                compose.stockInfo.stockObj = g_stock_info_id_dict[stockId];;                
+                compose.monitor_name = monitorName; /* select value is monitor name */
+
                 $.ajax({
                       url: URLs,
                       data: JSON.stringify(compose),
@@ -79,7 +103,9 @@ div
                       dataType:'json',
                       contentType: "application/json; charset=utf-8",
 
-                      success: function(res){                                   		
+                      success: function(res){              
+                          debugger;          
+                          g_monitor_list = res;          		
                           bootbox.alert("Success!");
                       },
                       error:function(xhr, ajaxOptions, thrownError){
@@ -87,12 +113,36 @@ div
 
                       }
                 }); /* ajax */
-            }/* if */
-      });     
+          }
+
+           if((result != '') && (result != null)){
+                debugger;
+                if (result == 'AddNewMonitorName')
+                {
+                   bootbox.prompt({
+                      title: "新增Monitor名稱",
+                      inputType: 'textarea',
+                      callback: function (result) {  
+                          debugger;                                                
+                          __f_send_to_server(result);
+                      }
+                   });
+                }else
+                {
+                    __f_send_to_server(result);
+                }
+            }else{                
+                 bootbox.alert("請選擇一個Monitor Name");
+            }
+      } /*function - bootbox_cb */
+
+      bootbox.prompt(bootbox_prompt_init);
+
   }/* btn_add_monitor() */
   
   var g_stock_date;
-  var g_stock_info_id_dict = {};
+  var g_stock_info_id_dict = {}; 
+  var g_monitor_list = <%- JSON.stringify(monitor_list)%>;
 
   $(document).ready(function(){
         
@@ -269,7 +319,6 @@ div
 </div> 
 
 <div class="row" id="div_stock_list">
-
   <div class="col-sm-10">
   <table class="table">
     <thead class="thead-inverse">

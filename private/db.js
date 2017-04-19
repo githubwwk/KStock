@@ -90,6 +90,17 @@ exports.stockMonitorList_Find = function(name, callback)
     });
 };
 
+exports.stockMonitor_FindAll = function (callback)
+{    
+    STOCK_MONITOR.find().lean().exec(function (err, dataObj){
+        if (dataObj.length){
+            console.log('STOCK_MONITOR.find successful!');
+            return callback(null, dataObj);
+        }else{
+            return callback(err);
+        }
+      });   
+}
 
 exports.stockMonitor_Update = function(dataObj, callback)
 {
@@ -142,14 +153,25 @@ exports.stockMonitor_Remove = function(name, stockId, callback)
 
             }
             //docs[0].monitorList.push(dataObj.monitorList[0]);
-            docs[0].save(function(err){
+            docs[0].save(function(err, result){
                 console.log("STOCK_MONITOR save:" + err);
-                return callback(null, err);
+                return callback(err, result);
             });
             
         }
     });   
 };
+
+exports.stockMonitor_GetMonitorNameList = function (callback)
+{
+    var keys = [];
+    STOCK_MONITOR.find().lean().exec(function (err, dataObj){
+       dataObj.forEach(function(doc){
+           keys.push(doc.name);           
+        });
+        return callback(null, keys);
+      });   
+}
 
 //**********************************************************
 //  For twStockTwsePRE.js
