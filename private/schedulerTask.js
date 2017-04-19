@@ -51,14 +51,14 @@ function getRealtimeAllStockPric(callback)
 exports.init = function()
 {        
     updateTwStockTwsePRE();
-/*    
+   
     utility.timestamp('getRealtimeStockPric()+++');
     getRealtimeAllStockPric(function(err, result){        
               exports.gStockRealTimePrice = result;
-              console.dir(result);              
+             // console.dir(result);              
               utility.timestamp('getRealtimeStockPric()---');
     });
-*/
+
     /*
     var j = schedule.scheduleJob('30 * * * * *', function(){
         console.log('scheduleJob: updateTwStockTwsePRE()');

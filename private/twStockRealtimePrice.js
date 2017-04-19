@@ -188,7 +188,7 @@ exports.readAllStockPrice = function(stockid_list, callback_readPrice)
             let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;     
             options_default.url = url; 
             let data = wait.for(getDatafromWeb, options_default);  
-            console.dir(data);   
+            //console.dir(data);   
             result[stockId] = data;                        
             wait.for(utility.sleepForMs, 25); /* mis.twse.com.tw limitation. Should add delay. */ 
          } /* for */
