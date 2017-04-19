@@ -56,10 +56,6 @@ div
 
   <script type="text/javascript">
 
-  function setData()
-  {
-  }
-
   function btn_add_monitor(item) 
   { 
       var stockId = item.value;
@@ -286,9 +282,9 @@ div
           g_stock_info_id_dict = showStockDailyInfo(g_stock_info_list);
 
            $('#span_description').append(g_info_description);
-           $('#span_date').append(gStockData.date);
-
+           $('#span_date').append(gStockData.date);           
            genDateSelectInfo(gStockDateList);
+           $('#stock_date_sel').val(gStockData.date);
         } /* initHtmlContent */
   });
 
