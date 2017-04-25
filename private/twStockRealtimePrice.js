@@ -6,9 +6,21 @@ var wait = require('wait.for');
 var cheerio = require('cheerio');
 var cheerioTableparser = require('cheerio-tableparser');
 var iconv = require('iconv-lite');
-var replaceall = require("replaceall");
+var fs = require('fs');
 var utility = require("./utility.js");
+var db = require('./db.js');
+
+
 //var mutex = require( 'node-mutex' )();
+
+//**************************************************
+// Variable
+//**************************************************
+var gStockRealTimePrice ;
+var gLocalFileDbDir = 'daily_stock_price';
+var gStockAllObj;
+exports.gStockAllObj;
+
 
 function data_reconstruct(raw_data_list)
 {
@@ -68,6 +80,7 @@ function getDatafromWeb(options, callback)
                 result.datetime = new moment(parseInt(ms_tlong)).format('YYYY-MM-DD HH:mm-ss');  
             } catch(err){
                 console.log('ERROR - stockRealTimePrice getDatafromWeb()' + err);
+                console.dir(options);
                 return callback('ERROR - stockRealTimePrice getDatafromWeb()' + err);                
             }
         }
@@ -111,30 +124,9 @@ function getCookie(callback_getcookie)
     });
 }
 
-var stock_info_dict = {};
-function updateToStockInfoDict(stockInfoObj)
+exports.readStockPriceFromWeb = function(stockid, callback_readPrice)
 {
-    /* Should install Redis - https://github.com/dmajkic/redis/downloads */
-    
-    /*
-    mutex.lock( 'key', function( err, unlock ) {
-        if ( err ) {
-  	        console.error( err );
-  	        console.error( 'Unable to acquire lock' );
-        }
-        //synchronized code block 
-        var stockId = stockInfoObj.stockId;
-
-        stock_info_dict[stockId] = stockInfoObj;
-
-        unlock();
-    });
-    */
-}
-
-exports.readStockPrice = function(stockid, callback_readPrice)
-{
-    console.log("readStockPrice() StockId:" + stockid);
+    console.log("readStockPriceFromWeb() StockId:" + stockid);
     let options_default = {
         url : '',
         method: "GET",     
@@ -155,15 +147,21 @@ exports.readStockPrice = function(stockid, callback_readPrice)
     {                          
          let cookie = wait.for(getCookie); 
          options_default.url = url;          
-         options_default.headers.Cookie = replaceall(cookie_temp, '%COOKIE_STR%',cookie);   
-         let data = wait.for(getDatafromWeb, options_default);                  
-         callback_exe(null, data);
-    } /* readStockPrice() */
+         //options_default.headers.Cookie = replaceall(cookie_temp, '%COOKIE_STR%',cookie);   
+         options_default.headers.Cookie = cookie_temp.replace(/%COOKIE_STR%/g, cookie);     
+         try {
+             let data = wait.for(getDatafromWeb, options_default);          
+             callback_exe(null, data);        
+         }catch(err){
+             /* Do something for getDatafromWeb() error */
+         }
+         
+    } /* readStockPriceFromWeb() */
 
     wait.launchFiber(exec, callback_readPrice);
 };
 
-exports.readAllStockPrice = function(stockid_list, callback_readPrice)
+function _f_readAllStockPriceFromWeb(stockid_list, callback_readPrice)
 {    
     let options_default = {
         url : '',
@@ -185,45 +183,115 @@ exports.readAllStockPrice = function(stockid_list, callback_readPrice)
 
          for (let stockId of stockid_list)
          { 
+            console.log("Get RTP:" + stockId);
             let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;     
             options_default.url = url; 
-            let data = wait.for(getDatafromWeb, options_default);  
-            //console.dir(data);   
-            result[stockId] = data;                        
+            try {
+                 let data = wait.for(getDatafromWeb, options_default);       
+                 //console.dir(data);               
+                 result[stockId] = data;                                         
+            }catch(err){
+                  result[stockId] = undefined;                  
+            }
             wait.for(utility.sleepForMs, 25); /* mis.twse.com.tw limitation. Should add delay. */ 
          } /* for */
          callback_exe(null, result);
     } /* readStockPrice() */
 
     wait.launchFiber(exec, callback_readPrice);
-};
+}
+
+function genLocalDbFileName(dateTime)
+{
+    let dateStr = moment(dateTime).format("YYYYMMDD");                  
+    let localDbFileName = 'realtime_sp_' + dateStr + '.db';
+    return localDbFileName;
+}
+
+function _f_initStockIdList()
+{
+    let result = wait.for(db.twseStockPRE_Find, '2017-04-14');
+    let stock_list = JSON.parse(result[0].data);
+    let stockid_list = [];
+    for(let stock of stock_list)
+    {
+        stockid_list.push(stock.stockId);
+    } /* for */
+
+    let retObj = {};
+    retObj.stockIdList = stockid_list;
+    retObj.stockObjList = stock_list;
+    return retObj;
+
+} /* _f_initStockIdList */
+
+function getRealTimeStockPrice(stockid_list, callback)
+{    
+        utility.timestamp('getRealTimeStockPrice()+++');    
+        
+        let bGetRealTimeFromWeb = false;
+        
+        /* Check whether load price from local file or from web. */
+        let today = moment().format('YYYY-MM-DD');
+        let sart_time = today +' 09:00';
+        if (moment().isBefore(new Date(sart_time)))
+        {
+            /* Check local file db exist or not. */
+            let yesterday = moment(today).subtract(1, 'day').format('YYYY-MM-DD');
+            let filename = genLocalDbFileName(yesterday);
+            let filedir = './db/' + gLocalFileDbDir + '/' + filename;
+            if (fs.existsSync(filedir)) {
+                // Do something
+                console.log(filedir);
+                gStockRealTimePrice = utility.readDataDbFile(filedir);
+                bGetRealTimeFromWeb = false; 
+            }else{
+                console.log("INFO - Get real time price from web.");
+                bGetRealTimeFromWeb = true;    
+            }
+        } /* if */
+
+        if (bGetRealTimeFromWeb)
+        {
+
+            _f_readAllStockPriceFromWeb(stockid_list, function(err, result){        
+                gStockRealTimePrice = result;
+            
+                /* Backup to file db, if not during 9:00~14:30, backup to file db. */
+                let today = moment().format('YYYY-MM-DD');
+                let sart_time = today +' 09:00';
+                let end_time = today +' 14:30';    
+                if (( Object.keys(gStockRealTimePrice).length > 0 ) && (!moment().isBetween(sart_time, end_time)))
+                {
+                    //console.log("First Element key:" + Object.keys(gStockRealTimePrice)[0]);
+                    //console.log("Result Length:" + Object.keys(gStockRealTimePrice).length);
+
+                    let firstKey =  Object.keys(gStockRealTimePrice)[0];
+                    //console.log(gStockRealTimePrice[firstKey]);                  
+                    //let dateStr = moment(gStockRealTimePrice[firstKey].datetime).format("YYYYMMDD");                  
+                    //let localDbFileName = 'realtime_sp_' + dateStr + '.db';
+                    let localDbFileName = genLocalDbFileName(gStockRealTimePrice[firstKey].datetime);
+                    utility.writeDbFile(localDbFileName, gLocalFileDbDir, gStockRealTimePrice);   
+                }                                            
+                utility.timestamp('getRealtimeStockPric()---');
+            });
+        } /* if */
+        return callback(null);    
+}
 
 
 exports.init = function()
-{
-/*    
-    var stockRtInfo = exports.readStockPrice('2454', function(err, result){
-        console.log("Stock Realtime Info:");
-        console.dir(result);
-        updateToStockInfoDict(result);
-    });    
-
-    var stockRtInfo = exports.readStockPrice('2498', function(err, result){
-        console.log("Stock Realtime Info:");
-        console.dir(result);
-        updateToStockInfoDict(result);
-    });  
-
-    var stockRtInfo = exports.readStockPrice('3008', function(err, result){
-        console.log("Stock Realtime Info:");
-        console.dir(result);
-        updateToStockInfoDict(result);
-    });          
-
-    var j = schedule.scheduleJob('30 * * * * *', function(){
-        console.log('scheduleJob: readStockPrice()');
-        exports.readStockPrice('2454', function(err, result){
-        });
-    });
-    */
+{    
+    console.log("INFO - twStockRealTimePrice init()");
+    function exec(callback)
+    {
+        gStockAllObj = _f_initStockIdList();
+        exports.gStockAllObj= gStockAllObj
+        //gStogStockAllObj.stockIdList, = ['2498', '2454', '1101']; /* For Test only */
+        getRealTimeStockPrice(gStockAllObj.stockIdList, function(){});
+        return callback(null);
+    }
+    wait.launchFiber(exec, function(){});
 };
+
+

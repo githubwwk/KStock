@@ -34,10 +34,13 @@ tr:nth-child(even) {background-color: #f2f2f2}
     padding: 20px;  
 }
 
-#div_monitor_select, #div_stock_list, #div_description {
-     padding: 1px 20px; /*up_down, left_right */
+#div_monitor_select, #div_stock_list{
+     padding: 10px 0px; /*up_down, left_right */
 }
 
+#div_stock_list {
+     padding: 3px 0px; /*up_down, left_right */
+}
 
 </style>
   <title> <%=title%></title>
@@ -215,20 +218,13 @@ function showStockDailyInfo(stock_info_list)
 
 <div class="row" id='div_monitor_select'>
   <div class="col-sm-3">
-    <div class="form-group">
-      <label for="sel1">Select list:</label>
+    <div class="form-group">      
       <select class="form-control" id="stock_monitor_sel">
         <!-- generate by genMonitorSelectInfo -->
       </select>
     </div>
   </div>
 </div>
-
-<div class="row" id="div_description">
-  <div class="col-sm-10">
-<!--   <span class="label label-info" id='span_monitor_name'></span> -->       
-  </div>
-</div> 
 
 <div class="row" id="div_stock_list">
   <div class="col-sm-10">

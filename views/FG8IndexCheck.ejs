@@ -12,8 +12,11 @@ table {
   table-layout: fixed;
 }
 
-
 tr:nth-child(even) {background-color: #f2f2f2}
+
+#div_main {
+     padding: 3px 0px; /*up_down, left_right */
+}
 
 </style>
   <title>外資8大指標判讀</title>
@@ -34,7 +37,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
     </script>
 </head>
 <body>
-<div class="row">
+<div class="row" id="div_main">
   <div class="col-sm-10">
   	
   <table class="table">  
@@ -110,7 +113,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
             <a target="_blank" href="http://stockcharts.com/h-sc/ui?s=$UST10Y" class="btn btn-default btn-xs" role="button">
             <span class="glyphicon glyphicon-link"></span></a>
         </td>
-        <td>值越低代表公債價格上漲，值飆高代表有危險</td>
+        <td>值越低代表公債價格上漲，資金流向債市，代表股市有風險</td>
      </tr>   
      <tr>   
         <td><span class="label label-danger">8</span></td>
@@ -183,7 +186,16 @@ tr:nth-child(even) {background-color: #f2f2f2}
             <span class="glyphicon glyphicon-link"></span></a>
         </td>           
         <td>觀察個股融借券賣出變化</td>     
-     </tr>                       
+     </tr>          
+     <tr>   
+        <td><span class="label label-info">14</span></td>
+        <td>外銷訂單統計</td>
+        <td>
+            <a target="_blank" href="https://www.moea.gov.tw/Mns/dos/bulletin/Bulletin.aspx?kind=5&html=1&menu_id=6724" class="btn btn-default btn-xs" role="button">
+            <span class="glyphicon glyphicon-link"></span></a>
+        </td>           
+        <td>參考新聞稿及全部附表 (PDF)，可以看出台灣什麼產業出口成長，代表該類產業業績好，可以買進該產業龍頭</td>     
+     </tr>                      
     </tbody>
   </table>
   </div>

@@ -18,14 +18,14 @@ table thead tr{
 }
 
 table th,table td{
-    width:100px;//fixed width
+    width:100px; 
 }
 
 
 table  tbody{
   display:block;
   height:500px;
-  overflow:auto;//set tbody to auto
+  overflow:auto;
 }
 
 tr:nth-child(even) {background-color: #f2f2f2}
@@ -35,7 +35,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
 }
 
 #div_date_select, #div_stock_list, #div_description {
-     padding: 1px 20px; /*up_down, left_right */
+     padding: 10px 0px; /*up_down, left_right */
 }
 
 
@@ -295,8 +295,7 @@ div
 <div class="row" id='div_date_select'>
 
   <div class="col-sm-3">
-    <div class="form-group">
-      <label for="sel1">Select list:</label>
+    <div class="form-group">      
       <select class="form-control" id="stock_date_sel">
         <!-- generate by genDateSelectInfo -->
       </select>
@@ -308,7 +307,7 @@ div
 <div class="row" id="div_description">
 
   <div class="col-sm-10">
-   <span class="label label-info" id='span_date'></span>
+   <span class="label label-info" id='span_date' style="display:none"></span>
    <p>
    <span class="label label-success" id='span_description'></span>   
   </div>

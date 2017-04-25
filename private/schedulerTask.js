@@ -9,7 +9,6 @@ var schedule = require('node-schedule');
 //**************************************************
 // Variable
 //**************************************************
-exports.gStockRealTimePrice ;
 
 //**************************************************
 // Function
@@ -32,8 +31,7 @@ function updateTwStockTwsePRE()
 }
 
 function getRealtimeAllStockPric(callback)
-{
-     
+{     
      db.twseStockPRE_Find('2017-04-14', function(err, result){
          let stock_list = JSON.parse(result[0].data);
          let stockid_list = [];
@@ -51,14 +49,6 @@ function getRealtimeAllStockPric(callback)
 exports.init = function()
 {        
     updateTwStockTwsePRE();
-   
-    utility.timestamp('getRealtimeStockPric()+++');
-    getRealtimeAllStockPric(function(err, result){        
-              exports.gStockRealTimePrice = result;
-             // console.dir(result);              
-              utility.timestamp('getRealtimeStockPric()---');
-    });
-
     /*
     var j = schedule.scheduleJob('30 * * * * *', function(){
         console.log('scheduleJob: updateTwStockTwsePRE()');
@@ -66,6 +56,7 @@ exports.init = function()
     });
     */
 
+/*
     var rule = new schedule.RecurrenceRule();
     var hours = [9, 10, 11, 12, 1, 2];
     var minutes = [1, 10, 20, 30, 40, 50, 60];
@@ -81,5 +72,5 @@ exports.init = function()
                 utility.timestamp('getRealtimeStockPric()---');
         });
     });
-    
+  */  
 }

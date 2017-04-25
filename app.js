@@ -1,10 +1,15 @@
 "use strict"
 var express = require('express');
 var path = require('path');
+var bodyParser = require('body-parser');
 //var os = require('os');
 var route = require('./private/route.js');
 var schedulerTask = require('./private/schedulerTask.js');
-var bodyParser = require('body-parser');
+var stockRTPirce = require('./private/twStockRealTimePrice.js');
+
+//*************************************************** 
+//  App.js - Code
+//***************************************************
 
 var app = express();
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
@@ -26,12 +31,16 @@ app.set('private', path.join(__dirname, 'private'));
 app.use(express.static(__dirname + '/public'));
 app.set('view engine', 'ejs');
 
+app.listen(3000);
+
 /******************/
 //db.init();
 schedulerTask.init();
+stockRTPirce.init();
 /******************/
-
-app.listen(3000);
 
 //console.log(os.platform());
 console.log("Server Start...");
+
+//*************************************************** 
+//***************************************************
