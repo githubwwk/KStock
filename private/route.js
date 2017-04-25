@@ -4,7 +4,7 @@ var wait = require('wait.for');
 var moment = require('moment');
 var fs = require('fs');
 var db = require('./db.js');
-var schedulerTask = require('./schedulerTask.js');
+var twStockRTP = require('./twStockRealTimePrice.js');
 var wait = require('wait.for');
 //=====================================
 // API
@@ -77,6 +77,7 @@ exports.showStockAnalysisDateList = function(req, res)
                     title : 'KStock Server',
                     description : description,
                     monitor_list : montiorNameList,
+                    srtpAllObj : twStockRTP.gStockRealTimePrice,
                     result : dataObj 
                 });	
             } /* if-else */
@@ -124,24 +125,16 @@ exports.addStockMonitor = function(req, res) {
 };
 
 exports.showStockMonitor = function(req, res)
-{
-  console.dir(schedulerTask.gStockRealTimePrice);  
-/*  
-  var monitor_list_name = '';
-
-  if (req.query.name == '' || req.query.name == undefined){
-       monitor_list_name = 'Konrad Test';
-   }else{
-       monitor_list_name = req.query.name;
-   }
-*/
+{ 
    var result = {};
+   
    console.log("req.query.current Done");
-   //db.stockMonitorList_Find(monitor_list_name, function(err, dataObj){                
-    db.stockMonitor_FindAll(function(err, dataObj){  
+   
+   db.stockMonitor_FindAll(function(err, dataObj){  
         res.render( 'stockMonitorList', {
 	                 result : dataObj,
-                      title : 'KStock Server'
+                     srtpAllObj : twStockRTP.gStockRealTimePrice,
+                     title : 'KStock Server'
                     });	                 
    });
 };

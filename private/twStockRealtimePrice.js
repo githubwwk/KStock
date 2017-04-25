@@ -16,7 +16,8 @@ var db = require('./db.js');
 //**************************************************
 // Variable
 //**************************************************
-var gStockRealTimePrice ;
+var gStockRealTimePrice;
+exports.gStockRealTimePrice;
 var gLocalFileDbDir = 'daily_stock_price';
 var gStockAllObj;
 exports.gStockAllObj;
@@ -229,6 +230,7 @@ function getRealTimeStockPrice(stockid_list, callback)
 {    
         utility.timestamp('getRealTimeStockPrice()+++');    
         
+        let stockRealTimePrice;
         let bGetRealTimeFromWeb = false;
         
         /* Check whether load price from local file or from web. */
@@ -243,8 +245,9 @@ function getRealTimeStockPrice(stockid_list, callback)
             if (fs.existsSync(filedir)) {
                 // Do something
                 console.log(filedir);
-                gStockRealTimePrice = utility.readDataDbFile(filedir);
+                stockRealTimePrice = utility.readDataDbFile(filedir);
                 bGetRealTimeFromWeb = false; 
+                return callback(null, stockRealTimePrice);
             }else{
                 console.log("INFO - Get real time price from web.");
                 bGetRealTimeFromWeb = true;    
@@ -255,28 +258,26 @@ function getRealTimeStockPrice(stockid_list, callback)
         {
 
             _f_readAllStockPriceFromWeb(stockid_list, function(err, result){        
-                gStockRealTimePrice = result;
+                stockRealTimePrice = result;
             
                 /* Backup to file db, if not during 9:00~14:30, backup to file db. */
                 let today = moment().format('YYYY-MM-DD');
                 let sart_time = today +' 09:00';
                 let end_time = today +' 14:30';    
-                if (( Object.keys(gStockRealTimePrice).length > 0 ) && (!moment().isBetween(sart_time, end_time)))
+                if (( Object.keys(stockRealTimePrice).length > 0 ) && (!moment().isBetween(sart_time, end_time)))
                 {
                     //console.log("First Element key:" + Object.keys(gStockRealTimePrice)[0]);
                     //console.log("Result Length:" + Object.keys(gStockRealTimePrice).length);
 
-                    let firstKey =  Object.keys(gStockRealTimePrice)[0];
-                    //console.log(gStockRealTimePrice[firstKey]);                  
-                    //let dateStr = moment(gStockRealTimePrice[firstKey].datetime).format("YYYYMMDD");                  
-                    //let localDbFileName = 'realtime_sp_' + dateStr + '.db';
-                    let localDbFileName = genLocalDbFileName(gStockRealTimePrice[firstKey].datetime);
-                    utility.writeDbFile(localDbFileName, gLocalFileDbDir, gStockRealTimePrice);   
+                    let firstKey =  Object.keys(stockRealTimePrice)[0];
+
+                    let localDbFileName = genLocalDbFileName(stockRealTimePrice[firstKey].datetime);
+                    utility.writeDbFile(localDbFileName, gLocalFileDbDir, stockRealTimePrice);   
                 }                                            
                 utility.timestamp('getRealtimeStockPric()---');
             });
         } /* if */
-        return callback(null);    
+        return callback(null, stockRealTimePrice);    
 }
 
 
@@ -288,7 +289,11 @@ exports.init = function()
         gStockAllObj = _f_initStockIdList();
         exports.gStockAllObj= gStockAllObj
         //gStogStockAllObj.stockIdList, = ['2498', '2454', '1101']; /* For Test only */
-        getRealTimeStockPrice(gStockAllObj.stockIdList, function(){});
+        getRealTimeStockPrice(gStockAllObj.stockIdList, function(err, result){
+            gStockRealTimePrice = result;
+            exports.gStockRealTimePrice = gStockRealTimePrice;
+            console.dir(gStockRealTimePrice);
+        });
         return callback(null);
     }
     wait.launchFiber(exec, function(){});

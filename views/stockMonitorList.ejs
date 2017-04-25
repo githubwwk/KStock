@@ -54,9 +54,12 @@ tr:nth-child(even) {background-color: #f2f2f2}
   <script type="text/javascript">
     
 
+var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>; 
 var g_monitor_list_all = <%- JSON.stringify(result) %>; 
 var g_stock_info_list = g_monitor_list_all[0].monitorList;        
 var g_monitor_list_all_lookup_dict = {};
+
+debugger;
 
 function btn_remove_monitor(item)
 {
@@ -130,7 +133,11 @@ function showStockDailyInfo(stock_info_list)
           continue;
        }
        /*********************************************/
-                   
+       debugger;
+
+       var dataDateTempList = stockObj.stockDailyInfo.date.split('/');
+       var dataDateStr =  dataDateTempList[1] + '/' + dataDateTempList[2]; /* MM/DD */
+
        var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
       
        var type = (stockObj.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
@@ -150,9 +157,19 @@ function showStockDailyInfo(stock_info_list)
                      '<span class="label label-success">' + stockObj.stockDailyInfo.CP + '</span>':
                      '<span class="label label-danger">' + stockObj.stockDailyInfo.CP + '</span>';
 
+       var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';
+
+               var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.stockDailyInfo.CP));
+               var price_delta_html = (price_delta >= 0)?
+                                      '<font color=\"red\"><b>' + price_delta.toFixed(2).toString() + '</b></font>':
+                                      '<font color=\"green\"><b>' + price_delta.toFixed(2).toString() + '</b></font>'; 
+
+
        temp_html = '<tr>' + 
                    '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
                    '<td>' + stockObj.stockInfo.stockName + '</td>' +                           
+                   '<td>' + today_cp_html + '</td>' + 
+                   '<td>' + price_delta_html + '</td>' + 
                    '<td>' + cp_html + '</td>' + 
                    '<td>' + GS + '</td>' + 
                    '<td>' + GSP + '</td>' + 
@@ -167,9 +184,12 @@ function showStockDailyInfo(stock_info_list)
                    '<td>' + Math.round(stockObj.stockDailyInfo.TV/1000) + '</td>' + 
                    '<td>' + Math.round(stockObj.stockDailyInfo.TV_times.TVMA_05/1000) + '</td>' +                            
 
+                   /*  
                    '<td>' + stockObj.stockInfo.YR + '</td>' + 
                    '<td>' + stockObj.stockInfo.PRE + '</td>' + 
                    '<td>' + stockObj.stockInfo.PBR + '</td>' + 
+                   */
+                   '<td>' + dataDateStr + '</td>' + 
                    '<td>' + remove_btn_html + '</td>' + 
                    '</tr>';              
        $('#stock_info_tbl_body').append(temp_html);
@@ -233,9 +253,11 @@ function showStockDailyInfo(stock_info_list)
      <tr>
         <th>ID</th>
         <th>Name</th>
-        <th>收盤價</th>         
-        <th>漲跌</th>
-        <th>漲跌幅</th>
+        <th>(今日)收盤價</th>         
+        <th>Delta</th>    
+        <th>(當時)收盤價</th>         
+        <th>(當時)漲跌</th>
+        <th>(當時)漲跌幅</th>
         <th>Type</th>              
         <th>MA60</th>
 <!--    <th>MA20</th> -->
@@ -243,10 +265,13 @@ function showStockDailyInfo(stock_info_list)
 <!--    <th>MA5</th> -->
         <th>成交量比</th>
         <th>成交量</th>
-        <th>前五日成交量</th>        
+        <th>成交量MA5</th>  
+        <th>加入時間</th>
+<!--              
         <th>殖利率</th>
         <th>本益比</th>
         <th>股價淨值比</th>       
+-->        
         <th>Action</th>
       </tr>
     </thead>
