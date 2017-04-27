@@ -1,27 +1,26 @@
-
+﻿
 "use strict"
 var request = require('request');
-var htmlparser = require('htmlparser2');
-var fs = require('fs');
+//var fs = require('fs');
+var fs = require("fs-extra");
 var moment = require('moment');
 var wait = require('wait.for');
 var cheerio = require('cheerio');
 var cheerioTableparser = require('cheerio-tableparser');
 var merge = require('merge');
-var Semaphore = require("node-semaphore");
-
-var pool = Semaphore(1);
+var fs = require("fs-extra");
+var db = require("./db.js");
 
 var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
 
-var ENABLE_A01 = true;
-var ENABLE_A02 = true;
+var ENABLE_A01 = false;
+var ENABLE_A02 = false;
 
 
 //******************************************
-// stock_data_reconstruct()
+// _f_stock_data_reconstruct()
 //******************************************
-function stock_data_reconstruct(raw_data_list)
+function _f_stock_data_reconstruct(raw_data_list)
 {
     let stock_data_dict = {};
 
@@ -40,14 +39,14 @@ function stock_data_reconstruct(raw_data_list)
        try {
             stock_data.date = row_data_list[0];
             stock_data.TV = parseInt(row_data_list[1].replace(/,/g, '')); /* Trading Volume 成交張數 */
-            stock_data.TO =  parseInt(row_data_list[2].replace(/,/g, '')); /* TurnOver in value 成交量 */
+            //stock_data.TO =  parseInt(row_data_list[2].replace(/,/g, '')); /* TurnOver in value 成交量 */
             stock_data.OP = row_data_list[3]; /* Open Price 開盤價 */
             stock_data.DH = row_data_list[4]; /* Day High 最高價 */
             stock_data.DL = row_data_list[5]; /* Day Low 最低價 */
             stock_data.CP = parseFloat(row_data_list[6].replace(/,/g, '')); /* Closing Price 收盤價*/
             stock_data.GS = parseFloat(row_data_list[7].replace(/,/g, '')); /* Gross Spread:漲跌價差 */
             stock_data.GSP =  (stock_data.GS/(stock_data.CP-stock_data.GS)*100).toFixed(1); /* Gross Spread percentage */
-            stock_data.NT = row_data_list[8]; /* Number of Transactions 成交筆數 */
+            //stock_data.NT = row_data_list[8]; /* Number of Transactions 成交筆數 */
        }catch(err){
             console.log("ERROR get raw data fail!" + err)
        } /* try-catch */
@@ -59,43 +58,115 @@ function stock_data_reconstruct(raw_data_list)
 
     return stock_data_dict;
 
-} /* function - stock_data_reconstruct */
+} /* function - _f_stock_data_reconstruct */
 
 //******************************************
-// getStockData()
+// _f_getStockMonthData()
 //******************************************
-function getStockData(stockId, year, month)
+function _f_readLastSyncTimeLog(stockId)
+{
+    let lastSyncTime_dir = './db/dail_stock_info/' + stockId + '/lastSyncTime.log';
+        
+    try {      
+      var content = fs.readFileSync(lastSyncTime_dir);      
+      var result = JSON.parse(content.toString());      
+    }catch(err){
+      console.log('INFO - lastSyncTime.log not exist:' + lastSyncTime_dir);
+    }
+    return result;
+}
+
+function _f_writeLastSyncTimeLog(stockId)
+{    
+    let lastSyncTimeObj = {};
+    lastSyncTimeObj.time = moment().format('YYYY-MM-DD HH:mm:ss');  
+
+    let lastSyncTime_dir = './db/dail_stock_info/' + stockId;
+    fs.ensureDirSync(lastSyncTime_dir);
+    let lastSyncTime_file = lastSyncTime_dir + '/lastSyncTime.log';
+
+    fs.writeFileSync(lastSyncTime_file, JSON.stringify(lastSyncTimeObj));
+    console.log('Write lastSyncTime.log:' + lastSyncTime_file);
+
+    return 0;
+}
+
+function _f_isDuringOpeningtime()
+{
+    let today = moment().format('YYYY-MM-DD');
+    let sart_time = today +' 09:00';
+    let end_time = today +' 14:00';     
+    return moment().isBetween(sart_time, end_time);
+}
+
+function _f_isAfterClosingtime()
+{
+    let today = moment().format('YYYY-MM-DD');    
+    let end_time = today +' 14:00';     
+    return moment().isAfter(end_time);
+}
+
+function _f_getStockMonthData(stockId, year, month)
 {
     /* try open on local DB */
-    let db_dir = './db/';
+    let db_dir = './db/dail_stock_info/';
     let stock_db_file  = db_dir + stockId + '/' + year + '_' + month + '.db';
     let current_month = moment().month() + 1;
-
-    try{
-        let temp_data_dict = readDataDbFile(stock_db_file);
-        return temp_data_dict;
-    }catch(err){
-        console.log("Get Data from Web:" + stockId);
-        let temp_data_dict = wait.for(getStockDatafromWeb, stockId, year, month);
-        /* Write to local db */
-        if ((month != current_month) && (Object.keys(temp_data_dict).length > 0))
+    let temp_data_dict;
+    
+    if (current_month == month)
+    {
+        let lastSyncTimeObj = _f_readLastSyncTimeLog(stockId);  
+        if(lastSyncTimeObj == undefined)
         {
-            /* Only backup this month before data */
-            writeDataDbFile(stockId, year, month, temp_data_dict);
+            /* First sync. */     
+            temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);        
+            _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict); 
+            _f_writeLastSyncTimeLog(stockId);  
+        }else{
+           let today = moment().format('YYYY-MM-DD');    
+           let end_time = today +' 14:00';  
+           let start_time = today +' 09:00';  
+           if(moment(lastSyncTimeObj.time).isBefore(end_time) && moment().isAfter(end_time))
+           {
+                temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);        
+                _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict); 
+                _f_writeLastSyncTimeLog(stockId);  
+           }else{
+                try{
+                    temp_data_dict = _f_readDataDbFile(stock_db_file);    
+                }catch(err){
+                    temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);        
+                    _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict);                 
+                    _f_writeLastSyncTimeLog(stockId);  
+                }                 
+           }    
         }
-        return temp_data_dict;
+
+    }else{
+        /* Not this month, could try to read data from file. */
+        try{
+            temp_data_dict = _f_readDataDbFile(stock_db_file);    
+        }catch(err){
+            temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);        
+            _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict);                 
+        }        
     }
+    
+    return temp_data_dict;
 }
 
 //******************************************
-// getStockDatafromWeb()
+// _f_getStockDatafromWeb()
 //******************************************
-function getStockDatafromWeb(stockId, year, month, callback_web)
+function _f_getStockDatafromWeb(stockId, year, month, callback_web)
 {
+    console.log("Get Data from Web:" + stockId);
+
     let body = {'download': '',
-                'query_year': '0', /* 2017, set by main */
+                'query_year': '0',   /* 2017, set by main */
                 'query_month' : '0', /* 2, set by main */
-                'CO_ID': '0',  /* 2454, set by main */
+                'CO_ID': '0',        /* 2454, set by main */
                 'query-button' : '%E6%9F%A5%E8%A9%A2'};
 
     let options = {
@@ -120,7 +191,7 @@ function getStockDatafromWeb(stockId, year, month, callback_web)
                 let $ = cheerio.load(table_html[0]);
                 cheerioTableparser($);
                 let data = $("table").parsetable(false, false, true);
-                stock_data_dict = stock_data_reconstruct(data);
+                stock_data_dict = _f_stock_data_reconstruct(data);
             } catch  (err) {
                 console.log("ERROR - Get HTML table error!" + err);
             }
@@ -383,7 +454,7 @@ function stockAnalyze_02(stock_id, data_dict, only_check_today)
 //******************************************
 // readDataDbFile()
 //******************************************
-function readDataDbFile(file_name)
+function _f_readDataDbFile(file_name)
 {
     try {
       //console.log('readDataDbFile()+++');
@@ -397,23 +468,22 @@ function readDataDbFile(file_name)
 }
 
 //******************************************
-// writeDataDbFile()
+// _f_writeDataDbFile()
 //******************************************
-function writeDataDbFile(stockId, year, month, dataObj)
-{
-  let db_dir = './db/';
+function _f_writeDataDbFile(db_dir, stockId, year, month, dataObj)
+{    
     if (!fs.existsSync(db_dir)) {
       fs.mkdirSync(db_dir);
     }
 
-    let stock_db_dir = db_dir + stockId + '/';
+    let stock_db_dir = db_dir + stockId;
     if (!fs.existsSync(stock_db_dir)) {
       fs.mkdirSync(stock_db_dir);
     }
 
-  var dbfile = stock_db_dir + '/'  + year + '_' + month + '.db';
-  fs.writeFileSync(dbfile, JSON.stringify(dataObj));
-  console.log('Write File DB:' + dbfile);
+    var dbfile = stock_db_dir + '/'  + year + '_' + month + '.db';
+    fs.writeFileSync(dbfile, JSON.stringify(dataObj));
+    console.log('Write File DB:' + dbfile);
 
     return 0;
 }
@@ -439,21 +509,22 @@ function writeCheckResultFile(typeName, stockObj)
 }
 
 //******************************************
-// stockDailyChecker()
+// _f_stockDailyChecker()
 //******************************************
-function stockDailyChecker(stockInfo)
+function _f_getRecentSixMonthData(stockId)
 {
     let MONTH = moment().month() + 1;
     let YEAR = moment().year();
-    let stockId = stockInfo.stockId;
 
-
-    let data_dict = {};
-    /* Get 6 month */
+    //*********************************
+    // Get 6 month stock data
+    //*********************************
+    let data_dict = {};    
     for(let i=0 ; i<6 ; i++ )
     {
         let data_month_int = parseInt(MONTH) - i;
         let data_year_int = parseInt(YEAR);
+
         if (data_month_int <= 0){
             data_month_int = data_month_int + 12;
             data_year_int = data_year_int - 1;
@@ -464,12 +535,20 @@ function stockDailyChecker(stockInfo)
         let temp_data_dict;
 
         try{
-            temp_data_dict = getStockData(stockId, query_year, query_month);
+            temp_data_dict = _f_getStockMonthData(stockId, query_year, query_month); 
             data_dict = merge(data_dict, temp_data_dict); /* Merge Data Dict */
         } catch(err){
             console.log(err);
         } /* try-catch */        
     }
+
+    return   data_dict;  
+}
+
+function _f_stockDailyChecker(stockId)
+{
+
+    let data_dict = _f_getRecentSixMonthData(stockId);
 
     if (ENABLE_A02)
     {
@@ -477,7 +556,7 @@ function stockDailyChecker(stockInfo)
 
       if (result_check.keyMoment == true)
       {
-        result_check.stockInfo = stockInfo;
+        //result_check.stockInfo = stockInfo;
         console.dir(result_check);
         writeCheckResultFile('A02', result_check);
       }
@@ -489,48 +568,52 @@ function stockDailyChecker(stockInfo)
 
       if (result_check.keyMoment == true)
       {
-          result_check.stockInfo = stockInfo;
+          //result_check.stockInfo = stockInfo;
           console.dir(result_check);
           writeCheckResultFile('A01', result_check);
       }
     }
 }/* stockDailyChecker() - END */
 
-//******************************************
-// main()
-//******************************************
 
-function main()
+function _f_initStockIdList()
 {
+    let result = wait.for(db.twseStockPRE_Find, '2017-04-14');
+    let stock_list = JSON.parse(result[0].data);
+    let stockid_list = [];
+    for(let stock of stock_list)
+    {
+        stockid_list.push(stock.stockId);
+    } /* for */
 
-    var stocks = readDataDbFile('./cfg/TwStockList_20170328.db');
-    //var stocks = readDataDbFile('./cfg/TwStockList_test.db');
+    let retObj = {};
+    retObj.stockIdList = stockid_list;
+    retObj.stockObjList = stock_list;
+    return retObj;
 
-    //function exec(stockInfo, callback_fiber)
+} /* _f_initStockIdList */
+
+//******************************************
+//  Init()
+//******************************************
+exports.init = function()
+{    
     function exec(callback_fiber)
     {
+         let stocksObj = _f_initStockIdList();
+         let stockid_list = stocksObj.stockIdList;
 
          //let stockId = '3665';
-
-         for (let i=0 ; i< stocks['stock_list'].length ; i++)
-         {
-              let stockInfo = stocks['stock_list'][i];
-              console.log("[StockId]:" + stockInfo.stockId);
-              let stockId = stocks['stock_list'][i].stockId;
-             stockDailyChecker(stockInfo);
+         for (let i=0 ; i< stockid_list.length ; i++)
+         {              
+             let stockId = stockid_list[i];
+             _f_stockDailyChecker(stockId);
          }
 
          return callback_fiber(null);
-    }
+    } /*for */
+    
+    wait.launchFiber(exec, function(){});
+}; 
 
-    //for (let i=0 ; i< stocks['stock_list'].length ; i++)
-    //{
-    //    let stockInfo = stocks['stock_list'][i];
-    //    let stockId = stocks['stock_list'][i].stockId;
-        //wait.launchFiber(exec, stockInfo, function(){});
-        wait.launchFiber(exec, function(){});
 
-   // }
-}
-
-main();

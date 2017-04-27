@@ -235,13 +235,23 @@ div
                var cp_html = (stockInfo.stockDailyInfo.GSP < 0) ?
                              '<span class="label label-success">' + stockInfo.stockDailyInfo.CP + '</span>':
                              '<span class="label label-danger">' + stockInfo.stockDailyInfo.CP + '</span>';
-
-               var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';
+               try {
+                    var currentPrice = g_stock_all_obj[stockId].currentPrice;
+                    var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';
                             
-               var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockInfo.stockDailyInfo.CP));
-               var price_delta_html = (price_delta >= 0)?
-                                      '<font color=\"red\"><b>' + price_delta.toFixed(2).toString() + '</b></font>':
-                                      '<font color=\"green\"><b>' + price_delta.toFixed(2).toString() + '</b></font>'; 
+                    var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockInfo.stockDailyInfo.CP));
+                    var price_delta_p_str = (((price_delta/parseFloat(stockInfo.stockDailyInfo.CP))*100).toFixed(1)).toString();
+                    var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';
+
+                    var price_delta_html = (price_delta >= 0)?
+                                          '<font color=\"red\"><b>' + price_delta_str + '</b></font>':
+                                          '<font color=\"green\"><b>' + price_delta_str + '</b></font>';                     
+               } catch(err){
+                    var currentPrice = 'Error';
+                    var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';                                              
+                    var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
+               }
+
 
                temp_html = '<tr>' + 
                            '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 

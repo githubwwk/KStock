@@ -30,31 +30,24 @@ function updateTwStockTwsePRE()
         
 }
 
-function getRealtimeAllStockPric(callback)
-{     
-     db.twseStockPRE_Find('2017-04-14', function(err, result){
-         let stock_list = JSON.parse(result[0].data);
-         let stockid_list = [];
-         for(let stock of stock_list)
-         {
-             stockid_list.push(stock.stockId);
-         }
 
-         //stockid_list = ['2498', '2454', '1101']; /* For Test only */
-
-         stockRTPirce.readAllStockPrice(stockid_list, callback);         
-     });          
-}
 
 exports.init = function()
 {        
     updateTwStockTwsePRE();
-    /*
-    var j = schedule.scheduleJob('30 * * * * *', function(){
+
+    //stockRTPirce.updateRealTimeStockPrice(); 
+    var rule = new schedule.RecurrenceRule();
+　　var times = [];
+　　for(var i=1; i<60; i=i+5){
+　　　　times.push(i);
+　　}
+　　rule.minute = times;    
+    var j = schedule.scheduleJob(rule, function(){
         console.log('scheduleJob: updateTwStockTwsePRE()');
-        updateTwStockTwsePRE();
+        stockRTPirce.updateRealTimeStockPrice();
     });
-    */
+    
 
 /*
     var rule = new schedule.RecurrenceRule();

@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 var route = require('./private/route.js');
 var schedulerTask = require('./private/schedulerTask.js');
 var stockRTPirce = require('./private/twStockRealTimePrice.js');
+var stockInfoCrawler = require('./private/twStockDailyInfoCrawler.js');
 
 //*************************************************** 
 //  App.js - Code
@@ -34,9 +35,10 @@ app.set('view engine', 'ejs');
 app.listen(3000);
 
 /******************/
-//db.init();
+
 schedulerTask.init();
 stockRTPirce.init();
+//stockInfoCrawler.init();
 /******************/
 
 //console.log(os.platform());

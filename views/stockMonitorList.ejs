@@ -136,7 +136,7 @@ function showStockDailyInfo(stock_info_list)
        debugger;
 
        var dataDateTempList = stockObj.stockDailyInfo.date.split('/');
-       var dataDateStr =  dataDateTempList[1] + '/' + dataDateTempList[2]; /* MM/DD */
+       var dataDateStr =  dataDateTempList[1] + '-' + dataDateTempList[2]; /* MM/DD */
 
        var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
       
@@ -159,11 +159,22 @@ function showStockDailyInfo(stock_info_list)
 
        var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';
 
-               var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.stockDailyInfo.CP));
-               var price_delta_html = (price_delta >= 0)?
-                                      '<font color=\"red\"><b>' + price_delta.toFixed(2).toString() + '</b></font>':
-                                      '<font color=\"green\"><b>' + price_delta.toFixed(2).toString() + '</b></font>'; 
+               try {
+                    var currentPrice = g_stock_all_obj[stockId].currentPrice;
+                    var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';
+                            
+                    var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.stockDailyInfo.CP));
+                    var price_delta_p_str = (((price_delta/parseFloat(stockObj.stockDailyInfo.CP))*100).toFixed(1)).toString();
+                    var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';
 
+                    var price_delta_html = (price_delta >= 0)?
+                                          '<font color=\"red\"><b>' + price_delta_str + '</b></font>':
+                                          '<font color=\"green\"><b>' + price_delta_str + '</b></font>';                     
+               } catch(err){
+                    var currentPrice = 'Error';
+                    var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';                                              
+                    var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
+               }
 
        temp_html = '<tr>' + 
                    '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
@@ -227,6 +238,7 @@ function showStockDailyInfo(stock_info_list)
         $( "#stock_monitor_sel" ).change(function() {
           let monitor_name = $( "#stock_monitor_sel option:selected").text();         
           let monitor = g_monitor_list_all_lookup_dict[monitor_name];
+          debugger;
           var g_stock_info_id_dict = showStockDailyInfo(monitor.monitorList);          
         });        
 	}); /* document - ready() */

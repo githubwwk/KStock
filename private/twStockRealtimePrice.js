@@ -226,26 +226,53 @@ function _f_initStockIdList()
 
 } /* _f_initStockIdList */
 
+function _f_isDuringOpeningtime()
+{
+    let today = moment().format('YYYY-MM-DD');
+    let sart_time = today +' 09:00';
+    let end_time = today +' 14:00';     
+    return moment().isBetween(sart_time, end_time);
+}
+
+function _f_isAfterClosingtime()
+{
+    let today = moment().format('YYYY-MM-DD');    
+    let end_time = today +' 14:00';     
+    return moment().isAfter(end_time);
+}
+
 function getRealTimeStockPrice(stockid_list, callback)
 {    
         utility.timestamp('getRealTimeStockPrice()+++');    
         
         let stockRealTimePrice;
-        let bGetRealTimeFromWeb = false;
+        let bGetRealTimeFromWeb = true;
         
-        /* Check whether load price from local file or from web. */
-        let today = moment().format('YYYY-MM-DD');
-        let sart_time = today +' 09:00';
-        if (moment().isBefore(new Date(sart_time)))
+        /* Check where should get price from local file or from web. */
+        
+        if (!_f_isDuringOpeningtime())
         {
+            
             /* Check local file db exist or not. */
-            let yesterday = moment(today).subtract(1, 'day').format('YYYY-MM-DD');
-            let filename = genLocalDbFileName(yesterday);
+            let yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
+            let today = moment().format('YYYY-MM-DD');
+            let filename = genLocalDbFileName(today);
             let filedir = './db/' + gLocalFileDbDir + '/' + filename;
-            if (fs.existsSync(filedir)) {
-                // Do something
-                console.log(filedir);
+            let yesterdayFilename = genLocalDbFileName(yesterday);
+            let yesterdayFiledir = './db/' + gLocalFileDbDir + '/' + yesterdayFilename;
+
+            if (fs.existsSync(filedir)) {                
+                /* 14:00~24:00 could read from today file data */
+                /* Check whether exist today price data. */                                    
+                //console.log(filedir);
                 stockRealTimePrice = utility.readDataDbFile(filedir);
+                bGetRealTimeFromWeb = false; 
+                return callback(null, stockRealTimePrice);
+            }else if ((fs.existsSync(yesterdayFiledir)) && (!_f_isAfterClosingtime())) 
+            {  
+                /* 00:00 ~ 09:00 could read yesterday file data. */
+                /* Check whether exist yesterday price data. */
+                stockRealTimePrice = utility.readDataDbFile(yesterdayFiledir);
                 bGetRealTimeFromWeb = false; 
                 return callback(null, stockRealTimePrice);
             }else{
@@ -261,10 +288,7 @@ function getRealTimeStockPrice(stockid_list, callback)
                 stockRealTimePrice = result;
             
                 /* Backup to file db, if not during 9:00~14:30, backup to file db. */
-                let today = moment().format('YYYY-MM-DD');
-                let sart_time = today +' 09:00';
-                let end_time = today +' 14:30';    
-                if (( Object.keys(stockRealTimePrice).length > 0 ) && (!moment().isBetween(sart_time, end_time)))
+                if (( Object.keys(stockRealTimePrice).length > 0 ) && (!_f_isDuringOpeningtime()))
                 {
                     //console.log("First Element key:" + Object.keys(gStockRealTimePrice)[0]);
                     //console.log("Result Length:" + Object.keys(gStockRealTimePrice).length);
@@ -275,11 +299,38 @@ function getRealTimeStockPrice(stockid_list, callback)
                     utility.writeDbFile(localDbFileName, gLocalFileDbDir, stockRealTimePrice);   
                 }                                            
                 utility.timestamp('getRealtimeStockPric()---');
+                return callback(null, stockRealTimePrice);    
             });
-        } /* if */
-        return callback(null, stockRealTimePrice);    
+        } else{
+            return callback(null, stockRealTimePrice);   
+        }        
 }
 
+
+exports.updateRealTimeStockPrice = function()
+{
+    utility.timestamp('updateRealTimeStockPrice()+++');
+    if (gStockAllObj == undefined) 
+    {    
+        return;
+    }
+
+    if (gStockRealTimePrice == undefined) 
+    {    
+        return;
+    }
+
+    if(_f_isDuringOpeningtime())
+    { 
+        /* get real time price */  
+        getRealTimeStockPrice(gStockAllObj.stockIdList, function(err, result){
+            gStockRealTimePrice = result;
+            exports.gStockRealTimePrice = gStockRealTimePrice;
+            //console.dir(gStockRealTimePrice);
+            utility.timestamp('updateRealTimeStockPrice() Done!');
+        });        
+    }
+}; 
 
 exports.init = function()
 {    
@@ -288,11 +339,11 @@ exports.init = function()
     {
         gStockAllObj = _f_initStockIdList();
         exports.gStockAllObj= gStockAllObj
-        //gStogStockAllObj.stockIdList, = ['2498', '2454', '1101']; /* For Test only */
-        getRealTimeStockPrice(gStockAllObj.stockIdList, function(err, result){
+        //gStockAllObj.stockIdList = ['2498', '2454', '1101']; /* For Test only */
+        getRealTimeStockPrice(gStockAllObj.stockIdList, function(err, result){            
             gStockRealTimePrice = result;
             exports.gStockRealTimePrice = gStockRealTimePrice;
-            console.dir(gStockRealTimePrice);
+            //console.dir(gStockRealTimePrice);
         });
         return callback(null);
     }

@@ -76,7 +76,7 @@ exports.readDataDbFile = function(file_name)
 //******************************************
 exports.writeDbFile = function(filename, dir, dataObj)
 {
-  let db_dir = './db/';
+    let db_dir = './db/';
     if (!fs.existsSync(db_dir)) {
       fs.mkdirSync(db_dir);
     }
@@ -87,9 +87,9 @@ exports.writeDbFile = function(filename, dir, dataObj)
       fs.mkdirSync(db_file_dir);
     }
 
-  var dbfile = db_file_dir + '/' + filename;
-  fs.writeFileSync(dbfile, JSON.stringify(dataObj));
-  console.log('Write File DB:' + dbfile);
+    var dbfile = db_file_dir + '/' + filename;
+    fs.writeFileSync(dbfile, JSON.stringify(dataObj));
+    console.log('Write File DB:' + dbfile);
 
     return 0;
 }
