@@ -251,11 +251,11 @@ function getRealTimeStockPrice(stockid_list, callback)
         /* Check where should get price from local file or from web. */
         
         if (!_f_isDuringOpeningtime())
-        {
-            
+        {            
             /* Check local file db exist or not. */
             let yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
-            let today = moment().format('YYYY-MM-DD');
+            let today = moment().format('YYYY-MM-DD');            
+
             let filename = genLocalDbFileName(today);
             let filedir = './db/' + gLocalFileDbDir + '/' + filename;
             let yesterdayFilename = genLocalDbFileName(yesterday);
@@ -276,8 +276,31 @@ function getRealTimeStockPrice(stockid_list, callback)
                 bGetRealTimeFromWeb = false; 
                 return callback(null, stockRealTimePrice);
             }else{
-                console.log("INFO - Get real time price from web.");
-                bGetRealTimeFromWeb = true;    
+                /* Sunday:0 Monday:1 ... */
+                let todayOfWeek = moment().weekday();
+                let yesterdayOfWeek = moment().subtract(1, 'day').weekday();
+                
+                if (todayOfWeek == 0 || todayOfWeek == 6 || todayOfWeek == 1)
+                {
+                    let subtractMappting = { 6:1,0:2, 1:3}; /* Sunday:0 (Friday is subtract 2)*/
+
+                    let lastOpenDay = moment().subtract(subtractMappting[todayOfWeek], 'day').format('YYYY-MM-DD');
+
+                    /* During Friday 14:00 to Monday 8:95 */
+                    let filename = genLocalDbFileName(lastOpenDay);
+                    let filedir = './db/' + gLocalFileDbDir + '/' + filename;
+
+                    if (fs.existsSync(filedir)) {                                            
+                        stockRealTimePrice = utility.readDataDbFile(filedir);
+                        bGetRealTimeFromWeb = false; 
+                        return callback(null, stockRealTimePrice);
+                    }else{
+                          bGetRealTimeFromWeb = true;   
+                    }
+                }else{                
+                    console.log("INFO - Get real time price from web.");
+                    bGetRealTimeFromWeb = true;    
+                }
             }
         } /* if */
 

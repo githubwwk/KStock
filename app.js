@@ -38,7 +38,7 @@ app.listen(3000);
 
 schedulerTask.init();
 stockRTPirce.init();
-//stockInfoCrawler.init();
+stockInfoCrawler.init();
 /******************/
 
 //console.log(os.platform());

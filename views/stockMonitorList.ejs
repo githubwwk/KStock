@@ -59,14 +59,14 @@ var g_monitor_list_all = <%- JSON.stringify(result) %>;
 var g_stock_info_list = g_monitor_list_all[0].monitorList;        
 var g_monitor_list_all_lookup_dict = {};
 
-debugger;
+//debugger;
 
 function btn_remove_monitor(item)
 {
     var stockId = item.value;
     console.log("Remove Stock:" + stockId);
     var URLs = "remove_stock_monitor";
-    debugger;
+    //debugger;
     bootbox.confirm("Remove out monitor list", function(result) {            	
         if (result == true){                	
             var compose = {};
@@ -80,7 +80,7 @@ function btn_remove_monitor(item)
 		           contentType: "application/json; charset=utf-8",
 
 		           success: function(res){
-                    debugger;
+                    //debugger;
                     /* Reinit g_monitor_list_all and table data. */
                     let monitor_name = $( "#stock_monitor_sel option:selected").text();   
                     g_monitor_list_all = res;
@@ -133,7 +133,7 @@ function showStockDailyInfo(stock_info_list)
           continue;
        }
        /*********************************************/
-       debugger;
+       //debugger;
 
        var dataDateTempList = stockObj.stockDailyInfo.date.split('/');
        var dataDateStr =  dataDateTempList[1] + '-' + dataDateTempList[2]; /* MM/DD */
@@ -238,7 +238,7 @@ function showStockDailyInfo(stock_info_list)
         $( "#stock_monitor_sel" ).change(function() {
           let monitor_name = $( "#stock_monitor_sel option:selected").text();         
           let monitor = g_monitor_list_all_lookup_dict[monitor_name];
-          debugger;
+          //debugger;
           var g_stock_info_id_dict = showStockDailyInfo(monitor.monitorList);          
         });        
 	}); /* document - ready() */

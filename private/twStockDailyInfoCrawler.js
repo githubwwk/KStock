@@ -11,11 +11,20 @@ var merge = require('merge');
 var fs = require("fs-extra");
 var db = require("./db.js");
 
-var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
+//******************************************
+// Setting
+//******************************************
 
+var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
 var ENABLE_A01 = false;
 var ENABLE_A02 = false;
 
+//******************************************
+// Global Variable
+//******************************************
+
+var gStockInfo = {};
+exports.gStockInfo;
 
 //******************************************
 // _f_stock_data_reconstruct()
@@ -161,7 +170,7 @@ function _f_getStockMonthData(stockId, year, month)
 //******************************************
 function _f_getStockDatafromWeb(stockId, year, month, callback_web)
 {
-    console.log("Get Data from Web:" + stockId);
+    console.log("Get Data from Web:" + stockId + ' month:' + month);
 
     let body = {'download': '',
                 'query_year': '0',   /* 2017, set by main */
@@ -212,57 +221,7 @@ function _f_getStockDatafromWeb(stockId, year, month, callback_web)
     });
 }
 
-//******************************************
-// calMA()
-//******************************************
-function calMA(stock_id, posi, date_key_list, data_dict)
-{
 
-    let result = {};
-    let price_MA60 = 0;
-    let price_MA20 = 0;
-    let price_MA10 = 0;
-    let price_MA5 = 0;
-    let check_days = 60
-
-    if (date_key_list.length < (check_days-1))
-    {
-           /* W/o valid data over 60 */
-           console.log("ERROR calMA() - StockId:" + stock_id);
-           console.log("ERROR calMA() - date_key_list.length:" + date_key_list.length);
-           return undefined;
-    }
-
-    for(let i=0 ; i<check_days ; i++)
-    {
-        try {
-            let price = data_dict[date_key_list[posi+i]].CP;
-            price_MA60 += price;
-
-            if (i < 20) {
-                price_MA20 += price;
-            }
-            if (i < 10) {
-                price_MA10 += price;
-            }
-            if (i < 5) {
-                price_MA5 += price;
-            }
-        } catch (err) {
-            console.log("ERROR calMA() - Error:" + err);
-            console.log("ERROR calMA() - posi:" + posi + ' i:' + i);
-            console.log("ERROR calMA() - StockObj:" + date_key_list[posi+i]);
-            console.log("ERROR calMA() - Dict Length:" + date_key_list.length);
-            //return result;
-        }/* try-catch */
-    } /* for */
-
-    result.MA60 = (price_MA60/60).toFixed(2);
-    result.MA20 = (price_MA20/20).toFixed(2);
-    result.MA10 = (price_MA10/10).toFixed(2);
-    result.MA5 = (price_MA5/5).toFixed(2);
-    return result;
-} /* calMA */
 
 //******************************************
 // stockAnalyze()
@@ -271,185 +230,142 @@ function calMA(stock_id, posi, date_key_list, data_dict)
 var TV_TIMES_CONDITION = 1.5;
 
 /* 帶量超過5日均量1.5倍 */
-function stockAnalyze_01(stock_id, data_dict, only_check_today)
+function stockAnalyze_01(stock_id, data_dict)
 {
-
-    var key_list = Object.keys(data_dict);
-    key_list.sort();
-    key_list.reverse(); /* recently to far date */
-    let i=0;
-    let keyMoment = false;
-    let keyDate = '';
-
-    for (let key of key_list)
-    {        
-        try {             
-             let TV_times_result = check_TV_times(i, data_dict, key_list);
-             if (parseFloat(TV_times_result.TV_times) > TV_TIMES_CONDITION)
-             {
-                 let result_MA = calMA(stock_id, i, key_list, data_dict);
-                 if (result_MA == undefined){
-                     console.log("ERROR - ");
-                     return null;
-                 }
-                 
-                 /* UP */
-                 if ((data_dict[key_list[i]].CP > result_MA.MA5) &&
-                    (result_MA.MA5 > result_MA.MA10 ) &&
-                    (result_MA.MA10 > result_MA.MA20 ))
-                 {
-                     console.log(key);
-                     console.log(data_dict[key].CP);
-                     console.log(data_dict[key].GS);
-                     console.log(data_dict[key].GSP + '%');                     
-                     console.log(result_MA);
-                     data_dict[key].TV_times = TV_times_result;
-                     data_dict[key].MA = result_MA;
-                     keyMoment = true;
-                     keyDate = key;
-                 }
-                 else if((data_dict[key_list[i]].CP < result_MA.MA5) &&
-                         (result_MA.MA5 < result_MA.MA10 ) &&
-                         (result_MA.MA10 < result_MA.MA20 ) && 
-                         data_dict[key_list[i]].CP > STOCK_DOWN_MIN_PRICE) /* DOWN, price over 30 */
-                 {
-                     console.log(key);
-                     console.log(data_dict[key].CP);
-                     console.log(data_dict[key].GS);
-                     console.log(data_dict[key].GSP + '%');                     
-                     console.log(result_MA);
-                     data_dict[key].TV_times = TV_times_result;
-                     data_dict[key].MA = result_MA;
-                     keyMoment = true;
-                     keyDate = key;                 
-                 }
-
-             }/* if */
-        } catch(err) {
-            console.log("ERROR - " + err);
-        }            
-
-        if (only_check_today == true)
-        {
-            break;
-        }
-
-        i++;
-        if (i > 60)
-        {
-            /* Just analyze one quarter (60 Days) */
-            break;
-        }/* if */
-    }/* for */
-
     let result = {};
-    result.stockDailyInfo = data_dict[keyDate];
-    result.keyMoment = keyMoment;    
     
     return result;
+} /* stockAnalyze_01 */
+
+function _f_genPriceAndTVSerialData(date_list, data_dict)
+{
+    let result = {};
+    let Date_SerialData = [];
+    let TV_SerialData = [];
+    let CP_SerialData = [];
+    for(let i=0; i<date_list.length ; i++)
+    {        
+        Date_SerialData.push(date_list[i]);
+        CP_SerialData.push(data_dict[date_list[i]].CP);
+        TV_SerialData.push(data_dict[date_list[i]].TV);
+    }
+    
+    result.Date_SD = Date_SerialData;
+    result.CP_SD = CP_SerialData;
+    result.TV_SD = TV_SerialData;
+    return result;
+
+
 }
 
-function check_TV_times(i, data_dict, key_list)
+function _f_genMATV(date_list, data_dict)
 {
-    try {
-         var TVMA_05 = Math.round((data_dict[key_list[i+1]].TV +
-                                   data_dict[key_list[i+2]].TV +
-                                   data_dict[key_list[i+3]].TV +
-                                   data_dict[key_list[i+4]].TV +
-                                   data_dict[key_list[i+5]].TV)/5);
+    let result = {};
 
-         var TV_times = (data_dict[key_list[i]].TV / TVMA_05).toFixed(1);
-         var result = {};
-         result.TV_times = TV_times;
-         result.TVMA_05 = TVMA_05;
-         result.TV = data_dict[key_list[i]].TV;
-         return result;
-    } catch(err){
-          return {};
+    if(date_list.lenght < 60)
+    {
+        return undefined;
     }
-    return {};
+
+    try {
+         let temp_TVMA10 = 0;
+         let temp_TVMA05 = 0;
+         let temp_TVMA03 = 0;
+
+         let temp_RTVMA10 = 0;  /* For realtime check TV, include last date. */
+         let temp_RTVMA05 = 0;  /* For realtime check TV, include last date. */
+         let temp_RTVMA03 = 0;  /* For realtime check TV, include last date. */        
+
+         for (let i=0; i<=10 ; i++)
+         {
+              if(i<10)
+              {
+                   temp_TVMA10 += data_dict[date_list[i+1]].TV;
+                   temp_RTVMA10 += data_dict[date_list[i]].TV;
+              }
+              if(i<5)
+              {
+                   temp_TVMA05 += data_dict[date_list[i+1]].TV;                    
+                   temp_RTVMA05 += data_dict[date_list[i]].TV;
+              }
+              if(i<3)
+              {
+                   temp_TVMA03 += data_dict[date_list[i+1]].TV;                    
+                   temp_RTVMA03 += data_dict[date_list[i]].TV;
+              }
+         }
+         var TVMA_10 = Math.round((temp_TVMA10)/10);
+         var TVMA_05 = Math.round((temp_TVMA05)/5);
+         var TVMA_03 = Math.round((temp_TVMA03)/3);
+
+         var RTVMA_10 = Math.round((temp_RTVMA10)/10);
+         var RTVMA_05 = Math.round((temp_RTVMA05)/5);
+         var RTVMA_03 = Math.round((temp_RTVMA03)/3);
+
+         //var TV_times = (data_dict[date_list[i]].TV / TVMA_05).toFixed(1);
+         
+         //result.TV_times = TV_times;
+         result.TVMA_10 = TVMA_10;         
+         result.TVMA_05 = TVMA_05;
+         result.TVMA_03 = TVMA_03;
+         result.RTVMA_10 = RTVMA_10;         
+         result.RTVMA_05 = RTVMA_05;
+         result.RTVMA_03 = RTVMA_03;
+
+         result.TV = data_dict[date_list[1]].TV; /* Yesterday TV */        
+         result.RTV = data_dict[date_list[0]].TV; /* last (Today, after close market) TV */        
+
+    } catch(err){
+          console.log("ERROR - _f_genMATV()" + err);
+          result = undefined;
+    }
+   return result;
 
 }
 
 /* 現貨價穿過MA60 */
-function stockAnalyze_02(stock_id, data_dict, only_check_today)
+function stockAnalyze_02(date_list, data_dict, result_MA)
 {
+   let result = {};
+   let date_key = date_list[0];
+   let temp_CP = data_dict[date_key].CP;
+   let temp_GS = data_dict[date_key].GS;
 
-    let key_list = Object.keys(data_dict);
-    if(key_list.indexOf("查無資料！") > -1)
-    {
-       key_list.splice( key_list.indexOf("查無資料！"), 1 );
-    }
-    key_list.sort();
-    key_list.reverse(); /* recently to far date */
-    let i=0;
-    let stage = 0;  /* 0=init value -1=smaller 1=bigger */
-    let keyMoment = false;
-    let keyDate = '';
+   if ((temp_CP > result_MA.MA60) && ((temp_CP - temp_GS) < result_MA.MA60)) 
+   {
+        console.log("[Key Date][N->P]:" + key);
+        console.log("[CP]" + data_dict[key].CP);
+        console.log("[GS]" + data_dict[key].GS);
+        console.log("[GSP]" + data_dict[key].GSP + '%');
+        console.log(result_MA);
+        //data_dict[key].TV_times = check_TV_times(0, data_dict, key_list);
 
-    for (let key of key_list)
-    {
-        console.log("DEBUG - stockAnalyze_02() id:" + stock_id);
-        let result_MA = calMA(stock_id, i, key_list, data_dict);
-        if (result_MA == undefined){
-            /* Invalid data, don't need to analyze */
-            console.log("ERROR - result is undefined! stockId:" + stock_id);
-            console.log("ERROR - key_list len:" + key_list.length);
-            console.dir(result_MA);
-            console.dir(data_dict);
-            console.dir(key_list);
-            keyMoment = false;
-            break;
-        }
-
-        data_dict[key].MA = result_MA;
-        var temp_CP = data_dict[key].CP;
-        var temp_GS =  data_dict[key].GS;
-        if ((temp_CP > result_MA.MA60) && ((temp_CP - temp_GS) < result_MA.MA60)) {
-             console.log("[Key Date][N->P]:" + key);
-             console.log("[CP]" + data_dict[key].CP);
-             console.log("[GS]" + data_dict[key].GS);
-             console.log("[GSP]" + data_dict[key].GSP + '%');
-             console.log(result_MA);
-             data_dict[key].TV_times = check_TV_times(i, data_dict, key_list);
-             //console.log("[TO Times]:" + result_times.TO_times);
-             keyMoment = true;
-             data_dict[key].type = 'N->P';
-             keyDate = key;
-        }
-        else if((temp_CP < result_MA.MA60) && ((temp_CP - temp_GS) > result_MA.MA60) && (temp_CP > STOCK_DOWN_MIN_PRICE))  { /* DOWN, price over 30 */
-             console.log("[Key Date][P->N]:" + key);
-             console.log("[CP]" + data_dict[key].CP);
-             console.log("[GS]" + data_dict[key].GS);
-             console.log("[GSP]" + data_dict[key].GSP + '%');
-             console.log(result_MA);
-             data_dict[key].TV_times = check_TV_times(i, data_dict, key_list);
-             //console.log("[TO Times]:" + result_times.TO_times);
-             keyMoment = true;
-             data_dict[key].type = 'P->N';
-             keyDate = key;
-        }/* if-else */
-
-        if (only_check_today == true)
-        {
-            data_dict[key].MA = result_MA;
-            break;
-        }
-
-        i++;
-        if (i > 60)
-        {
-            /* Just analyze  one quarter (60 Days) MA60 */
-            break;
-        }/* if */
-    } /* for */
-
-    let result = {};
-    result.stockDailyInfo = data_dict[keyDate];
-    result.keyMoment = keyMoment;
+        result.keyMoment = true;
+        data_dict[key].type = 'N->P';
+        keyDate = key;
+   }
+   else if((temp_CP < result_MA.MA60) && ((temp_CP - temp_GS) > result_MA.MA60))  
+   { /* DOWN */
+        console.log("[Key Date][P->N]:" + key);
+        console.log("[CP]" + data_dict[key].CP);
+        console.log("[GS]" + data_dict[key].GS);
+        console.log("[GSP]" + data_dict[key].GSP + '%');
+        console.log(result_MA);
+        //data_dict[key].TV_times = check_TV_times(0, data_dict, key_list);
+        result.keyMoment = true;
+        data_dict[key].type = 'P->N';
+        keyDate = key;
+    }/* if-else */
+        
+    //result.stockDailyInfo = data_dict[keyDate];    
 
     return result;
-}
+}/* function stockAnalyze_02() */
+
+function stockAnalyze_03()
+{
+
+} /* stockAnalyze_03() */
 
 //******************************************
 // readDataDbFile()
@@ -545,14 +461,118 @@ function _f_getRecentSixMonthData(stockId)
     return   data_dict;  
 }
 
+function _f_genDateList(data_dict)
+{
+    let date_list = Object.keys(data_dict);
+    if(date_list.indexOf("查無資料！") > -1)
+    {
+       date_list.splice( date_list.indexOf("查無資料！"), 1 );
+    }
+    date_list.sort();
+    date_list.reverse(); /* recently to far date */
+    return date_list;
+}
+
+function _f_genMA(date_list, data_dict)
+{
+    let posi = 0;
+    let result = {};
+    let price_MA60 = 0;
+    let price_MA20 = 0;
+    let price_MA10 = 0;
+    let price_MA5 = 0;
+    let check_days = 60;
+
+    if (date_list.length < (check_days-1))
+    {
+           /* W/o valid data over 60 */           
+           console.log("ERROR calMA() - date_list.length:" + date_list.length);
+           return undefined;
+    }
+
+    for(let i=0 ; i<check_days ; i++)
+    {
+        try {
+            let price = data_dict[date_list[posi+i]].CP;
+            price_MA60 += price;
+
+            if (i < 20) {
+                price_MA20 += price;
+            }
+            if (i < 10) {
+                price_MA10 += price;
+            }
+            if (i < 5) {
+                price_MA5 += price;
+            }
+        } catch (err) {
+            console.log("ERROR calMA() - Error:" + err);
+            console.log("ERROR calMA() - posi:" + posi + ' i:' + i);
+            console.log("ERROR calMA() - StockObj:" + date_list[posi+i]);
+            console.log("ERROR calMA() - Dict Length:" + date_list.length);
+            //return result;
+        }/* try-catch */
+    } /* for */
+    
+    let MA60 = price_MA60/60;
+    let MA20 = price_MA20/20;
+    let MA10 = price_MA10/10;
+    let MA5 = price_MA5/5;
+
+    result.MA60 = MA60.toFixed(4);
+    result.MA20 = MA20.toFixed(4);
+    result.MA10 = MA10.toFixed(4);
+    result.MA5 = MA5.toFixed(4);
+    
+    let temp_MA_list = [];
+    temp_MA_list.push(MA60);
+    temp_MA_list.push(MA20);
+    temp_MA_list.push(MA10);
+    temp_MA_list.push(MA5);
+    //temp_MA_list.sort();
+    temp_MA_list.sort(function(a, b) {
+         return a - b;
+    });
+    let diff = ((temp_MA_list[3] - temp_MA_list[0])/temp_MA_list[0])*1000;
+    result.diff = Math.abs(diff);
+
+    return result;    
+}
+
 function _f_stockDailyChecker(stockId)
 {
-
+    let daily_check_result = {};
     let data_dict = _f_getRecentSixMonthData(stockId);
+    
+    let date_list = _f_genDateList(data_dict);
+    
+    if(date_list.length < 60)
+    {
+        /* Cannot calculate MA60, so skip. */ 
+        return;
+    }
+    //console.log("DEBUG - [StockId]:" + stockId + " [Len of data_dic]:" + date_list.length);
+ 
+    gStockInfo[stockId] = {};
+    let result_MA = _f_genMA(date_list, data_dict);
+    let result_TV = _f_genMATV(date_list, data_dict);
+    let result_CPTVserial = _f_genPriceAndTVSerialData(date_list, data_dict);
+    let result_StockInfo = data_dict[date_list[0]];        
+
+    gStockInfo[stockId].result_MA = result_MA;
+    gStockInfo[stockId].result_TV = result_TV;
+    gStockInfo[stockId].result_CPTVserial = result_CPTVserial;
+    gStockInfo[stockId].result_StockInfo = result_StockInfo;
+
+    /* A03 */
+    if (result_MA.diff < 5)
+    {
+        console.log("[MA diff<0.5%]:" +stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);
+    }
 
     if (ENABLE_A02)
     {
-      let result_check = stockAnalyze_02(stockId, data_dict, true);
+      let result_check = stockAnalyze_02(date_list, data_dict, result_MA);
 
       if (result_check.keyMoment == true)
       {
@@ -609,7 +629,8 @@ exports.init = function()
              let stockId = stockid_list[i];
              _f_stockDailyChecker(stockId);
          }
-
+         exports.gStockInfo = gStockInfo;  
+         //console.dir(gStockInfo);
          return callback_fiber(null);
     } /*for */
     

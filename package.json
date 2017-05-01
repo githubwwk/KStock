@@ -1,7 +1,6 @@
 {
   "name": "kstockserver",
   "version": "1.0.0",
-  "description": "",
   "main": "app.js",
   "dependencies": {
     "cheerio": "^0.22.0",
@@ -36,5 +35,6 @@
   "bugs": {
     "url": "https://github.com/githubwwk/KStock/issues"
   },
-  "homepage": "https://github.com/githubwwk/KStock#readme"
+  "homepage": "https://github.com/githubwwk/KStock#readme",
+  "description": ""
 }

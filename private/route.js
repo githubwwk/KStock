@@ -73,6 +73,7 @@ exports.showStockAnalysisDateList = function(req, res)
                 console.log("ERROR - db.stockDailyA01_Find()" + err);
                 res.send(503);
             }else {     
+                //console.dir(dataObj);
                 res.render( 'stockInfoCrawerDaily', {
                     title : 'KStock Server',
                     description : description,
