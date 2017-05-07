@@ -34,7 +34,7 @@ exports.default = function(req, res){
    }
 
    var result = {};     
-   res.sendfile( './public/index.html');	
+   res.sendfile('./public/index.html');	
 	                   
 };
 
@@ -48,17 +48,26 @@ exports.showStockAnalysisDateList = function(req, res)
    {
         var dbStockdailFind_fn;
         var description = '';
-
+        let analyze_category = '';
+        let render_file = '';
         switch(req.query.type)
         {
                 case 'A01':
-                    dbStockdailFind_fn = db.stockDailyA01_Find;
+                    
+                    analyze_category = 'stockDaily_A01';
+                    render_file = 'stockInfoCrawerDaily';
                     description = '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破MA5,MA10,MA20均線，量過5日1.5倍(價格>30)';
                 break;
-                case 'A02':
-                    dbStockdailFind_fn = db.stockDailyA02_Find;
+                case 'A02':                    
+                    analyze_category = 'stockDaily_A02';
+                    render_file = 'stockInfoCrawerDaily';
                     description = '[漲]:突破MA60 [跌]:跌破MA60(價格>30)';
                 break;
+                case 'A03':                    
+                    analyze_category = 'stockDaily_A03';
+                    render_file = 'stockInfoAnalyzeResult';
+                    description = '均線糾結 MA60/MA20/MA10/MA5 Bias<1%';
+                break;                
                 default:
                     console.log("ERROR - Invalid Type:" + req.query.type);
                     res.send(503);
@@ -67,14 +76,14 @@ exports.showStockAnalysisDateList = function(req, res)
        
         let montiorNameList = wait.for(db.stockMonitor_GetMonitorNameList);
 
-        dbStockdailFind_fn('', function(err, dataObj){  
+        db.stockDailyAnalyzeResult_Find(analyze_category, '', function(err, dataObj){  
             if (err != null)
             {
                 console.log("ERROR - db.stockDailyA01_Find()" + err);
                 res.send(503);
             }else {     
                 //console.dir(dataObj);
-                res.render( 'stockInfoCrawerDaily', {
+                res.render( render_file, {
                     title : 'KStock Server',
                     description : description,
                     monitor_list : montiorNameList,
@@ -106,18 +115,23 @@ exports.addStockMonitor = function(req, res) {
         //console.log(typeof(req.body.stockInfo));
 
         var stocksInfoObj = JSON.stringify(req.body.stockInfo);
-        console.log(stocksInfoObj);
+        //console.log(stocksInfoObj);
         stockMonitorObj.monitorList.push(stocksInfoObj);
 
         db.stockMonitor_Update(stockMonitorObj, function(err, result){
-            console.log(err);
-            db.stockMonitor_GetMonitorNameList(function(err, result){
-                let montiorNameList = result;
-                res.end(JSON.stringify(montiorNameList));    
-                callback_exec(null);
-            });
-            //res.status(500).json({ error: 'message' })
-            
+            if (err != null)
+            {            
+                db.stockMonitor_GetMonitorNameList(function(err, result){
+                    let montiorNameList = result;
+                    res.end(JSON.stringify(montiorNameList));    
+                    callback_exec(null);
+                });
+            } 
+            else
+            {
+                console.log("ERROR - stockMonitor_Update()" + err);
+                res.status(500).json({ error: err })
+            }                    
         });          
     } /* exec */
    wait.launchFiber(exec, function(err, result){
@@ -158,7 +172,58 @@ exports.removeStockMonitor = function(req, res)
     });
 };
 
+//**********************************************************
+//  For Foreign 8 Index
+//**********************************************************
+
 exports.showFG8IndexCheck = function(req, res)
 {
         res.render( 'FG8IndexCheck', {});	
 }
+
+//**********************************************************
+//  For RealTime Price 
+//**********************************************************
+exports.showStockRealTime = function(req, res)
+{
+   function exec(callback_exec)
+   {
+        var dbStockdailFind_fn;
+        var description = '';
+
+        switch(req.query.type)
+        {
+                case 'A01':
+                    dbStockdailFind_fn = db.stockDailyA01_Find;
+                    description = '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破MA5,MA10,MA20均線，量過5日1.5倍(價格>30)';
+                break;
+                case 'A02':
+                    dbStockdailFind_fn = db.stockDailyA02_Find;
+                    description = '[漲]:突破MA60 [跌]:跌破MA60(價格>30)';
+                break;
+                default:
+                    console.log("ERROR - Invalid Type:" + req.query.type);
+                    res.sendStatus(503);
+                break;
+        }
+       
+        let montiorNameList = wait.for(db.stockMonitor_GetMonitorNameList);
+        
+        description = 'Real Time Stock Status';
+        if (twStockRTP.gStockRealTimeTVGSPCheckResult != undefined)
+        {
+                res.render( 'stockInfoRealTime', {
+                    title : 'KStock Server',
+                    description : description,                                        
+                    result : twStockRTP.gStockRealTimeTVGSPCheckResult 
+                });	           
+        }else{
+            console.log("ERROR - db.showStockRealTime() twStockRTP.gStockRealTimeTVGSPCheckResult is undefined!");
+            res.send(503);
+        }	
+   }/* exec */    
+
+   wait.launchFiber(exec, function(){
+       console.log("INFO - showStockAnalysisDateList() Done");
+   }); 
+};

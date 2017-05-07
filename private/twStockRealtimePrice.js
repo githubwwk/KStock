@@ -9,20 +9,24 @@ var iconv = require('iconv-lite');
 var fs = require('fs');
 var utility = require("./utility.js");
 var db = require('./db.js');
-
+var stockInfoCrawler = require('./twStockDailyInfoCrawler.js');
 
 //var mutex = require( 'node-mutex' )();
 
 //**************************************************
 // Variable
 //**************************************************
-var gStockRealTimePrice;
+var gStockRealTimePrice = {};
 exports.gStockRealTimePrice;
+var gStockRealTimeTVGSPCheckResult = {};
+exports.gStockRealTimeTVGSPCheckResult;
 var gLocalFileDbDir = 'daily_stock_price';
 var gStockAllObj;
 exports.gStockAllObj;
 
-
+//******************************************
+// data_reconstruct()
+//******************************************
 function data_reconstruct(raw_data_list)
 {
     var organize_data_dict = {};  /* Put/Call Ratio dict */
@@ -55,9 +59,9 @@ function data_reconstruct(raw_data_list)
     return organize_data_dict;
 } /* function - stock_data_reconstruct */
 
-
-
-
+//******************************************
+// getDatafromWeb()
+//******************************************
 function getDatafromWeb(options, callback)
 {   
     request( options, function (error, response, body) {
@@ -91,7 +95,7 @@ function getDatafromWeb(options, callback)
 }
 
 //******************************************
-// Utility
+// getTwDate()
 //******************************************
 function getTwDate(dateStr)
 {
@@ -110,6 +114,9 @@ function getTwDate(dateStr)
     return twDateStr;
 }
 
+//******************************************
+// getCookie()
+//******************************************
 function getCookie(callback_getcookie)
 {
 
@@ -125,6 +132,9 @@ function getCookie(callback_getcookie)
     });
 }
 
+//******************************************
+// readStockPriceFromWeb
+//******************************************
 exports.readStockPriceFromWeb = function(stockid, callback_readPrice)
 {
     console.log("readStockPriceFromWeb() StockId:" + stockid);
@@ -162,6 +172,9 @@ exports.readStockPriceFromWeb = function(stockid, callback_readPrice)
     wait.launchFiber(exec, callback_readPrice);
 };
 
+//******************************************
+// _f_readAllStockPriceFromWeb
+//******************************************
 function _f_readAllStockPriceFromWeb(stockid_list, callback_readPrice)
 {    
     let options_default = {
@@ -202,13 +215,19 @@ function _f_readAllStockPriceFromWeb(stockid_list, callback_readPrice)
     wait.launchFiber(exec, callback_readPrice);
 }
 
-function genLocalDbFileName(dateTime)
+//******************************************
+// _f_genLocalDbFileName()
+//******************************************
+function _f_genLocalDbFileName(dateTime)
 {
     let dateStr = moment(dateTime).format("YYYYMMDD");                  
     let localDbFileName = 'realtime_sp_' + dateStr + '.db';
     return localDbFileName;
 }
 
+//******************************************
+// _f_initStockIdList()
+//******************************************
 function _f_initStockIdList()
 {
     let result = wait.for(db.twseStockPRE_Find, '2017-04-14');
@@ -226,14 +245,35 @@ function _f_initStockIdList()
 
 } /* _f_initStockIdList */
 
+//******************************************
+// _f_isDuringOpeningtime()
+//******************************************
 function _f_isDuringOpeningtime()
 {
     let today = moment().format('YYYY-MM-DD');
-    let sart_time = today +' 09:00';
+    let start_time = today +' 09:00';
     let end_time = today +' 14:00';     
-    return moment().isBetween(sart_time, end_time);
+    return moment().isBetween(start_time, end_time);
 }
 
+
+/* Check whether during start time and end time. */
+function _f_isDuringSpecialTime(checkDateTime, start_time, end_time)
+{
+    let today = moment().format('YYYY-MM-DD');
+    let start_time_str = today +' ' + start_time;
+    let end_time_str = today + ' ' + end_time;     
+    if (checkDateTime == "")
+    {
+        return moment().isBetween(start_time_str, end_time_str);
+    }else{
+        return moment(checkDateTime, 'YYYY-MM-DD HH:mm-ss').isBetween(start_time_str, end_time_str);
+    }
+}
+
+//******************************************
+// _f_isAfterClosingtime()
+//******************************************
 function _f_isAfterClosingtime()
 {
     let today = moment().format('YYYY-MM-DD');    
@@ -241,6 +281,9 @@ function _f_isAfterClosingtime()
     return moment().isAfter(end_time);
 }
 
+//******************************************
+// getRealTimeStockPrice()
+//******************************************
 function getRealTimeStockPrice(stockid_list, callback)
 {    
         utility.timestamp('getRealTimeStockPrice()+++');    
@@ -256,9 +299,9 @@ function getRealTimeStockPrice(stockid_list, callback)
             let yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
             let today = moment().format('YYYY-MM-DD');            
 
-            let filename = genLocalDbFileName(today);
+            let filename = _f_genLocalDbFileName(today);
             let filedir = './db/' + gLocalFileDbDir + '/' + filename;
-            let yesterdayFilename = genLocalDbFileName(yesterday);
+            let yesterdayFilename = _f_genLocalDbFileName(yesterday);
             let yesterdayFiledir = './db/' + gLocalFileDbDir + '/' + yesterdayFilename;
 
             if (fs.existsSync(filedir)) {                
@@ -287,7 +330,7 @@ function getRealTimeStockPrice(stockid_list, callback)
                     let lastOpenDay = moment().subtract(subtractMappting[todayOfWeek], 'day').format('YYYY-MM-DD');
 
                     /* During Friday 14:00 to Monday 8:95 */
-                    let filename = genLocalDbFileName(lastOpenDay);
+                    let filename = _f_genLocalDbFileName(lastOpenDay);
                     let filedir = './db/' + gLocalFileDbDir + '/' + filename;
 
                     if (fs.existsSync(filedir)) {                                            
@@ -318,7 +361,7 @@ function getRealTimeStockPrice(stockid_list, callback)
 
                     let firstKey =  Object.keys(stockRealTimePrice)[0];
 
-                    let localDbFileName = genLocalDbFileName(stockRealTimePrice[firstKey].datetime);
+                    let localDbFileName = _f_genLocalDbFileName(stockRealTimePrice[firstKey].datetime);
                     utility.writeDbFile(localDbFileName, gLocalFileDbDir, stockRealTimePrice);   
                 }                                            
                 utility.timestamp('getRealtimeStockPric()---');
@@ -329,7 +372,103 @@ function getRealTimeStockPrice(stockid_list, callback)
         }        
 }
 
+//******************************************
+// _f_check_realtime_TV_GSP()
+//******************************************
+function _f_check_realtime_TV_GSP()
+{
+  let result = {};  
+  result.priceRiseOver5 = {};
+  result.priceFallOver5 = {};
+  result.RTPAndTvRise= {};
 
+  while (stockInfoCrawler.gStockDailyInfo == undefined)
+  {
+      console.log("Wait stockInfoCrawler.gStockDailyInfo...");
+      wait.for(utility.sleepForMs, 1000);
+  }
+
+  while (stockInfoCrawler.gStockDailyInfo['9958'] == undefined)
+  {
+      console.log("Wait stockInfoCrawler.gStockDailyInfo['9958']...");
+      wait.for(utility.sleepForMs, 1000);
+  }
+
+  for (let stockId of gStockAllObj.stockIdList)
+  {       
+     try {
+          let times = 1;
+          /* Transfer datetime: 2017-05-02 09:22-44, remove '-44' */
+          let re = /\-[0-9]*$/g;
+          let temp_datetime = gStockRealTimePrice[stockId].datetime;
+          temp_datetime = temp_datetime.replace(re, '');
+          
+          if(_f_isDuringSpecialTime(temp_datetime, '09:05', '09:15'))
+          {
+              /* 09:10 check, TV is over 1/10 TVMA30 */ 
+              times = 10;
+          }
+          else if(_f_isDuringSpecialTime(temp_datetime, '09:25', '19:35'))          
+          {
+              /* 09:30 check, TV  is over 1/3 TVMA03. */
+              times = 3.3333;
+          }
+          else if(!_f_isDuringOpeningtime())
+          {
+              /* Close market, TV  is over 2 times TVMA03. */
+              times = 0.5
+          } 
+          
+          /* check Realtime TV */
+          if((parseInt(gStockRealTimePrice[stockId].tv)*times) > (parseInt(stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03)))
+          {
+             if (parseInt(gStockRealTimePrice[stockId].tv) > 1000)
+             { 
+                let stockObj = {};
+                stockObj.Info = stockInfoCrawler.gStockDailyInfo[stockId];
+                stockObj.RtInfo = gStockRealTimePrice[stockId];             
+                result.RTPAndTvRise[stockId] = stockObj;
+                //console.log("[RTP TV bigger than MA3]:" + stockId);
+                //console.log("[TV]:" + gStockRealTimePrice[stockId].tv);
+                //console.log("[TVMA03]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03);
+             }
+          }            
+          
+          /* Price Rise over 5% */
+          if(parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP) > 5)
+          {
+              console.log("[GSP UP 5%][StockId]:" + stockId);
+              console.log("[GSP]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP);
+              console.log("[TV]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.TV/1000);
+              let stockObj = {};
+              stockObj.Info = stockInfoCrawler.gStockDailyInfo[stockId];
+              stockObj.RtInfo = gStockRealTimePrice[stockId];             
+              result.priceRiseOver5[stockId] = stockObj;
+          }  
+          
+          /* Price fall over 5% */
+          if(parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP) < -5)
+          {
+              console.log("[GSP DOWN 5% StockId]:" + stockId);
+              console.log("[GSP]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP);
+              console.log("[TV]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.TV/1000);
+              let stockObj = {};
+              stockObj.Info = stockInfoCrawler.gStockDailyInfo[stockId];
+              stockObj.RtInfo = gStockRealTimePrice[stockId];             
+              result.priceFallOver5[stockId] = stockObj;
+          }  
+
+      } catch(err){
+          console.log("ERROR - Compare TVMA Error! (" + stockId + ')' + err);
+      } /* try-catch */           
+  } /* for */
+  //console.dir(result);
+  return result;
+}
+
+//******************************************
+// updateRealTimeStockPrice()
+//******************************************
 exports.updateRealTimeStockPrice = function()
 {
     utility.timestamp('updateRealTimeStockPrice()+++');
@@ -350,11 +489,37 @@ exports.updateRealTimeStockPrice = function()
             gStockRealTimePrice = result;
             exports.gStockRealTimePrice = gStockRealTimePrice;
             //console.dir(gStockRealTimePrice);
+            
+            /* Do someting, check TV MA */
+            gStockRealTimeTVGSPCheckResult = _f_check_realtime_TV_GSP();
+            exports.gStockRealTimeTVGSPCheckResult = gStockRealTimeTVGSPCheckResult;
+
             utility.timestamp('updateRealTimeStockPrice() Done!');
         });        
     }
 }; 
 
+function _f_init_scheduler()
+{
+    let rule = new schedule.RecurrenceRule();
+　　let times = [];
+    
+    /* Every 10 minute to update stock price. */
+　　for(let i=1; i<60; i=i+3){
+　　　　times.push(i);
+　　}
+　　rule.minute = times;    
+    rule.hour = [9, 10, 11, 12, 13];  
+    rule.dayOfWeek = [1, 2, 3, 4, 5]; /* Monday to Friday */
+    let j = schedule.scheduleJob(rule, function(){
+        console.log('scheduleJob: updateTwStockTwsePRE()');
+        exports.updateRealTimeStockPrice();
+    });
+}
+
+//******************************************
+// Utility
+//******************************************
 exports.init = function()
 {    
     console.log("INFO - twStockRealTimePrice init()");
@@ -367,6 +532,10 @@ exports.init = function()
             gStockRealTimePrice = result;
             exports.gStockRealTimePrice = gStockRealTimePrice;
             //console.dir(gStockRealTimePrice);
+            /* Do someting, check TV MA */
+            gStockRealTimeTVGSPCheckResult =  _f_check_realtime_TV_GSP();
+            exports.gStockRealTimeTVGSPCheckResult = gStockRealTimeTVGSPCheckResult;
+            _f_init_scheduler();
         });
         return callback(null);
     }

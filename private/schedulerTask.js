@@ -37,17 +37,6 @@ exports.init = function()
     updateTwStockTwsePRE();
 
     //stockRTPirce.updateRealTimeStockPrice(); 
-    var rule = new schedule.RecurrenceRule();
-　　var times = [];
-　　for(var i=1; i<60; i=i+5){
-　　　　times.push(i);
-　　}
-　　rule.minute = times;    
-    var j = schedule.scheduleJob(rule, function(){
-        console.log('scheduleJob: updateTwStockTwsePRE()');
-        stockRTPirce.updateRealTimeStockPrice();
-    });
-    
 
 /*
     var rule = new schedule.RecurrenceRule();

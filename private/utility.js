@@ -1,6 +1,7 @@
 "use strict"
 
 var fs = require('fs');
+var moment = require('moment');
 
 exports.timestamp = function (msg)
 {
@@ -17,6 +18,7 @@ exports.twDateToDcDate = function(dateStr)
     function addZero(str,length){               
         return new Array(length - str.length + 1).join("0") + str;              
     }
+    dateStr = dateStr.replace(/\//g, '-');
     let date_list = dateStr.split('-');
     let dc_year = parseInt(date_list[0]) + 1911;
     date_list[0] = dc_year.toString();
@@ -93,3 +95,34 @@ exports.writeDbFile = function(filename, dir, dataObj)
 
     return 0;
 }
+
+exports.lastOpenDateOfWeek = function()
+{           
+    /* Sunday:0 Monday:1 ... */
+    let today = moment().format('YYYY-MM-DD');    
+    let todayOfWeek = moment().weekday();
+    let yesterdayOfWeek = moment().subtract(1, 'day').weekday();
+    let lastOpenDay;            
+    let subtractMappting = { 6:1,0:2, 1:3}; /* Sunday:0 (Friday is subtract 2)*/
+    if (todayOfWeek == 0 || todayOfWeek == 6)
+    {       
+        lastOpenDay = moment().subtract(subtractMappting[todayOfWeek], 'day').format('YYYY-MM-DD');
+    }
+    else if(todayOfWeek == 1)
+    {       
+        let end_time = today +' 14:00';  
+        let start_time = today +' 09:00';  
+
+        if (moment().isBefore(start_time))
+        {
+            lastOpenDay = moment().subtract(subtractMappting[todayOfWeek], 'day').format('YYYY-MM-DD');
+        }else{
+            lastOpenDay = today;
+        }
+    }
+    else {
+       lastOpenDay = today;         
+    }/* if-else */
+
+    return lastOpenDay;
+} 

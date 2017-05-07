@@ -10,6 +10,7 @@ var cheerioTableparser = require('cheerio-tableparser');
 var merge = require('merge');
 var fs = require("fs-extra");
 var db = require("./db.js");
+var utility = require("./utility.js");
 
 //******************************************
 // Setting
@@ -18,13 +19,19 @@ var db = require("./db.js");
 var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
 var ENABLE_A01 = false;
 var ENABLE_A02 = false;
+var ENABLE_A03 = true;
 
 //******************************************
 // Global Variable
 //******************************************
 
-var gStockInfo = {};
-exports.gStockInfo;
+var gStockDailyInfo = {}; /* For store all stock information, TV, MA... */
+exports.gStockDailyInfo;
+
+var gStockDailyAnalyzeResult = {};
+exports.gStockDailyAnalyzeResult; /* For store Analyze Result Stock ID */
+
+var gAllStocksObj;  /* From PRE data, stock name, PRE.... */
 
 //******************************************
 // _f_stock_data_reconstruct()
@@ -132,11 +139,11 @@ function _f_getStockMonthData(stockId, year, month)
             temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);        
             _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict); 
             _f_writeLastSyncTimeLog(stockId);  
-        }else{
-           let today = moment().format('YYYY-MM-DD');    
-           let end_time = today +' 14:00';  
-           let start_time = today +' 09:00';  
-           if(moment(lastSyncTimeObj.time).isBefore(end_time) && moment().isAfter(end_time))
+        }else{            
+           let lastOpenDate = utility.lastOpenDateOfWeek();            
+           let last_open_end_time = lastOpenDate +' 14:00';  
+
+           if(moment(lastSyncTimeObj.time).isBefore(last_open_end_time))
            {
                 temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);        
                 _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict); 
@@ -294,13 +301,13 @@ function _f_genMATV(date_list, data_dict)
                    temp_RTVMA03 += data_dict[date_list[i]].TV;
               }
          }
-         var TVMA_10 = Math.round((temp_TVMA10)/10);
-         var TVMA_05 = Math.round((temp_TVMA05)/5);
-         var TVMA_03 = Math.round((temp_TVMA03)/3);
+         var TVMA_10 = Math.round((temp_TVMA10)/10000);
+         var TVMA_05 = Math.round((temp_TVMA05)/5000);
+         var TVMA_03 = Math.round((temp_TVMA03)/3000);
 
-         var RTVMA_10 = Math.round((temp_RTVMA10)/10);
-         var RTVMA_05 = Math.round((temp_RTVMA05)/5);
-         var RTVMA_03 = Math.round((temp_RTVMA03)/3);
+         var RTVMA_10 = Math.round((temp_RTVMA10)/10000);
+         var RTVMA_05 = Math.round((temp_RTVMA05)/5000);
+         var RTVMA_03 = Math.round((temp_RTVMA03)/3000);
 
          //var TV_times = (data_dict[date_list[i]].TV / TVMA_05).toFixed(1);
          
@@ -312,8 +319,8 @@ function _f_genMATV(date_list, data_dict)
          result.RTVMA_05 = RTVMA_05;
          result.RTVMA_03 = RTVMA_03;
 
-         result.TV = data_dict[date_list[1]].TV; /* Yesterday TV */        
-         result.RTV = data_dict[date_list[0]].TV; /* last (Today, after close market) TV */        
+         result.TV = Math.round(data_dict[date_list[1]].TV/1000); /* Yesterday TV */        
+         result.RTV = Math.round(data_dict[date_list[0]].TV/1000); /* last (Today, after close market) TV */        
 
     } catch(err){
           console.log("ERROR - _f_genMATV()" + err);
@@ -362,8 +369,20 @@ function stockAnalyze_02(date_list, data_dict, result_MA)
     return result;
 }/* function stockAnalyze_02() */
 
-function stockAnalyze_03()
+function stockAnalyze_03(stockInfoObj)
 {
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;
+    if ((result_MA.diff < 10) && (result_TV.RTV > (result_TV.RTVMA_03*1.3)) && (parseInt(result_TV.RTV) > 500))
+    {                     
+        console.log("[MA diff<0.5%]:"  + stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);        
+        if (gStockDailyAnalyzeResult['stockDaily_A03'] == undefined)
+        {
+            gStockDailyAnalyzeResult['stockDaily_A03'] = [];
+        }                       
+        gStockDailyAnalyzeResult['stockDaily_A03'].push(gStockDailyInfo[stockId]);
+    } /* if */
 
 } /* stockAnalyze_03() */
 
@@ -553,22 +572,19 @@ function _f_stockDailyChecker(stockId)
     }
     //console.log("DEBUG - [StockId]:" + stockId + " [Len of data_dic]:" + date_list.length);
  
-    gStockInfo[stockId] = {};
+    gStockDailyInfo[stockId] = {};
     let result_MA = _f_genMA(date_list, data_dict);
     let result_TV = _f_genMATV(date_list, data_dict);
     let result_CPTVserial = _f_genPriceAndTVSerialData(date_list, data_dict);
     let result_StockInfo = data_dict[date_list[0]];        
-
-    gStockInfo[stockId].result_MA = result_MA;
-    gStockInfo[stockId].result_TV = result_TV;
-    gStockInfo[stockId].result_CPTVserial = result_CPTVserial;
-    gStockInfo[stockId].result_StockInfo = result_StockInfo;
-
-    /* A03 */
-    if (result_MA.diff < 5)
-    {
-        console.log("[MA diff<0.5%]:" +stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);
-    }
+    
+    gStockDailyInfo[stockId].ver = 'v2.0';   /* From 2017.5.8 Konrad change format, so ejs has to check version for parsing. */
+    gStockDailyInfo[stockId].stockId = stockId;
+    gStockDailyInfo[stockId].stockInfo = gAllStocksObj.stockObjDict[stockId];    
+    gStockDailyInfo[stockId].result_MA = result_MA;
+    gStockDailyInfo[stockId].result_TV = result_TV;
+    //gStockDailyInfo[stockId].result_CPTVserial = result_CPTVserial;
+    gStockDailyInfo[stockId].result_StockInfo = result_StockInfo;
 
     if (ENABLE_A02)
     {
@@ -592,7 +608,14 @@ function _f_stockDailyChecker(stockId)
           console.dir(result_check);
           writeCheckResultFile('A01', result_check);
       }
-    }
+    }/* if */
+
+    /* A03 */
+    if (ENABLE_A03) 
+    {
+        stockAnalyze_03(gStockDailyInfo[stockId]);
+        
+    }/* if */ 
 }/* stockDailyChecker() - END */
 
 
@@ -601,17 +624,48 @@ function _f_initStockIdList()
     let result = wait.for(db.twseStockPRE_Find, '2017-04-14');
     let stock_list = JSON.parse(result[0].data);
     let stockid_list = [];
+    let stockObjDict = {};
     for(let stock of stock_list)
     {
         stockid_list.push(stock.stockId);
+        stockObjDict[stock.stockId] = stock;
     } /* for */
 
     let retObj = {};
     retObj.stockIdList = stockid_list;
-    retObj.stockObjList = stock_list;
+    retObj.stockObjDict = stockObjDict;
     return retObj;
 
 } /* _f_initStockIdList */
+
+
+function _f_writeAnalyzeResultToDb(analyzeResultDict)
+{
+    for (let typename in gStockDailyAnalyzeResult)  
+    {
+        let wrtObj = {};
+        let stockId;
+        let date;
+        if (analyzeResultDict[typename].length == 0)
+        {
+            continue;
+        }else{
+            stockId = analyzeResultDict[typename][0].stockId;
+            let stockInfo = gStockDailyInfo[stockId];
+            date = stockInfo.result_StockInfo.date;   
+        }       
+        date = utility.twDateToDcDate(date);
+        wrtObj.date = date;
+
+        wrtObj.data = JSON.stringify(analyzeResultDict[typename]);
+        db.stockDailyAnalyzeResult_IsExist(typename, date, wrtObj, function(err, result){
+            if (err != null)
+            {
+                console.log("ERROR - _f_writeAnalyzeResultToDb()" + err);
+            }
+        });
+    }
+}
 
 //******************************************
 //  Init()
@@ -620,8 +674,8 @@ exports.init = function()
 {    
     function exec(callback_fiber)
     {
-         let stocksObj = _f_initStockIdList();
-         let stockid_list = stocksObj.stockIdList;
+         gAllStocksObj = _f_initStockIdList();
+         let stockid_list = gAllStocksObj.stockIdList;
 
          //let stockId = '3665';
          for (let i=0 ; i< stockid_list.length ; i++)
@@ -629,8 +683,13 @@ exports.init = function()
              let stockId = stockid_list[i];
              _f_stockDailyChecker(stockId);
          }
-         exports.gStockInfo = gStockInfo;  
-         //console.dir(gStockInfo);
+         exports.gStockDailyInfo = gStockDailyInfo;  
+         //console.dir(gStockDailyInfo);
+         exports.gStockDailyAnalyzeResult = gStockDailyAnalyzeResult;
+         
+         /* Write result to DB */
+         _f_writeAnalyzeResultToDb(gStockDailyAnalyzeResult);
+
          return callback_fiber(null);
     } /*for */
     

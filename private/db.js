@@ -1,3 +1,4 @@
+"use strict"
 var mongoose = require('mongoose');
 
 mongoose.connect('mongodb://localhost/kStock');
@@ -205,15 +206,6 @@ exports.twseStockPRE_Find = function(date, callback)
 //**********************************************************
 //  For TwStockInfoWriteDb.js
 //**********************************************************
-exports.stockDailyInfoSave = function(dataObj)
-{ 
-    var newStockDailyInfo = STOCK_DAILY_A02_INFO(dataObj);
-    
-    newStockDailyInfo.save(function(err){
-        console.log('STOCK_DAILY_A02_INFO Created Done');        
-    });     
-};
-
 exports.stockDailyA02_IsExist = function(checkDate, saveDataObj)
 {
    console.log("stockDailyA02_IsExist() Date:" + checkDate);
@@ -229,6 +221,9 @@ exports.stockDailyA02_IsExist = function(checkDate, saveDataObj)
     });
 };
 
+//**********************************************************
+// stockDailyA01_IsExist()
+//**********************************************************
 exports.stockDailyA01_IsExist = function(checkDate, saveDataObj)
 {
    console.log("stockDailyA01_IsExist() Date:" + checkDate);
@@ -240,6 +235,52 @@ exports.stockDailyA01_IsExist = function(checkDate, saveDataObj)
             newStockDailyInfo.save(function(err){
                 console.log('STOCK_DAILY_A01_INFO Created Done'); 
             });
+        }
+    });
+};
+
+//**********************************************************
+// stockDailyAnalyzeResult_IsExist()
+//**********************************************************
+exports.stockDailyAnalyzeResult_IsExist = function(category, checkDate, saveDataObj, callback)
+{
+   let STOCK_DAILY_ANALYZE_RESULT = mongoose.model(category, stockSchema2); 
+
+   console.log("STOCK_DAILY_ANALYZE_RESULT() [Category]:" + category + " [Date]:" + checkDate);
+   STOCK_DAILY_ANALYZE_RESULT.find({date : checkDate}, function (err, dataObj) {
+        if (dataObj.length){
+            console.log('stockDailyA01_IsExist() already Exist:' + checkDate);
+            callback(null);
+        }else{
+            let newStockDailyInfo = STOCK_DAILY_ANALYZE_RESULT(saveDataObj);
+            newStockDailyInfo.save(function(err){
+                console.log('STOCK_DAILY_ANALYZE_RESULT Created Done [Category]::' + category); 
+                callback(err);
+            });
+        }
+        
+    });
+};
+
+//**********************************************************
+// stockDailyAnalyzeResult_Find()
+//**********************************************************
+exports.stockDailyAnalyzeResult_Find = function(category, date, callback)
+{   
+     let STOCK_DAILY_ANALYZE_RESULT = mongoose.model(category, stockSchema2); 
+
+     var filter = {};
+     if ((date != undefined) && (date != '')) {
+         filter.date = date;
+     }
+
+     STOCK_DAILY_ANALYZE_RESULT.find(filter).lean().exec(function (err, dataObj) {
+        if (dataObj.length){
+            console.log(STOCK_DAILY_ANALYZE_RESULT + '.find successful!');
+            return callback(null, dataObj);
+        }else{
+            console.log("ERROR - " + STOCK_DAILY_ANALYZE_RESULT + " fail! " + err);
+            return callback('Not data');
         }
     });
 };

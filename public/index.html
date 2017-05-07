@@ -50,12 +50,17 @@
                 console.log('A02');
                 href = './show_stock_analysis_date_list?type=A02';
             break;
+            case 'A03':
+                console.log('A03');
+                href = './show_stock_analysis_date_list?type=A03';
+            break;            
             case 'Monitor':
                 console.log('Monitor');
                 href = './show_stock_monitor';
             break
             case 'RealTime':  
-                return;
+                console.log('Real Time Stock');
+                href = './show_stock_realtime';
             break;
             case '外資八大條件判讀':  
                 console.log('FG 8 Index Check');
@@ -100,6 +105,9 @@
                 <li>
                     <a href="">A02</a>
                 </li>
+                <li>
+                    <a href="">A03</a>
+                </li>                
                 <li>
                     <a href="">Monitor</a>
                 </li>                
