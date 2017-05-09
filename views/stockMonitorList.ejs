@@ -108,14 +108,14 @@ function _f_showStockDailyInfo_v20(stockObj)
    if ((parseFloat(stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_03)*10) < 13)  /* 1.3 times is teacher's experience */
    {
       console.log("Skip:" + stockObj.stockInfo.stockName);     
-      return;
+      //return;
    }
 
    if ((Math.round(stockObj.result_TV.RTV)) < 100)
    {
       console.log("Skip:" + stockObj.stockInfo.stockName);
       console.log("Skip TV:" + Math.round(stockObj.stockDailyInfo.TV/1000));   
-      return;
+      //return;
    }
    
    /*********************************************/
@@ -224,7 +224,7 @@ function showStockDailyInfo(stock_info_list)
               console.log("Skip:" + stockObj.stockInfo.stockName);
               console.log("Skip TV times:" + stockObj.stockDailyInfo.TV_times.TV_times);
               // Skip
-              continue;
+              //continue;
            }
 
            if ((Math.round(stockObj.stockDailyInfo.TV/1000)) < 100)
@@ -232,7 +232,7 @@ function showStockDailyInfo(stock_info_list)
               console.log("Skip:" + stockObj.stockInfo.stockName);
               console.log("Skip TV:" + Math.round(stockObj.stockDailyInfo.TV/1000));
               // Skip
-              continue;
+              //continue;
            }
            /*********************************************/
            //debugger;

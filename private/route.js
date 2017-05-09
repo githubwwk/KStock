@@ -77,17 +77,37 @@ exports.showStockAnalysisDateList = function(req, res)
         let montiorNameList = wait.for(db.stockMonitor_GetMonitorNameList);
 
         db.stockDailyAnalyzeResult_Find(analyze_category, '', function(err, dataObj){  
+
             if (err != null)
             {
                 console.log("ERROR - db.stockDailyA01_Find()" + err);
                 res.send(503);
             }else {     
+                /* get all stockId of dataObj */        
+                let srtpAllObj = {};
+                for(let stockDailyResultObj of dataObj)
+                {
+                    for(let stockObj of JSON.parse(stockDailyResultObj.data))
+                    {
+                        if (stockObj.stockId !== undefined) {
+                            /* v2.0 format */
+                            srtpAllObj[stockObj.stockId] = twStockRTP.gStockRealTimePrice[stockObj.stockId];
+                        }else{
+                            /* v1.0 format */
+                            try {
+                                srtpAllObj[stockObj.stockInfo.stockId] = twStockRTP.gStockRealTimePrice[stockObj.stockInfo.stockId];
+                            } catch(err){
+                                console.log("@@@");
+                            }    
+                        }    
+                    }
+                }                    
                 //console.dir(dataObj);
                 res.render( render_file, {
                     title : 'KStock Server',
                     description : description,
                     monitor_list : montiorNameList,
-                    srtpAllObj : twStockRTP.gStockRealTimePrice,
+                    srtpAllObj : srtpAllObj,
                     result : dataObj 
                 });	
             } /* if-else */
@@ -119,7 +139,7 @@ exports.addStockMonitor = function(req, res) {
         stockMonitorObj.monitorList.push(stocksInfoObj);
 
         db.stockMonitor_Update(stockMonitorObj, function(err, result){
-            if (err != null)
+            if (err == null)
             {            
                 db.stockMonitor_GetMonitorNameList(function(err, result){
                     let montiorNameList = result;
@@ -146,9 +166,22 @@ exports.showStockMonitor = function(req, res)
    console.log("req.query.current Done");
    
    db.stockMonitor_FindAll(function(err, dataObj){  
+
+        /* get all stockId of dataObj */        
+        let srtpAllObj = {};
+        for(let monitorObj of dataObj)
+        {
+            for(let monitor of monitorObj.monitorList)
+            {
+                let temp = JSON.parse(monitor);
+                //stockid_list.push(temp.stockId);
+                srtpAllObj[temp.stockId] = twStockRTP.gStockRealTimePrice[temp.stockId];
+            }
+        }                         
+
         res.render( 'stockMonitorList', {
 	                 result : dataObj,
-                     srtpAllObj : twStockRTP.gStockRealTimePrice,
+                     srtpAllObj : srtpAllObj,
                      title : 'KStock Server'
                     });	                 
    });

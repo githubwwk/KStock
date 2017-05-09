@@ -323,7 +323,7 @@ function getRealTimeStockPrice(stockid_list, callback)
                 let todayOfWeek = moment().weekday();
                 let yesterdayOfWeek = moment().subtract(1, 'day').weekday();
                 
-                if (todayOfWeek == 0 || todayOfWeek == 6 || todayOfWeek == 1)
+                if (todayOfWeek == 0 || todayOfWeek == 6 || ((todayOfWeek == 1) && (!_f_isAfterClosingtime())))
                 {
                     let subtractMappting = { 6:1,0:2, 1:3}; /* Sunday:0 (Friday is subtract 2)*/
 
