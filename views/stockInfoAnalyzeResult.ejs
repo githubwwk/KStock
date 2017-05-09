@@ -238,10 +238,10 @@ div
                              '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
                              '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
                try {
-                    var currentPrice = g_stock_all_obj[stockId].currentPrice;
-                    //var currentPriceDelta = g_stock_all_obj[stockId].currentPrice - stockObj.result_StockInfo.CP;
-                    var today_cp_html = '<div><span class="label label-default">' + currentPrice  +'</span></div>';
-                    //today_cp_html += '<div><span class="label label-info">(' + currentPriceDelta  +')</span></div>';
+                    var currentPrice = g_stock_all_obj[stockId].currentPrice;                                       
+                    var today_cp_html = '<span class="label label-default" style="display:block">' + 
+                                        currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
+                                        g_stock_all_obj[stockId].GS + '</span>';                                        
                             
                     var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
                     var price_delta_p_str = (((price_delta/parseFloat(stockObj.result_StockInfo.CP))*100).toFixed(1)).toString();

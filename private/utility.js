@@ -104,14 +104,15 @@ exports.lastOpenDateOfWeek = function()
     let yesterdayOfWeek = moment().subtract(1, 'day').weekday();
     let lastOpenDay;            
     let subtractMappting = { 6:1,0:2, 1:3}; /* Sunday:0 (Friday is subtract 2)*/
+    let end_time = today +' 14:00';  
+    let start_time = today +' 09:00'; 
+
     if (todayOfWeek == 0 || todayOfWeek == 6)
     {       
         lastOpenDay = moment().subtract(subtractMappting[todayOfWeek], 'day').format('YYYY-MM-DD');
     }
     else if(todayOfWeek == 1)
-    {       
-        let end_time = today +' 14:00';  
-        let start_time = today +' 09:00';  
+    {                
 
         if (moment().isBefore(start_time))
         {
@@ -120,8 +121,15 @@ exports.lastOpenDateOfWeek = function()
             lastOpenDay = today;
         }
     }
-    else {
-       lastOpenDay = today;         
+    else {        
+       if (moment().isBefore(start_time))
+       {
+           /* N day 12:00~09:00 */
+           lastOpenDay = moment().subtract(1, 'day').format('YYYY-MM-DD');
+       }else
+       { 
+           lastOpenDay = today;         
+       } 
     }/* if-else */
 
     return lastOpenDay;

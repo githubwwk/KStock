@@ -5,6 +5,7 @@ var moment = require('moment');
 var fs = require('fs');
 var db = require('./db.js');
 var twStockRTP = require('./twStockRealTimePrice.js');
+var twStockDailyInfo = require('./twStockDailyInfoCrawler.js');
 var wait = require('wait.for');
 //=====================================
 // API
@@ -85,23 +86,31 @@ exports.showStockAnalysisDateList = function(req, res)
             }else {     
                 /* get all stockId of dataObj */        
                 let srtpAllObj = {};
+
+                /* Extract realtime stock price for this category */
                 for(let stockDailyResultObj of dataObj)
                 {
                     for(let stockObj of JSON.parse(stockDailyResultObj.data))
                     {
-                        if (stockObj.stockId !== undefined) {
+                        let stockId;
+                        if (stockObj.stockId !== undefined) {                            
                             /* v2.0 format */
-                            srtpAllObj[stockObj.stockId] = twStockRTP.gStockRealTimePrice[stockObj.stockId];
+                            stockId = stockObj.stockId;                            
                         }else{
                             /* v1.0 format */
-                            try {
-                                srtpAllObj[stockObj.stockInfo.stockId] = twStockRTP.gStockRealTimePrice[stockObj.stockInfo.stockId];
-                            } catch(err){
-                                console.log("@@@");
-                            }    
-                        }    
-                    }
-                }                    
+                            stockId = stockObj.stockInfo.stockId;                                
+                        }/* if-else */   
+                        try {
+                            srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
+                            let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];
+                            srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
+                            srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;
+                        } catch(err){
+                                console.log("WARNING - gStockRealTimePrice uninit!"); 
+                        } /* try-catch */ 
+                    } /* for */
+                } /* for */    
+
                 //console.dir(dataObj);
                 res.render( render_file, {
                     title : 'KStock Server',
@@ -174,10 +183,14 @@ exports.showStockMonitor = function(req, res)
             for(let monitor of monitorObj.monitorList)
             {
                 let temp = JSON.parse(monitor);
+                let stockId = temp.stockId;
                 //stockid_list.push(temp.stockId);
-                srtpAllObj[temp.stockId] = twStockRTP.gStockRealTimePrice[temp.stockId];
-            }
-        }                         
+                srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
+                let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];
+                srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
+                srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;
+            } /* for */
+        }/* for */                         
 
         res.render( 'stockMonitorList', {
 	                 result : dataObj,

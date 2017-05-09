@@ -263,7 +263,9 @@ function showStockDailyInfo(stock_info_list)
 
                    try {
                        var currentPrice = g_stock_all_obj[stockId].currentPrice;                        
-                       var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';                              
+                       var today_cp_html = '<span class="label label-default" style="display:block">' + 
+                                        currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
+                                        g_stock_all_obj[stockId].GS + '</span>';                              
 
                         var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.stockDailyInfo.CP));
                         var price_delta_p_str = (((price_delta/parseFloat(stockObj.stockDailyInfo.CP))*100).toFixed(1)).toString();
