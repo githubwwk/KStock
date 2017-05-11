@@ -33,7 +33,7 @@ app.set('private', path.join(__dirname, 'private'));
 app.use(express.static(__dirname + '/public'));
 app.set('view engine', 'ejs');
 
-app.listen(3000);
+app.listen(80);
 
 /******************/
 

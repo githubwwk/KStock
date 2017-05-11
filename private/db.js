@@ -249,7 +249,7 @@ exports.stockDailyAnalyzeResult_IsExist = function(category, checkDate, saveData
    console.log("STOCK_DAILY_ANALYZE_RESULT() [Category]:" + category + " [Date]:" + checkDate);
    STOCK_DAILY_ANALYZE_RESULT.find({date : checkDate}, function (err, dataObj) {
         if (dataObj.length){
-            console.log('stockDailyA01_IsExist() already Exist:' + checkDate);
+            console.log('STOCK_DAILY_ANALYZE_RESULT already Exist:' + category + ' ' + checkDate);
             callback(null);
         }else{
             let newStockDailyInfo = STOCK_DAILY_ANALYZE_RESULT(saveDataObj);

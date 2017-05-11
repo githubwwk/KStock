@@ -322,6 +322,10 @@ function showStockDailyInfo(stock_info_list)
         function genMonitorSelectInfo(monitor_list_all)
         {  
             var html = '';            
+            monitor_list_all.sort(function(a, b) {
+               return a.name > b.name;
+            });
+
             for(monitor of monitor_list_all)
             {       
                 g_monitor_list_all_lookup_dict[monitor.name] = monitor;         

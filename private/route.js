@@ -24,7 +24,7 @@ console.log = function(data)
 //=====================================
 exports.default = function(req, res){
 
-   console.log("route.current()+");
+   //console.log("route.current()+");
    
    var dateStr = '';
 
@@ -102,9 +102,10 @@ exports.showStockAnalysisDateList = function(req, res)
                         }/* if-else */   
                         try {
                             srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
-                            let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];
-                            srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
-                            srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;
+                            let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
+                            let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
+                            srtpAllObj[stockId].GS = currentGP.toFixed(2);
+                            srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
                         } catch(err){
                                 console.log("WARNING - gStockRealTimePrice uninit!"); 
                         } /* try-catch */ 
@@ -181,14 +182,20 @@ exports.showStockMonitor = function(req, res)
         for(let monitorObj of dataObj)
         {
             for(let monitor of monitorObj.monitorList)
-            {
+            {                                
                 let temp = JSON.parse(monitor);
-                let stockId = temp.stockId;
-                //stockid_list.push(temp.stockId);
-                srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
-                let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];
-                srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
-                srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;
+                try {
+                    let stockId = temp.stockId;
+                    //stockid_list.push(temp.stockId);
+                    srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
+                    let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                
+                    let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
+                    srtpAllObj[stockId].GS = currentGP.toFixed(2);
+                    srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+                } catch(err) {
+                    console.log("ERROR - [Monitor List Name]" + monitorObj.name);
+                    console.log("ERROR - Null Object:" + err);
+                }
             } /* for */
         }/* for */                         
 

@@ -145,8 +145,9 @@ div
       
         var g_info_description = "<%=description%>";
         var gStockDateList = <%- JSON.stringify(result)%>;
-        
-        console.dir(gStockDateList);
+        var gCurrentPageStockUrlList = [];
+
+        //console.dir(gStockDateList);
 
         /* Init HTML Content */  
         initHtmlContent();
@@ -168,11 +169,17 @@ div
           $('#span_date').html(stockData.date);
         });
 
+        $("#open_all_stock_url_btn").click(function() {
+          window.open('https://stock.cnyes.com/market/TSE:3032:STOCK', '_blank');
+        });   
+
         function showStockDailyInfo(stock_info_list)
         {
             var temp_html = '';
             var stock_info_id_dict = {};
             var idx = 0;
+
+            gCurrentPageStockUrlList = []; /* Clean Stock URL list */
 
             /* sort by Gross Spread (漲跌) */                      
             function compare(a,b) {
@@ -220,6 +227,7 @@ div
                var dataDateStr =  dataDateTempList[1] + '-' + dataDateTempList[2]; /* MM/DD */               
 
                var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
+               gCurrentPageStockUrlList.push(web_link);
 
                //var type = (stockInfo.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
                var type = (stockObj.result_StockInfo.GSP < 0)?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
@@ -294,12 +302,12 @@ div
         function genDateSelectInfo(stockDateList)
         {
             var html = '';
-            console.dir(stockDateList);
+            //console.dir(stockDateList);
             //stockDateList.sort();
             stockDateList.sort(function(a, b) {
                return moment(a.date) - moment(b.date);
             });
-            console.dir(stockDateList);
+            //console.dir(stockDateList);
             for(stockInfo of stockDateList)
             {                
                 html += '<option>' + stockInfo.date + '</option>';
@@ -342,10 +350,12 @@ div
 <!-- <span class="label label-default" id='span_description'><%=description%></span> -->
 <div class="row" id="div_description">
 
-  <div class="col-sm-10">
+  <div class="col-sm-10">  
    <span class="label label-info" id='span_date' style="display:none"></span>
    <p>
-   <span class="label label-success" id='span_description'></span>   
+   <span class="label label-success" id='span_description'></span>      
+   <p>
+   <button type="button" class="btn btn-success" id="open_all_stock_url_btn">Open All</button>
   </div>
 </div> 
 
