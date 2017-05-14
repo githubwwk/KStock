@@ -116,19 +116,16 @@ function lookup_by_stockid(stockid)
 	});
 	}catch(err){
 		alarm('BootBox ERROR');
+		return;
 	}
-dialog.init(function(){
-
-	
-	$.get(URL, { stockId: stockid}, function(data){
-		console.dir(data);
-		stock_dispersion = JSON.parse(data);
-		init_dispersion_chart(stock_dispersion);
-		dialog.modal('hide');
-	});		
-});
-
-
+    dialog.init(function(){	
+		$.get(URL, { stockId: stockid}, function(data){
+			console.dir(data);
+			stock_dispersion = JSON.parse(data);
+			init_dispersion_chart(stock_dispersion);
+			dialog.modal('hide');
+		});		
+	});
 }
 
 $(document).ready(function(){

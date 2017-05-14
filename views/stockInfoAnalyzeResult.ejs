@@ -47,8 +47,25 @@ tr:nth-child(even) {background-color: #f2f2f2}
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="./js_external/echart/echarts-all.js"></script>
   <script src="./js_external/bootbox/bootbox.min.js"></script>
-
+  <script type="text/javascript" src="./js/kstock.chart.js"></script>
   <script type="text/javascript">
+
+function btn_dispersion_info(item)
+{
+  var stockId = item.value;
+	let URL = '/lookup_stock_dispersion';
+  $('#dispersion_chart').empty();	
+
+  try { 
+      $('#myModal').modal('show');  
+      $.get(URL, { stockId: stockId}, function(data){	       
+          stock_dispersion = JSON.parse(data);
+          show_dispersion_chart(stock_dispersion, 'ar_dispersion_chart');           
+    });	
+  }catch (err){
+    alert('Error!');
+  }	    
+}
 
   function btn_add_monitor(item) 
   { 
@@ -236,7 +253,10 @@ tr:nth-child(even) {background-color: #f2f2f2}
                         '<font color=\"red\">' + stockObj.result_StockInfo.GSP + '%</font>';
 
                var add_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_add_btn_' + stockId + '" value="' +
-                                 stockId + '" onclick="btn_add_monitor(this)"><span class="glyphicon glyphicon-eye-open"></span></button>';
+                                 stockId + '" onclick="btn_add_monitor(this)"><span class="glyphicon glyphicon-plus"></span></button>';
+
+               var dispersion_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_dsps_btn_' + stockId + '" value="' +
+                         stockId + '" onclick="btn_dispersion_info(this)"><span class="glyphicon glyphicon-info-sign"></span></button>';
 
                var cp_html = (stockObj.result_StockInfo.GSP < 0) ?
                              '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
@@ -285,7 +305,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
                            '<td>' + stockInfo.stockInfo.PBR + '</td>' + 
                            */
                            '<td>' + dataDateStr + '</td>' +
-                           '<td>' + add_btn_html + '</td>' + 
+                           '<td>' + add_btn_html + dispersion_info_btn_html + '</td>' + 
                            '</tr>';
 
                $('#stock_info_tbl_body').append(temp_html);
@@ -390,5 +410,27 @@ tr:nth-child(even) {background-color: #f2f2f2}
   </table>
   </div>
 </div>
+
+<!-- Modal -->
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">大股東持股超過1000張</h4>
+      </div>
+      <div class="modal-body" >
+        <div id="ar_dispersion_chart" style="width: 580px; height: 400px;"></div>      
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>
