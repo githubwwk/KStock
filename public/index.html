@@ -64,12 +64,16 @@
             break;
             case '外資八大條件判讀':  
                 console.log('FG 8 Index Check');
-                href = './show_fg8index_check'             
+                href = './show_fg8index_check';             
+            break;
+            case '大股東持股':
+                console.log("[Go] Stock Dispersion");
+                href = './show_stock_dispersion';                
             break;
             default:
                 return;
         } /*switch */
-                   
+        console.log("[Go] url:" + href);
         $.ajax({
             url:href,
             type:'GET',
@@ -113,7 +117,10 @@
                 </li>                
                 <li>
                     <a href="">RealTime</a>
-                </li>     
+                </li>   
+                <li>
+                    <a href="">大股東持股</a>
+                </li>  
                 <li>
                     <a href="">外資八大條件判讀</a>
                 </li>                                 

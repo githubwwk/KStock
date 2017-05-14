@@ -21,7 +21,6 @@ table th,table td{
     width:100px; 
 }
 
-
 table  tbody{
   display:block;
   height:500px;
@@ -37,9 +36,6 @@ tr:nth-child(even) {background-color: #f2f2f2}
 #div_date_select, #div_stock_list, #div_description {
      padding: 10px 0px; /*up_down, left_right */
 }
-
-
-div 
 
 </style>
 <%
@@ -71,6 +67,8 @@ div
       options.value = 'AddNewMonitorName';
       bootbox_prompt_init.inputOptions.push(options);
 
+      g_monitor_list.sort();
+      
       for (let monitorName of g_monitor_list)
       {
            let options = {};

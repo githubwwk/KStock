@@ -38,13 +38,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
      padding: 10px 0px; /*up_down, left_right */
 }
 
-
-div 
-
 </style>
-<%
-  //console.dir(result);
-%>
   <title> <%=title%></title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -70,6 +64,8 @@ div
       options.text = '加入新名單...';
       options.value = 'AddNewMonitorName';
       bootbox_prompt_init.inputOptions.push(options);
+
+      g_monitor_list.sort();      
 
       for (let monitorName of g_monitor_list)
       {

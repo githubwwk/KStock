@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+<head>
+
+    <title>Stock Dispersion</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>    
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="./js_external/echart/echarts-all.js"></script>
+	<script src="./js_external/bootbox/bootbox.min.js"></script>    
+
+<style type="text/css">
+
+.container {  
+  width: 600px;
+  margin-bottom: 10px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+  vertical-align: middle;
+  display: table-cell;
+}
+
+
+</style>
+
+    <script type="text/javascript">
+    
+    var g_stock_dispersion = <%- JSON.stringify(stock_dispersion)%>;    
+
+function init_dispersion_chart(stock_dispersion)
+{
+	if (Object.keys(stock_dispersion).length == 0)
+	{
+		return;		
+	}
+
+    var chart = document.getElementById('dispersion_chart');
+    var myChart = echarts.init(chart);
+  
+	option = {
+   	         tooltip : {
+		        trigger: 'axis'
+		     },
+		     legend: {
+		        data:['持股超過1000張股東']
+		     },
+		     toolbox: {
+		        show : true,
+		        feature : {
+		            mark : {show: false},
+		            dataView : {show: true, readOnly: false},
+		            magicType : {show: false, type: ['line']},
+		            restore : {show: true},
+		            saveAsImage : {show: true}
+		        }
+		    },
+		    calculable : false,
+		    xAxis : [
+		        {
+		            type : 'category',
+		            boundaryGap : false,
+		            data : []  /* X-axis tag */
+		        }
+		    ],
+		    yAxis : [
+		        {
+		            type : 'value',		
+		            max : '0',            
+                    min : '0',		            
+		        }
+		    ],
+		    series : [
+		        {
+		            name:'持股',
+		            type:'line',		           
+		            data:[] /* Value */
+		        },  
+		    ]
+		};
+		
+        /* Set value to chart data */		
+		let yAxis_max = '0';
+		let yAxis_min = '100';		
+		stock_dispersion.sort(function(a, b){
+			return a.date - b.date;
+		});		
+	    for (item of stock_dispersion)
+	    {
+	        //console.log("Time:" + item.Time + " Humi:" + item.Humi + " Temp:" + item.Temp );
+	        option.xAxis[0].data.push(item.date);
+	        option.series[0].data.push(item.data);			
+			if (parseFloat(item.data) < parseFloat(yAxis_min))
+			{
+				yAxis_min = item.data;
+			}
+			if (parseFloat(item.data) > parseFloat(yAxis_max))
+			{
+				yAxis_max = item.data;
+			}			
+	    }        
+        option.yAxis[0].max = (parseInt(yAxis_max) + 1).toString();
+		option.yAxis[0].min = (parseInt(yAxis_min) - 1).toString();
+		console.log(yAxis_max);
+		console.log(yAxis_min);
+        myChart.setOption(option);  	
+}
+
+function lookup_by_stockid(stockid)
+{
+	let URL = '/lookup_stock_dispersion';
+
+	try {
+	var dialog = bootbox.dialog({
+    	title: '大股東持股資料',
+    	message: '<p><i class="fa fa-spin fa-spinner"></i> Loading...</p>'
+	});
+	}catch(err){
+		alarm('BootBox ERROR');
+	}
+dialog.init(function(){
+
+	
+	$.get(URL, { stockId: stockid}, function(data){
+		console.dir(data);
+		stock_dispersion = JSON.parse(data);
+		init_dispersion_chart(stock_dispersion);
+		dialog.modal('hide');
+	});		
+});
+
+
+}
+
+$(document).ready(function(){
+
+  init_dispersion_chart(g_stock_dispersion);
+
+	$("#lookup_submit").click(function(){		
+		let stockId = $('#stockId').val();
+		if (stockId != '')
+		{
+			lookup_by_stockid(stockId);
+		}
+	});
+});
+    </script>
+</head>
+
+
+<body>  
+  <div class="container">
+     <div class="row">
+	     <div class="col-md-2">
+            <label for="usr" style="text-align: center;">Stock Id:</label>
+	     </div>
+         <div class="col-md-4">
+            <input type="text" class="form-control" id="stockId">
+         </div>
+         <div class="col-md-4">
+            <button type="submit" class="btn btn-default" id='lookup_submit'>Lookup</button>
+        </div>
+     </div>
+   </div>	  
+    <div id="dispersion_chart" style="width: 800px; height: 350px;"></div>
+
+</body>
+</html>

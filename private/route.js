@@ -6,6 +6,7 @@ var fs = require('fs');
 var db = require('./db.js');
 var twStockRTP = require('./twStockRealTimePrice.js');
 var twStockDailyInfo = require('./twStockDailyInfoCrawler.js');
+var twStockDispersion = require('./twStockDispersion.js');
 var wait = require('wait.for');
 //=====================================
 // API
@@ -280,3 +281,32 @@ exports.showStockRealTime = function(req, res)
        console.log("INFO - showStockAnalysisDateList() Done");
    }); 
 };
+
+//**********************************************************
+//  For Stock Dispersion
+//**********************************************************
+exports.showStockDispersion = function(req, res)
+{
+    console.log("showStockDispersion()+++");
+    let stockId = req.stockId;
+
+    if (stockId == '' || stockId == undefined)
+    {
+       //stockId = '2454';
+       let result = {};
+       res.render( 'stockDispersion', {
+                stock_dispersion: result
+       });	    
+       return;
+    }            
+};
+
+exports.lookupStockDispersion = function(req, res)
+{
+    let stockId = req.query.stockId;
+    twStockDispersion.getStockDispersion(stockId, function(err, result) {
+            let stock_dispersion = result;
+            res.end(JSON.stringify(stock_dispersion)); 
+    });
+    
+}
