@@ -43,17 +43,13 @@
         switch(menu_button_event)
         {
             case 'A01':
-                console.log('A01');
-                href = './show_stock_analysis_date_list?type=A01';
-            break;
             case 'A02':
-                console.log('A02');
-                href = './show_stock_analysis_date_list?type=A02';
-            break;
             case 'A03':
-                console.log('A03');
-                href = './show_stock_analysis_date_list?type=A03';
-            break;            
+            case 'A04':
+            case 'A05':
+                console.log(menu_button_event);
+                href = './show_stock_analysis_date_list?type=' + menu_button_event;
+            break;       
             case 'Monitor':
                 console.log('Monitor');
                 href = './show_stock_monitor';
@@ -111,7 +107,13 @@
                 </li>
                 <li>
                     <a href="">A03</a>
-                </li>                
+                </li>     
+                <li>
+                    <a href="">A04</a>
+                </li>    
+                <li>
+                    <a href="">A05</a>
+                </li>                                          
                 <li>
                     <a href="">Monitor</a>
                 </li>                

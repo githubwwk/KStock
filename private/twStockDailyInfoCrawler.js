@@ -19,7 +19,9 @@ var utility = require("./utility.js");
 var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
 var ENABLE_A01 = false;
 var ENABLE_A02 = false;
-var ENABLE_A03 = true;
+var ENABLE_A03 = false;
+var ENABLE_A04 = true;
+var ENABLE_A05 = true;
 
 //******************************************
 // Global Variable
@@ -386,6 +388,137 @@ function stockAnalyze_03(stockInfoObj)
 
 } /* stockAnalyze_03() */
 
+function stockAnalyze_04(stockInfoObj)
+{
+    /********************/ 
+    /* MA5 through MA20 */
+    /********************/
+    let result_type = 'stockDaily_A04';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;
+    
+    if (gStockDailyAnalyzeResult[result_type] == undefined)
+    {
+       gStockDailyAnalyzeResult[result_type] = [];
+    }                       
+
+    let MA_list_len = result_MA.MA60_list.length;
+    let diff_list = [];
+    
+    /* Every MA5 - MA20 to get diff value */
+    for (let i=0 ; i<MA_list_len ; i++)
+    {
+        let diff = result_MA.MA5_list[i] - result_MA.MA20_list[i];
+        diff_list.push(diff);
+    }
+    
+    /* Check diff serial data, if sign change, it means MA5 through MA20 */
+    //for (let i=0 ; i < MA_list_len-1 ; i++)
+    for (let i=0 ; i < 1 ; i++) /* 5 days */
+    {
+        let a;
+        let b;
+        a = (diff_list[i] > 0)?true:false;
+        b = (diff_list[i+1] > 0)?true:false;
+        
+        /*  */
+        if ((a ^ b) && (result_TV.RTVMA_03 > 500))
+        {        
+            gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
+            break;
+        }
+    } /* for */       
+}
+
+function stockAnalyze_05(stockInfoObj)
+{
+    let result_type = 'stockDaily_A05';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;
+    
+    if (result_TV.RTVMA_03 < 1000){
+        return;
+    }
+
+    if (gStockDailyAnalyzeResult[result_type] == undefined)
+    {
+       gStockDailyAnalyzeResult[result_type] = [];
+    }                       
+
+    let MA_list_len = result_MA.MA60_list.length;        
+    console.log("MA list Len:" + MA_list_len);
+    console.log("RTCMA_03:" + result_TV.RTVMA_03);
+
+    /* MA60 diff value */
+    let diff_list = [];
+    for (let i=1 ; i<MA_list_len ; i++)
+    {
+        //let diff = result_MA.MA60_list[i] -  result_MA.MA60_list[i+1];
+        let diff = parseFloat(result_MA.MA60_list[i]) +  parseFloat(result_MA.MA60_list[i-1]);
+        diff = diff.toFixed(2);
+        diff_list.push(parseFloat(diff));
+        /*
+        if (i > 0)                    
+        {
+            let a;
+            let b;
+            a = (diff_list[i] >= 0)?true:false;
+            b = (diff_list[i-1] >= 0)?true:false;            
+            if ((a ^ b) && (result_TV.RTVMA_03 > 1000))
+            {
+                //console.dir(diff_list);
+                //gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);   
+                //break;
+            }
+        }
+        */
+    }        
+
+    console.log("CP:" + stockInfoObj.result_StockInfo.CP);
+    let diff_temp = ((stockInfoObj.result_StockInfo.CP - (parseFloat(diff_list[0])/2))/stockInfoObj.result_StockInfo.CP)*100;
+    if ((diff_temp < 1) && (diff_temp > -1))
+    {
+                //console.dir(diff_list);
+                gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);   
+                //break;
+    }
+    return;
+
+    let diff_MA_list = [];
+    let diff_MA_temp_list = [];
+    for (let i=0; i<diff_list.length-5 ; i++)
+    {
+        /*
+        diff_MA_list[i] = diff_list[i] + 
+                          diff_list[i + 1] +  
+                          diff_list[i + 2] ;
+                          //diff_list[i + 3] + 
+                          //diff_list[i + 4];  
+        let temp = (diff_MA_list[i]/result_MA.MA60_list[i])*1000;        
+        diff_MA_temp_list.push(temp);             
+        if (temp < -10){
+            gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
+            break;
+        }             
+        */
+
+            let a;
+            let b;
+            a = (diff_list[i] >= 0)?true:false;
+            b = (diff_list[i-1] >= 0)?true:false;            
+            if ((a ^ b) && (result_TV.RTVMA_03 > 1000))
+            {
+                //console.dir(diff_list);
+                gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);   
+                //break;
+            }
+
+    }
+
+    console.log("GG");     
+}
 //******************************************
 // readDataDbFile()
 //******************************************
@@ -501,12 +634,13 @@ function _f_genMA(date_list, data_dict)
     let price_MA10 = 0;
     let price_MA5 = 0;
     let check_days = 60;
+    let MA_LIST_LEN = 30;
 
-    if (date_list.length < (check_days-1))
+    if (date_list.length < (check_days + MA_LIST_LEN))
     {
            /* W/o valid data over 60 */           
            console.log("ERROR calMA() - date_list.length:" + date_list.length);
-           return undefined;
+           return null;
     }
 
     for(let i=0 ; i<check_days ; i++)
@@ -532,17 +666,46 @@ function _f_genMA(date_list, data_dict)
             //return result;
         }/* try-catch */
     } /* for */
-    
+
     let MA60 = price_MA60/60;
     let MA20 = price_MA20/20;
     let MA10 = price_MA10/10;
     let MA5 = price_MA5/5;
 
+    result.MA60_list = [];
+    result.MA20_list = [];
+    result.MA10_list = [];
+    result.MA5_list = [];
+
+    result.MA60_list.push(MA60.toFixed(4));
+    result.MA20_list.push(MA20.toFixed(4));
+    result.MA10_list.push(MA10.toFixed(4));
+    result.MA5_list.push(MA5.toFixed(4));
+
+    let temp_price_MA60 = MA60; 
+    let temp_price_MA20 = MA20; 
+    let temp_price_MA10 = MA10; 
+    let temp_price_MA5 = MA5; 
+    /* Calculate 5 pieces MA data */
+    for (let i=0 ; i<MA_LIST_LEN ; i++)
+    {
+        temp_price_MA60 = (temp_price_MA60*60 - data_dict[date_list[i]].CP +  data_dict[date_list[60+i]].CP)/60;     
+        temp_price_MA20 = (temp_price_MA20*20 - data_dict[date_list[i]].CP +  data_dict[date_list[20+i]].CP)/20;     
+        temp_price_MA10 = (temp_price_MA10*10 - data_dict[date_list[i]].CP +  data_dict[date_list[10+i]].CP)/10;
+        temp_price_MA5 = (temp_price_MA5*5 - data_dict[date_list[i]].CP +  data_dict[date_list[5+i]].CP)/5;
+
+        result.MA60_list.push(temp_price_MA60.toFixed(4));
+        result.MA20_list.push(temp_price_MA20.toFixed(4));
+        result.MA10_list.push(temp_price_MA10.toFixed(4));
+        result.MA5_list.push(temp_price_MA5.toFixed(4));        
+   }
+
+
     result.MA60 = MA60.toFixed(4);
     result.MA20 = MA20.toFixed(4);
     result.MA10 = MA10.toFixed(4);
-    result.MA5 = MA5.toFixed(4);
-    
+    result.MA5 = MA5.toFixed(4);    
+
     let temp_MA_list = [];
     temp_MA_list.push(MA60);
     temp_MA_list.push(MA20);
@@ -554,7 +717,8 @@ function _f_genMA(date_list, data_dict)
     });
     let diff = ((temp_MA_list[3] - temp_MA_list[0])/temp_MA_list[0])*1000;
     result.diff = Math.abs(diff);
-
+    //console.log("MS Result:");
+    //console.dir(result);
     return result;    
 }
 
@@ -565,12 +729,13 @@ function _f_stockDailyChecker(stockId)
     
     let date_list = _f_genDateList(data_dict);
     
-    if(date_list.length < 60)
-    {
+    if(date_list.length < 90)
+    {   
+        /* calculate MA60 and gen 30 element to MA60_list */
         /* Cannot calculate MA60, so skip. */ 
         return;
     }
-    //console.log("DEBUG - [StockId]:" + stockId + " [Len of data_dic]:" + date_list.length);
+    console.log("DEBUG - [StockId]:" + stockId + " [Len of data_dic]:" + date_list.length);
  
     gStockDailyInfo[stockId] = {};
     let result_MA = _f_genMA(date_list, data_dict);
@@ -613,9 +778,18 @@ function _f_stockDailyChecker(stockId)
     /* A03 */
     if (ENABLE_A03) 
     {
-        stockAnalyze_03(gStockDailyInfo[stockId]);
-        
+        stockAnalyze_03(gStockDailyInfo[stockId]);        
     }/* if */ 
+
+    if (ENABLE_A04) 
+    {
+        stockAnalyze_04(gStockDailyInfo[stockId]);        
+    }/* if */ 
+
+    if (ENABLE_A05) 
+    {
+        stockAnalyze_05(gStockDailyInfo[stockId]);        
+    }/* if */    
 }/* stockDailyChecker() - END */
 
 

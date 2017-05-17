@@ -57,7 +57,7 @@ function btn_dispersion_info(item)
   $('#dispersion_chart').empty();	
 
   try { 
-      $('#myModal').modal('show');  
+      $('#AR_Modal').modal('show');  
       $.get(URL, { stockId: stockId}, function(data){	       
           stock_dispersion = JSON.parse(data);
           show_dispersion_chart(stock_dispersion, 'ar_dispersion_chart');           
@@ -157,10 +157,10 @@ function btn_dispersion_info(item)
         /* TODO: List all date for user */
       
         var g_info_description = "<%=description%>";
-        var gStockDateList = <%- JSON.stringify(result)%>;
+        var gStockDataList = <%- JSON.stringify(analysisResultDataObj)%>;
         var gCurrentPageStockUrlList = [];
 
-        //console.dir(gStockDateList);
+        //console.dir(gStockDataList);
 
         /* Init HTML Content */  
         initHtmlContent();
@@ -169,7 +169,7 @@ function btn_dispersion_info(item)
 
         $( "#stock_date_sel" ).change(function() {
           g_stock_date = $( "#stock_date_sel option:selected").text();         
-          for (var stockData of gStockDateList)
+          for (var stockData of gStockDataList)
           {
               console.log(stockData.date);
               if (stockData.date == g_stock_date)break;
@@ -223,7 +223,7 @@ function btn_dispersion_info(item)
                   console.log("Skip:" + stockObj.stockInfo.stockName);
                   //console.log("Skip TV times:" + stockInfo.stockDailyInfo.TV_times.TV_times);
                   // Skip
-                  continue;
+                  //continue;
                }
 
                if ((Math.round(stockObj.result_TV.RTV)) < 100)
@@ -231,7 +231,7 @@ function btn_dispersion_info(item)
                   console.log("Skip:" + stockObj.stockInfo.stockName);
                   console.log("Skip TV:" + Math.round(stockObj.result_TV.RTV/1000));
                   // Skip
-                  continue;
+                  //continue;
                }
                /*********************************************/
 
@@ -262,6 +262,7 @@ function btn_dispersion_info(item)
                              '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
                              '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
                try {
+                    debugger;
                     var currentPrice = g_stock_all_obj[stockId].currentPrice;                                       
                     var today_cp_html = '<span class="label label-default" style="display:block">' + 
                                         currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
@@ -335,15 +336,15 @@ function btn_dispersion_info(item)
         { 
           /* Init stock list information */          
           //debugger;
-          var stoackDataListLen = gStockDateList.length;
-          var gStockData = gStockDateList[stoackDataListLen-1];  /* default use latest data */
+          var stoackDataListLen = gStockDataList.length;
+          var gStockData = gStockDataList[stoackDataListLen-1];  /* default use latest data */
           var g_stock_info_list = JSON.parse(gStockData.data);
           g_stock_date = gStockData.date;
           g_stock_info_id_dict = showStockDailyInfo(g_stock_info_list);
 
            $('#span_description').append(g_info_description);
            $('#span_date').append(gStockData.date);           
-           genDateSelectInfo(gStockDateList);
+           genDateSelectInfo(gStockDataList);
            $('#stock_date_sel').val(gStockData.date);
         } /* initHtmlContent */
   });
@@ -371,7 +372,7 @@ function btn_dispersion_info(item)
    <p>
    <span class="label label-success" id='span_description'></span>      
    <p>
-   <button type="button" class="btn btn-success" id="open_all_stock_url_btn">Open All</button>
+   <!-- <button type="button" class="btn btn-success" id="open_all_stock_url_btn">Open All</button> -->
   </div>
 </div> 
 
@@ -412,7 +413,7 @@ function btn_dispersion_info(item)
 </div>
 
 <!-- Modal -->
-<div id="myModal" class="modal fade" role="dialog">
+<div id="AR_Modal" class="modal fade" role="dialog">
   <div class="modal-dialog">
 
     <!-- Modal content-->

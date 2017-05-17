@@ -28,6 +28,21 @@ exports.twDateToDcDate = function(dateStr)
     return dc_date;
 }
 
+exports.twDateToDcDate_ex = function(dateStr, src_separate_char, dest_separate_char)
+{
+    function addZero(str,length){               
+        return new Array(length - str.length + 1).join("0") + str;              
+    }
+    dateStr = dateStr.replace(/\//g, src_separate_char);
+    let date_list = dateStr.split(src_separate_char);
+    let dc_year = parseInt(date_list[0]) + 1911;
+    date_list[0] = dc_year.toString();
+    date_list[1] = addZero(date_list[1].toString(), 2);
+    date_list[2] = addZero(date_list[2].toString(), 2);
+    let dc_date = date_list.join(dest_separate_char);
+    return dc_date;
+}
+
 
 //***************************************************
 // dcDateToTwDate() 

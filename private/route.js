@@ -4,6 +4,7 @@ var wait = require('wait.for');
 var moment = require('moment');
 var fs = require('fs');
 var db = require('./db.js');
+var utility = require('./utility.js');
 var twStockRTP = require('./twStockRealTimePrice.js');
 var twStockDailyInfo = require('./twStockDailyInfoCrawler.js');
 var twStockDispersion = require('./twStockDispersion.js');
@@ -54,8 +55,7 @@ exports.showStockAnalysisDateList = function(req, res)
         let render_file = '';
         switch(req.query.type)
         {
-                case 'A01':
-                    
+                case 'A01':                    
                     analyze_category = 'stockDaily_A01';
                     render_file = 'stockInfoCrawerDaily';
                     description = '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破MA5,MA10,MA20均線，量過5日1.5倍(價格>30)';
@@ -69,27 +69,37 @@ exports.showStockAnalysisDateList = function(req, res)
                     analyze_category = 'stockDaily_A03';
                     render_file = 'stockInfoAnalyzeResult';
                     description = '均線糾結 MA60/MA20/MA10/MA5 Bias<1%';
-                break;                
+                break;   
+                case 'A04':                    
+                    analyze_category = 'stockDaily_A04';
+                    render_file = 'stockInfoAnalyzeResult';
+                    description = '2日內MA5穿過MA20';
+                break;                      
+                case 'A05':                    
+                    analyze_category = 'stockDaily_A05';
+                    render_file = 'stockInfoAnalyzeResult';
+                    description = 'Test';
+                break;                                                
                 default:
                     console.log("ERROR - Invalid Type:" + req.query.type);
                     res.send(503);
-                break;
+                    return;                
         }
        
         let montiorNameList = wait.for(db.stockMonitor_GetMonitorNameList);
 
-        db.stockDailyAnalyzeResult_Find(analyze_category, '', function(err, dataObj){  
+        db.stockDailyAnalyzeResult_Find(analyze_category, '', function(err, analysisResultDataObj){  
 
             if (err != null)
             {
-                console.log("ERROR - db.stockDailyA01_Find()" + err);
-                res.send(503);
+                console.log("ERROR - db.stockDailyAXX_Find()" + err);
+                res.status(503).send("ERROR - db.stockDailyAXX_Find()" + err);
             }else {     
                 /* get all stockId of dataObj */        
                 let srtpAllObj = {};
 
                 /* Extract realtime stock price for this category */
-                for(let stockDailyResultObj of dataObj)
+                for(let stockDailyResultObj of analysisResultDataObj)
                 {
                     for(let stockObj of JSON.parse(stockDailyResultObj.data))
                     {
@@ -101,14 +111,24 @@ exports.showStockAnalysisDateList = function(req, res)
                             /* v1.0 format */
                             stockId = stockObj.stockInfo.stockId;                                
                         }/* if-else */   
+
+                        /* Generate Today GS an GSP */
                         try {
                             srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
                             let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
                             let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
-                            srtpAllObj[stockId].GS = currentGP.toFixed(2);
-                            srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+                            
+                            let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');
+                            let srtp_date = moment(srtpAllObj[stockId].datetime).format("YYYY-MM-DD");
+                            if (moment(stockinfo_date).isSame(srtp_date)){
+                                srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
+                                srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
+                            }else {
+                                srtpAllObj[stockId].GS = currentGP.toFixed(2);
+                                srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+                            }
                         } catch(err){
-                                console.log("WARNING - gStockRealTimePrice uninit!"); 
+                                console.log("WARNING - gStockRealTimePrice uninit!" + err); 
                         } /* try-catch */ 
                     } /* for */
                 } /* for */    
@@ -119,7 +139,7 @@ exports.showStockAnalysisDateList = function(req, res)
                     description : description,
                     monitor_list : montiorNameList,
                     srtpAllObj : srtpAllObj,
-                    result : dataObj 
+                    analysisResultDataObj : analysisResultDataObj 
                 });	
             } /* if-else */
         });	
@@ -184,19 +204,25 @@ exports.showStockMonitor = function(req, res)
         {
             for(let monitor of monitorObj.monitorList)
             {                                
-                let temp = JSON.parse(monitor);
+                let temp = JSON.parse(monitor);                
                 try {
                     let stockId = temp.stockId;
-                    //stockid_list.push(temp.stockId);
                     srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
-                    let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                
+                    let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
                     let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
-                    srtpAllObj[stockId].GS = currentGP.toFixed(2);
-                    srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
-                } catch(err) {
-                    console.log("ERROR - [Monitor List Name]" + monitorObj.name);
-                    console.log("ERROR - Null Object:" + err);
-                }
+                            
+                    let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');
+                    let srtp_date = moment(srtpAllObj[stockId].datetime).format("YYYY-MM-DD");
+                    if (moment(stockinfo_date).isSame(srtp_date)){
+                        srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
+                        srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
+                    }else {
+                        srtpAllObj[stockId].GS = currentGP.toFixed(2);
+                        srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+                    }
+                } catch(err){
+                    console.log("WARNING - gStockRealTimePrice uninit!" + err); 
+                } /* try-catch */                 
             } /* for */
         }/* for */                         
 
@@ -238,41 +264,24 @@ exports.showFG8IndexCheck = function(req, res)
 //**********************************************************
 //  For RealTime Price 
 //**********************************************************
-exports.showStockRealTime = function(req, res)
+exports.showStockRealTimeAnalysisResult = function(req, res)
 {
    function exec(callback_exec)
-   {
-        var dbStockdailFind_fn;
-        var description = '';
-
-        switch(req.query.type)
-        {
-                case 'A01':
-                    dbStockdailFind_fn = db.stockDailyA01_Find;
-                    description = '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破MA5,MA10,MA20均線，量過5日1.5倍(價格>30)';
-                break;
-                case 'A02':
-                    dbStockdailFind_fn = db.stockDailyA02_Find;
-                    description = '[漲]:突破MA60 [跌]:跌破MA60(價格>30)';
-                break;
-                default:
-                    console.log("ERROR - Invalid Type:" + req.query.type);
-                    res.sendStatus(503);
-                break;
-        }
-       
+   {        
+        let description = 'Real Time Analysis Result';               
         let montiorNameList = wait.for(db.stockMonitor_GetMonitorNameList);
-        
-        description = 'Real Time Stock Status';
-        if (twStockRTP.gStockRealTimeTVGSPCheckResult != undefined)
+        let srtpAllObj = {};
+
+        if (twStockRTP.gStockRealTimeAnalyzeResult != undefined)
         {
-                res.render( 'stockInfoRealTime', {
+                res.render( 'stockRealtimeAnalyzeResult', {
                     title : 'KStock Server',
                     description : description,                                        
-                    result : twStockRTP.gStockRealTimeTVGSPCheckResult 
+                    RTAnalyzeResult : twStockRTP.gStockRealTimeAnalyzeResult,
+                    monitor_list : montiorNameList,                    
                 });	           
         }else{
-            console.log("ERROR - db.showStockRealTime() twStockRTP.gStockRealTimeTVGSPCheckResult is undefined!");
+            console.log("ERROR - db.showStockRealTime() twStockRTP.gStockRealTimeAnalyzeResult is undefined!");
             res.send(503);
         }	
    }/* exec */    

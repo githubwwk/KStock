@@ -39,7 +39,6 @@ tr:nth-child(even) {background-color: #f2f2f2}
 }
 
 </style>
-
   <title> <%=title%></title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,8 +47,25 @@ tr:nth-child(even) {background-color: #f2f2f2}
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="./js_external/echart/echarts-all.js"></script>
   <script src="./js_external/bootbox/bootbox.min.js"></script>
-
+  <script type="text/javascript" src="./js/kstock.chart.js"></script>
   <script type="text/javascript">
+
+function btn_dispersion_info(item)
+{
+  var stockId = item.value;
+	let URL = '/lookup_stock_dispersion';
+  $('#dispersion_chart').empty();	
+
+  try { 
+      $('#AR_Modal').modal('show');  
+      $.get(URL, { stockId: stockId}, function(data){	       
+          stock_dispersion = JSON.parse(data);
+          show_dispersion_chart(stock_dispersion, 'ar_dispersion_chart');           
+    });	
+  }catch (err){
+    alert('Error!');
+  }	    
+}
 
   function btn_add_monitor(item) 
   { 
@@ -66,6 +82,8 @@ tr:nth-child(even) {background-color: #f2f2f2}
       options.value = 'AddNewMonitorName';
       bootbox_prompt_init.inputOptions.push(options);
 
+      g_monitor_list.sort();      
+
       for (let monitorName of g_monitor_list)
       {
            let options = {};
@@ -81,12 +99,10 @@ tr:nth-child(even) {background-color: #f2f2f2}
           function __f_send_to_server(monitorName)
           {
                 var compose = {};
-                compose.stockInfo = {};
-                compose.stockInfo.stockId = stockId;                                         
-                compose.stockInfo.date = g_stock_date;
-                compose.stockInfo.stockObj = g_stock_info_id_dict[stockId];;                
+                compose.stockInfo = {};              
+                compose.stockInfo = g_stock_info_id_dict[stockId];                
                 compose.monitor_name = monitorName; /* select value is monitor name */
-
+                debugger;
                 $.ajax({
                       url: URLs,
                       data: JSON.stringify(compose),
@@ -95,7 +111,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
                       contentType: "application/json; charset=utf-8",
 
                       success: function(res){              
-                          debugger;          
+                          //debugger;          
                           g_monitor_list = res;          		
                           bootbox.alert("Success!");
                       },
@@ -107,14 +123,14 @@ tr:nth-child(even) {background-color: #f2f2f2}
           }
 
            if((result != '') && (result != null)){
-                debugger;
+                //debugger;
                 if (result == 'AddNewMonitorName')
                 {
                    bootbox.prompt({
                       title: "新增Monitor名稱",
                       inputType: 'textarea',
                       callback: function (result) {  
-                          debugger;                                                
+                          //debugger;                                                
                           __f_send_to_server(result);
                       }
                    });
@@ -133,15 +149,19 @@ tr:nth-child(even) {background-color: #f2f2f2}
   
   var g_stock_date;
   var g_stock_info_id_dict = {}; 
-  var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>; 
+  var g_monitor_list = <%- JSON.stringify(monitor_list)%>;
+  var g_realtime_analyze_result_obj = <%- JSON.stringify(RTAnalyzeResult) %>; 
 
   $(document).ready(function(){
         
         /* TODO: List all date for user */
       
         var g_info_description = "<%=description%>";
-        var gStockDateList = <%- JSON.stringify(result)%>;
-          
+        var gStockDateList = [];
+        var gCurrentPageStockUrlList = [];
+
+        //console.dir(gStockDateList);
+        debugger;
         /* Init HTML Content */  
         initHtmlContent();
         /* Init Date Select */                
@@ -162,17 +182,23 @@ tr:nth-child(even) {background-color: #f2f2f2}
           $('#span_date').html(stockData.date);
         });
 
+        $("#open_all_stock_url_btn").click(function() {
+          window.open('https://stock.cnyes.com/market/TSE:3032:STOCK', '_blank');
+        });   
+
         function showStockDailyInfo(stock_info_list)
         {
             var temp_html = '';
             var stock_info_id_dict = {};
             var idx = 0;
 
+            gCurrentPageStockUrlList = []; /* Clean Stock URL list */
+
             /* sort by Gross Spread (漲跌) */                      
             function compare(a,b) {
-                if (a.stockDailyInfo.GSP < b.stockDailyInfo.GSP)
+                if (a.result_StockInfo.GSP < b.result_StockInfo.GSP)
                   return 1;
-                if (a.stockDailyInfo.GSP > b.stockDailyInfo.GSP)
+                if (a.result_StockInfo.GSP > b.result_StockInfo.GSP)
                   return -1;
                 
                 return 0;
@@ -183,59 +209,67 @@ tr:nth-child(even) {background-color: #f2f2f2}
             /* Clean HTML content */
             $('#stock_info_tbl_body').empty();
 
-            for (stockInfo of stock_info_list)
+            for (stockObj of stock_info_list)
             {
-               var stockId = stockInfo.stockInfo.stockId;
-               stock_info_id_dict[stockId] = stockInfo;
+               //debugger;
+               var stockId = stockObj.stockInfo.stockId;
+               stock_info_id_dict[stockId] = stockObj;
 
                /*********************************************/
                /* Special condition */               
                //if ((parseFloat(stockInfo.stockDailyInfo.TV_times.TV_times)*10) < 13)  /* 1.3 times is teacher's experience */
-               if ((parseFloat(stockInfo.stockDailyInfo.TV_times.TV_times)*10) < 10)  /* 1.3 times is teacher's experience */
+               if ((parseFloat(stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_03)*10) < 13)  /* 1.3 times is teacher's experience */
                {
-                  console.log("Skip:" + stockInfo.stockInfo.stockName);
-                  console.log("Skip TV times:" + stockInfo.stockDailyInfo.TV_times.TV_times);
+                  console.log("Skip:" + stockObj.stockInfo.stockName);
+                  //console.log("Skip TV times:" + stockInfo.stockDailyInfo.TV_times.TV_times);
                   // Skip
-                  continue;
+                  //continue;
                }
 
-               if ((Math.round(stockInfo.stockDailyInfo.TV/1000)) < 100)
+               if ((Math.round(stockObj.result_TV.RTV)) < 100)
                {
-                  console.log("Skip:" + stockInfo.stockInfo.stockName);
-                  console.log("Skip TV:" + Math.round(stockInfo.stockDailyInfo.TV/1000));
+                  console.log("Skip:" + stockObj.stockInfo.stockName);
+                  console.log("Skip TV:" + Math.round(stockObj.result_TV.RTV/1000));
                   // Skip
-                  continue;
+                  //continue;
                }
                /*********************************************/
 
                //console.dir(stockInfo);
-               var dataDateTempList = stockInfo.stockDailyInfo.date.split('/');
+               var dataDateTempList = stockObj.result_StockInfo.date.split('/');
                var dataDateStr =  dataDateTempList[1] + '-' + dataDateTempList[2]; /* MM/DD */               
 
                var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
+               gCurrentPageStockUrlList.push(web_link);
 
                //var type = (stockInfo.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
-               var type = (stockInfo.stockDailyInfo.GSP < 0)?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
-               var GS = (stockInfo.stockDailyInfo.GS < 0) ?
-                        '<font color=\"green\">' + stockInfo.stockDailyInfo.GS + '</font>' :
-                        '<font color=\"red\">' + stockInfo.stockDailyInfo.GS + '</font>';
+               var type = (stockObj.result_StockInfo.GSP < 0)?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
+               var GS = (stockObj.result_StockInfo.GS < 0) ?
+                        '<font color=\"green\">' + stockObj.result_StockInfo.GS + '</font>' :
+                        '<font color=\"red\">' + stockObj.result_StockInfo.GS + '</font>';
 
-               var GSP = (stockInfo.stockDailyInfo.GSP < 0) ?
-                        '<font color=\"green\">' + stockInfo.stockDailyInfo.GSP + '%</font>' :
-                        '<font color=\"red\">' + stockInfo.stockDailyInfo.GSP + '%</font>';
+               var GSP = (stockObj.result_StockInfo.GSP < 0) ?
+                        '<font color=\"green\">' + stockObj.result_StockInfo.GSP + '%</font>' :
+                        '<font color=\"red\">' + stockObj.result_StockInfo.GSP + '%</font>';
 
                var add_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_add_btn_' + stockId + '" value="' +
-                                 stockId + '" onclick="btn_add_monitor(this)"><span class="glyphicon glyphicon-eye-open"></span></button>';
+                                 stockId + '" onclick="btn_add_monitor(this)"><span class="glyphicon glyphicon-plus"></span></button>';
 
-               var cp_html = (stockInfo.stockDailyInfo.GSP < 0) ?
-                             '<span class="label label-success">' + stockInfo.stockDailyInfo.CP + '</span>':
-                             '<span class="label label-danger">' + stockInfo.stockDailyInfo.CP + '</span>';
+               var dispersion_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_dsps_btn_' + stockId + '" value="' +
+                         stockId + '" onclick="btn_dispersion_info(this)"><span class="glyphicon glyphicon-info-sign"></span></button>';
+
+               var cp_html = (stockObj.result_StockInfo.GSP < 0) ?
+                             '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
+                             '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
                try {
-                    var currentPrice = g_stock_all_obj[stockId].currentPrice;
-                    var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';
+                    debugger;
+                    var currentPrice = g_stock_all_obj[stockId].currentPrice;                                       
+                    var today_cp_html = '<span class="label label-default" style="display:block">' + 
+                                        currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
+                                        g_stock_all_obj[stockId].GS + '</span>';                                        
                             
-                    var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockInfo.stockDailyInfo.CP));
-                    var price_delta_p_str = (((price_delta/parseFloat(stockInfo.stockDailyInfo.CP))*100).toFixed(1)).toString();
+                    var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
+                    var price_delta_p_str = (((price_delta/parseFloat(stockObj.result_StockInfo.CP))*100).toFixed(1)).toString();
                     var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';
 
                     var price_delta_html = (price_delta >= 0)?
@@ -247,32 +281,32 @@ tr:nth-child(even) {background-color: #f2f2f2}
                     var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
                }
 
-
+               TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
                temp_html = '<tr>' + 
                            '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
-                           '<td>' + stockInfo.stockInfo.stockName + '</td>' +
+                           '<td>' + stockObj.stockInfo.stockName + '</td>' +
                            '<td>' + today_cp_html + '</td>' + 
                            '<td>' + price_delta_html + '</td>' + 
                            '<td>' + cp_html + '</td>' + 
                            '<td>' + GS + '</td>' + 
                            '<td>' + GSP + '</td>' + 
                            '<td>' + type + '</td>' +                                                       
-                           '<td>' + stockInfo.stockDailyInfo.MA.MA60 + '</td>' + 
+                           '<td>' + parseFloat(stockObj.result_MA.MA60).toFixed(2) + '</td>' + 
                            /*
                            '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
                            '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
                            '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
                            */
-                           '<td><span class="badge">' + stockInfo.stockDailyInfo.TV_times.TV_times + '</span></td>' +  
-                           '<td>' + Math.round(stockInfo.stockDailyInfo.TV/1000) + '</td>' + 
-                           '<td>' + Math.round(stockInfo.stockDailyInfo.TV_times.TVMA_05/1000) + '</td>' +                            
+                           '<td><span class="badge">' + TV_times + '</span></td>' +  
+                           '<td>' + Math.round(stockObj.result_TV.RTV) + '</td>' + 
+                           '<td>' + Math.round(stockObj.result_TV.RTVMA_05) + '</td>' +                            
                            /* 
                            '<td>' + stockInfo.stockInfo.YR + '</td>' + 
                            '<td>' + stockInfo.stockInfo.PRE + '</td>' + 
                            '<td>' + stockInfo.stockInfo.PBR + '</td>' + 
                            */
                            '<td>' + dataDateStr + '</td>' +
-                           '<td>' + add_btn_html + '</td>' + 
+                           '<td>' + add_btn_html + dispersion_info_btn_html + '</td>' + 
                            '</tr>';
 
                $('#stock_info_tbl_body').append(temp_html);
@@ -285,12 +319,12 @@ tr:nth-child(even) {background-color: #f2f2f2}
         function genDateSelectInfo(stockDateList)
         {
             var html = '';
-            console.dir(stockDateList);
+            //console.dir(stockDateList);
             //stockDateList.sort();
             stockDateList.sort(function(a, b) {
                return moment(a.date) - moment(b.date);
             });
-            console.dir(stockDateList);
+            //console.dir(stockDateList);
             for(stockInfo of stockDateList)
             {                
                 html += '<option>' + stockInfo.date + '</option>';
@@ -301,6 +335,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
         function initHtmlContent()
         { 
           /* Init stock list information */          
+          //debugger;
           var stoackDataListLen = gStockDateList.length;
           var gStockData = gStockDateList[stoackDataListLen-1];  /* default use latest data */
           var g_stock_info_list = JSON.parse(gStockData.data);
@@ -332,10 +367,12 @@ tr:nth-child(even) {background-color: #f2f2f2}
 <!-- <span class="label label-default" id='span_description'><%=description%></span> -->
 <div class="row" id="div_description">
 
-  <div class="col-sm-10">
+  <div class="col-sm-10">  
    <span class="label label-info" id='span_date' style="display:none"></span>
    <p>
-   <span class="label label-success" id='span_description'></span>   
+   <span class="label label-success" id='span_description'></span>      
+   <p>
+   <!-- <button type="button" class="btn btn-success" id="open_all_stock_url_btn">Open All</button> -->
   </div>
 </div> 
 
@@ -374,5 +411,27 @@ tr:nth-child(even) {background-color: #f2f2f2}
   </table>
   </div>
 </div>
+
+<!-- Modal -->
+<div id="AR_Modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">大股東持股超過1000張</h4>
+      </div>
+      <div class="modal-body" >
+        <div id="ar_dispersion_chart" style="width: 580px; height: 400px;"></div>      
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>

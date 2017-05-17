@@ -22,7 +22,7 @@ app.get('/', route.default);
 app.get('/show_stock_analysis_date_list', route.showStockAnalysisDateList);
 app.get('/show_fg8index_check', route.showFG8IndexCheck);
 app.get('/show_stock_monitor', route.showStockMonitor);
-app.get('/show_stock_realtime', route.showStockRealTime);
+app.get('/show_stock_realtime', route.showStockRealTimeAnalysisResult);
 app.get('/show_stock_dispersion', route.showStockDispersion);
 app.get('/lookup_stock_dispersion', route.lookupStockDispersion);
 app.post('/remove_stock_monitor', route.removeStockMonitor);

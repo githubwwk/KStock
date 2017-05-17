@@ -56,7 +56,7 @@ function btn_dispersion_info(item)
   $('#dispersion_chart').empty();
 
   try { 
-      $('#myModal').modal('show');  
+      $('#crawer_myModal').modal('show');  
       $.get(URL, { stockId: stockId}, function(data){	       
           stock_dispersion = JSON.parse(data);
           show_dispersion_chart(stock_dispersion, 'crawer_dispersion_chart');           
@@ -159,7 +159,7 @@ function btn_dispersion_info(item)
         /* TODO: List all date for user */
       
         var g_info_description = "<%=description%>";
-        var gStockDateList = <%- JSON.stringify(result)%>;
+        var gStockDataList = <%- JSON.stringify(analysisResultDataObj)%>;
           
         /* Init HTML Content */  
         initHtmlContent();
@@ -168,7 +168,7 @@ function btn_dispersion_info(item)
 
         $( "#stock_date_sel" ).change(function() {
           g_stock_date = $( "#stock_date_sel option:selected").text();         
-          for (var stockData of gStockDateList)
+          for (var stockData of gStockDataList)
           {
               console.log(stockData.date);
               if (stockData.date == g_stock_date)break;
@@ -218,12 +218,12 @@ function btn_dispersion_info(item)
                   //continue;
                }
 
-               if ((Math.round(stockInfo.stockDailyInfo.TV/1000)) < 100)
+               if ((Math.round(stockInfo.stockDailyInfo.TV/1000)) < 500)
                {
                   console.log("Skip:" + stockInfo.stockInfo.stockName);
                   console.log("Skip TV:" + Math.round(stockInfo.stockDailyInfo.TV/1000));
                   // Skip
-                  //continue;
+                  continue;
                }
                /*********************************************/
 
@@ -306,16 +306,16 @@ function btn_dispersion_info(item)
             return stock_info_id_dict;
         } /* showStockDailyInfo */
 
-        function genDateSelectInfo(stockDateList)
+        function genDateSelectInfo(stockDataList)
         {
             var html = '';
-            console.dir(stockDateList);
+            console.dir(stockDataList);
             //stockDateList.sort();
-            stockDateList.sort(function(a, b) {
+            stockDataList.sort(function(a, b) {
                return moment(a.date) - moment(b.date);
             });
-            console.dir(stockDateList);
-            for(stockInfo of stockDateList)
+            console.dir(stockDataList);
+            for(stockInfo of stockDataList)
             {                
                 html += '<option>' + stockInfo.date + '</option>';
             } /* for */
@@ -325,15 +325,15 @@ function btn_dispersion_info(item)
         function initHtmlContent()
         { 
           /* Init stock list information */          
-          var stoackDataListLen = gStockDateList.length;
-          var gStockData = gStockDateList[stoackDataListLen-1];  /* default use latest data */
+          var stoackDataListLen = gStockDataList.length;
+          var gStockData = gStockDataList[stoackDataListLen-1];  /* default use latest data */
           var g_stock_info_list = JSON.parse(gStockData.data);
           g_stock_date = gStockData.date;
           g_stock_info_id_dict = showStockDailyInfo(g_stock_info_list);
 
            $('#span_description').append(g_info_description);
            $('#span_date').append(gStockData.date);           
-           genDateSelectInfo(gStockDateList);
+           genDateSelectInfo(gStockDataList);
            $('#stock_date_sel').val(gStockData.date);
         } /* initHtmlContent */
   });
@@ -400,7 +400,7 @@ function btn_dispersion_info(item)
 </div>
 
 <!-- Modal -->
-<div id="myModal" class="modal fade" role="dialog">
+<div id="crawer_myModal" class="modal fade" role="dialog">
   <div class="modal-dialog">
 
     <!-- Modal content-->

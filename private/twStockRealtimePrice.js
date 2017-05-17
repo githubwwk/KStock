@@ -18,8 +18,8 @@ var stockInfoCrawler = require('./twStockDailyInfoCrawler.js');
 //**************************************************
 var gStockRealTimePrice = {};
 exports.gStockRealTimePrice;
-var gStockRealTimeTVGSPCheckResult = {};
-exports.gStockRealTimeTVGSPCheckResult;
+var gStockRealTimeAnalyzeResult = {};
+exports.gStockRealTimeAnalyzeResult;
 var gLocalFileDbDir = 'daily_stock_price';
 var gStockAllObj;
 exports.gStockAllObj;
@@ -378,9 +378,6 @@ function getRealTimeStockPrice(stockid_list, callback)
 function _f_check_realtime_TV_GSP()
 {
   let result = {};  
-  result.priceRiseOver5 = {};
-  result.priceFallOver5 = {};
-  result.RTPAndTvRise= {};
 
   while (stockInfoCrawler.gStockDailyInfo == undefined)
   {
@@ -424,13 +421,9 @@ function _f_check_realtime_TV_GSP()
           {
              if (parseInt(gStockRealTimePrice[stockId].tv) > 1000)
              { 
-                let stockObj = {};
-                stockObj.Info = stockInfoCrawler.gStockDailyInfo[stockId];
-                stockObj.RtInfo = gStockRealTimePrice[stockId];             
-                result.RTPAndTvRise[stockId] = stockObj;
-                //console.log("[RTP TV bigger than MA3]:" + stockId);
-                //console.log("[TV]:" + gStockRealTimePrice[stockId].tv);
-                //console.log("[TVMA03]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03);
+                let stockObj = {};                
+                stockObj.RtInfo = gStockRealTimePrice[stockId];                             
+                result['RTPAndTvRise'].push(stockInfoCrawler.gStockDailyInfo[stockId]);
              }
           }            
           
@@ -438,24 +431,23 @@ function _f_check_realtime_TV_GSP()
           if(parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP) > 5)
           {
               console.log("[GSP UP 5%][StockId]:" + stockId);
-              console.log("[GSP]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP);
-              console.log("[TV]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.TV/1000);
               let stockObj = {};
-              stockObj.Info = stockInfoCrawler.gStockDailyInfo[stockId];
+              
               stockObj.RtInfo = gStockRealTimePrice[stockId];             
-              result.priceRiseOver5[stockId] = stockObj;
+              
+              gStockDailyInfo[stockId].stockInfo = gAllStocksObj.stockObjDict[stockId];     
+              result['priceRiseOver5'].push(stockInfoCrawler.gStockDailyInfo[stockId]);
           }  
           
           /* Price fall over 5% */
           if(parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP) < -5)
           {
               console.log("[GSP DOWN 5% StockId]:" + stockId);
-              console.log("[GSP]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP);
-              console.log("[TV]:" + stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.TV/1000);
               let stockObj = {};
-              stockObj.Info = stockInfoCrawler.gStockDailyInfo[stockId];
+              
               stockObj.RtInfo = gStockRealTimePrice[stockId];             
-              result.priceFallOver5[stockId] = stockObj;
+              
+              result['priceFallOver5'].push(stockInfoCrawler.gStockDailyInfo[stockId]);
           }  
 
       } catch(err){
@@ -491,8 +483,8 @@ exports.updateRealTimeStockPrice = function()
             //console.dir(gStockRealTimePrice);
             
             /* Do someting, check TV MA */
-            gStockRealTimeTVGSPCheckResult = _f_check_realtime_TV_GSP();
-            exports.gStockRealTimeTVGSPCheckResult = gStockRealTimeTVGSPCheckResult;
+            gStockRealTimeAnalyzeResult = _f_check_realtime_TV_GSP();
+            exports.gStockRealTimeAnalyzeResult = gStockRealTimeAnalyzeResult;
 
             utility.timestamp('updateRealTimeStockPrice() Done!');
         });        
@@ -533,8 +525,8 @@ exports.init = function()
             exports.gStockRealTimePrice = gStockRealTimePrice;
             //console.dir(gStockRealTimePrice);
             /* Do someting, check TV MA */
-            gStockRealTimeTVGSPCheckResult =  _f_check_realtime_TV_GSP();
-            exports.gStockRealTimeTVGSPCheckResult = gStockRealTimeTVGSPCheckResult;
+            gStockRealTimeAnalyzeResult =  _f_check_realtime_TV_GSP();
+            exports.gStockRealTimeAnalyzeResult = gStockRealTimeAnalyzeResult;
             _f_init_scheduler();
         });
         return callback(null);

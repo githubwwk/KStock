@@ -67,7 +67,7 @@ function btn_dispersion_info(item)
   $('#dispersion_chart').empty();
 
   try { 
-      $('#myModal').modal('show');  
+      $('#monitor_Modal').modal('show');  
       $.get(URL, { stockId: stockId}, function(data){	       
           stock_dispersion = JSON.parse(data);
           show_dispersion_chart(stock_dispersion, 'dispersion_chart');           
@@ -167,7 +167,9 @@ function _f_showStockDailyInfo_v20(stockObj)
 
     try {
           var currentPrice = g_stock_all_obj[stockId].currentPrice;
-          var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';
+                       var today_cp_html = '<span class="label label-default" style="display:block">' + 
+                                        currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
+                                        g_stock_all_obj[stockId].GS + '</span>';  
                                 
           var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
           var price_delta_p_str = (((price_delta/parseFloat(stockObj.result_StockInfo.CP))*100).toFixed(1)).toString();
@@ -269,8 +271,8 @@ function _f_showStockDailyInfo_v10(stock)
                          '<span class="label label-success">' + stockObj.stockDailyInfo.CP + '</span>':
                          '<span class="label label-danger">' + stockObj.stockDailyInfo.CP + '</span>';
 
-           var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';
-
+           //var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';
+          debugger;
                    try {
                        var currentPrice = g_stock_all_obj[stockId].currentPrice;                        
                        var today_cp_html = '<span class="label label-default" style="display:block">' + 
@@ -440,7 +442,7 @@ function showStockDailyInfo(stock_info_list)
 </div>
 
 <!-- Modal -->
-<div id="myModal" class="modal fade" role="dialog">
+<div id="monitor_Modal" class="modal fade" role="dialog">
   <div class="modal-dialog">
 
     <!-- Modal content-->
