@@ -111,6 +111,9 @@ exports.writeDbFile = function(filename, dir, dataObj)
     return 0;
 }
 
+//******************************************
+// lastOpenDateOfWeek()
+//******************************************
 exports.lastOpenDateOfWeek = function()
 {           
     /* Sunday:0 Monday:1 ... */

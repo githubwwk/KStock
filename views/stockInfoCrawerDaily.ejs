@@ -112,8 +112,7 @@ function btn_dispersion_info(item)
                       dataType:'json',
                       contentType: "application/json; charset=utf-8",
 
-                      success: function(res){              
-                          debugger;          
+                      success: function(res){                                                  
                           g_monitor_list = res;          		
                           bootbox.alert("Success!");
                       },
@@ -124,15 +123,13 @@ function btn_dispersion_info(item)
                 }); /* ajax */
           }
 
-           if((result != '') && (result != null)){
-                debugger;
+           if((result != '') && (result != null)){                
                 if (result == 'AddNewMonitorName')
                 {
                    bootbox.prompt({
                       title: "新增Monitor名稱",
                       inputType: 'textarea',
-                      callback: function (result) {  
-                          debugger;                                                
+                      callback: function (result) {                            
                           __f_send_to_server(result);
                       }
                    });

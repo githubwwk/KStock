@@ -101,8 +101,7 @@ function btn_dispersion_info(item)
                 var compose = {};
                 compose.stockInfo = {};              
                 compose.stockInfo = g_stock_info_id_dict[stockId];                
-                compose.monitor_name = monitorName; /* select value is monitor name */
-                debugger;
+                compose.monitor_name = monitorName; /* select value is monitor name */                
                 $.ajax({
                       url: URLs,
                       data: JSON.stringify(compose),
@@ -110,8 +109,7 @@ function btn_dispersion_info(item)
                       dataType:'json',
                       contentType: "application/json; charset=utf-8",
 
-                      success: function(res){              
-                          //debugger;          
+                      success: function(res){                                        
                           g_monitor_list = res;          		
                           bootbox.alert("Success!");
                       },
@@ -262,7 +260,7 @@ function btn_dispersion_info(item)
                              '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
                              '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
                try {
-                    debugger;
+                    //debugger;
                     var currentPrice = g_stock_all_obj[stockId].currentPrice;                                       
                     var today_cp_html = '<span class="label label-default" style="display:block">' + 
                                         currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 

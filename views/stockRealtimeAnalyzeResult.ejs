@@ -82,9 +82,9 @@ function btn_dispersion_info(item)
       options.value = 'AddNewMonitorName';
       bootbox_prompt_init.inputOptions.push(options);
 
-      g_monitor_list.sort();      
+      g_monitor_name_list.sort();      
 
-      for (let monitorName of g_monitor_list)
+      for (let monitorName of g_monitor_name_list)
       {
            let options = {};
            options.text = monitorName;
@@ -112,7 +112,7 @@ function btn_dispersion_info(item)
 
                       success: function(res){              
                           //debugger;          
-                          g_monitor_list = res;          		
+                          g_monitor_name_list = res;          		
                           bootbox.alert("Success!");
                       },
                       error:function(xhr, ajaxOptions, thrownError){
@@ -147,39 +147,41 @@ function btn_dispersion_info(item)
 
   }/* btn_add_monitor() */
   
-  var g_stock_date;
+  var g_current_del_type;
   var g_stock_info_id_dict = {}; 
-  var g_monitor_list = <%- JSON.stringify(monitor_list)%>;
+  var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>;
+  var g_monitor_name_list = <%- JSON.stringify(monitor_name_list)%>;
   var g_realtime_analyze_result_obj = <%- JSON.stringify(RTAnalyzeResult) %>; 
-
+  var gAnalyzeTypeList = Object.keys(g_realtime_analyze_result_obj);
+    
   $(document).ready(function(){
         
         /* TODO: List all date for user */
       
-        var g_info_description = "<%=description%>";
-        var gStockDateList = [];
+        var g_info_description = "<%=description%>";        
         var gCurrentPageStockUrlList = [];
 
-        //console.dir(gStockDateList);
-        debugger;
         /* Init HTML Content */  
         initHtmlContent();
         /* Init Date Select */                
 
-
-        $( "#stock_date_sel" ).change(function() {
-          g_stock_date = $( "#stock_date_sel option:selected").text();         
-          for (var stockData of gStockDateList)
+        
+        /* Reload current type data */
+        $( "#stock_analyze_type_sel" ).change(function() {
+/*        	
+          g_current_del_type = $( "#stock_analyze_type_sel option:selected").text();         
+          for (var type of gAnalyzeTypeList)
           {
-              console.log(stockData.date);
-              if (stockData.date == g_stock_date)break;
+              console.log(type);
+              if (type == g_current_del_type)break;
 
           }   
-          var stock_info_list = JSON.parse(stockData.data);
-          var stock_date = stockData.date;
-          var g_stock_info_id_dict = showStockDailyInfo(stock_info_list);
+          debugger;
+*/          
+          var stock_info_list = g_realtime_analyze_result_obj[type];          
+          g_stock_info_id_dict = showStockDailyInfo(stock_info_list);
 
-          $('#span_date').html(stockData.date);
+          $('#span_current_type').html(type);
         });
 
         $("#open_all_stock_url_btn").click(function() {
@@ -261,17 +263,18 @@ function btn_dispersion_info(item)
                var cp_html = (stockObj.result_StockInfo.GSP < 0) ?
                              '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
                              '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
-               try {
-                    debugger;
+               try {                    
                     var currentPrice = g_stock_all_obj[stockId].currentPrice;                                       
                     var today_cp_html = '<span class="label label-default" style="display:block">' + 
                                         currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
                                         g_stock_all_obj[stockId].GS + '</span>';                                        
-                            
+                    
+                    debugger;
+                    //var tv_delta_str = parseInt(g_stock_all_obj[stockId].tv) -  Math.round(stockObj.result_TV.RTV);         
                     var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
                     var price_delta_p_str = (((price_delta/parseFloat(stockObj.result_StockInfo.CP))*100).toFixed(1)).toString();
-                    var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';
-
+                    var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';                    
+                    	
                     var price_delta_html = (price_delta >= 0)?
                                           '<font color=\"red\"><b>' + price_delta_str + '</b></font>':
                                           '<font color=\"green\"><b>' + price_delta_str + '</b></font>';                     
@@ -280,32 +283,18 @@ function btn_dispersion_info(item)
                     var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';                                              
                     var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
                }
-
+               var rt_tv_html = g_stock_all_obj[stockId].tv;
+               debugger;
                TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
                temp_html = '<tr>' + 
                            '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
                            '<td>' + stockObj.stockInfo.stockName + '</td>' +
                            '<td>' + today_cp_html + '</td>' + 
+                           '<td>' + rt_tv_html + '</td>' + 
                            '<td>' + price_delta_html + '</td>' + 
-                           '<td>' + cp_html + '</td>' + 
-                           '<td>' + GS + '</td>' + 
-                           '<td>' + GSP + '</td>' + 
-                           '<td>' + type + '</td>' +                                                       
+                           '<td>' + cp_html + '</td>' +                                                                                  
                            '<td>' + parseFloat(stockObj.result_MA.MA60).toFixed(2) + '</td>' + 
-                           /*
-                           '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
-                           '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
-                           '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
-                           */
-                           '<td><span class="badge">' + TV_times + '</span></td>' +  
                            '<td>' + Math.round(stockObj.result_TV.RTV) + '</td>' + 
-                           '<td>' + Math.round(stockObj.result_TV.RTVMA_05) + '</td>' +                            
-                           /* 
-                           '<td>' + stockInfo.stockInfo.YR + '</td>' + 
-                           '<td>' + stockInfo.stockInfo.PRE + '</td>' + 
-                           '<td>' + stockInfo.stockInfo.PBR + '</td>' + 
-                           */
-                           '<td>' + dataDateStr + '</td>' +
                            '<td>' + add_btn_html + dispersion_info_btn_html + '</td>' + 
                            '</tr>';
 
@@ -316,36 +305,30 @@ function btn_dispersion_info(item)
             return stock_info_id_dict;
         } /* showStockDailyInfo */
 
-        function genDateSelectInfo(stockDateList)
+        function genTypeSelectInfo(typeList)
         {
             var html = '';
             //console.dir(stockDateList);
             //stockDateList.sort();
-            stockDateList.sort(function(a, b) {
-               return moment(a.date) - moment(b.date);
-            });
+            typeList.sort();
             //console.dir(stockDateList);
-            for(stockInfo of stockDateList)
+            for(type of typeList)
             {                
-                html += '<option>' + stockInfo.date + '</option>';
+                html += '<option>' + type + '</option>';
             } /* for */
-            $('#stock_date_sel').append(html); 
+            $('#stock_analyze_type_sel').append(html); 
         }/* showDateSelectInfo */
         
         function initHtmlContent()
         { 
           /* Init stock list information */          
-          //debugger;
-          var stoackDataListLen = gStockDateList.length;
-          var gStockData = gStockDateList[stoackDataListLen-1];  /* default use latest data */
-          var g_stock_info_list = JSON.parse(gStockData.data);
-          g_stock_date = gStockData.date;
-          g_stock_info_id_dict = showStockDailyInfo(g_stock_info_list);
-
            $('#span_description').append(g_info_description);
-           $('#span_date').append(gStockData.date);           
-           genDateSelectInfo(gStockDateList);
-           $('#stock_date_sel').val(gStockData.date);
+           //$('#span_current_type').append(gStockData.date);           
+           genTypeSelectInfo(gAnalyzeTypeList);
+           $('#stock_analyze_type_sel').val(gAnalyzeTypeList[0]);
+          var stock_info_list = g_realtime_analyze_result_obj[gAnalyzeTypeList[0]];          
+          g_stock_info_id_dict = showStockDailyInfo(stock_info_list);
+
         } /* initHtmlContent */
   });
 
@@ -357,8 +340,8 @@ function btn_dispersion_info(item)
 
   <div class="col-sm-3">
     <div class="form-group">      
-      <select class="form-control" id="stock_date_sel">
-        <!-- generate by genDateSelectInfo -->
+      <select class="form-control" id="stock_analyze_type_sel">
+        <!-- generate by genTypeSelectInfo -->
       </select>
     </div>
   </div>
@@ -368,7 +351,7 @@ function btn_dispersion_info(item)
 <div class="row" id="div_description">
 
   <div class="col-sm-10">  
-   <span class="label label-info" id='span_date' style="display:none"></span>
+   <span class="label label-info" id='span_current_type' style="display:none"></span>
    <p>
    <span class="label label-success" id='span_description'></span>      
    <p>
@@ -383,25 +366,12 @@ function btn_dispersion_info(item)
      <tr>
         <th>ID</th>
         <th>Name</th>
-        <th>(今日)收盤價</th>         
+        <th>即時價格</th>         
+        <th>即時量</th>       
         <th>Delta</th>    
-        <th>(當時)收盤價</th>         
-        <th>(當時)漲跌</th>
-        <th>(當時)漲跌幅</th>
-        <th>Type</th>             
-        <th>MA60</th>
-<!--    <th>MA20</th> -->
-<!--    <th>MA10</th> -->
-<!--    <th>MA5</th> -->
-        <th>成交量比</th>
-        <th>成交量</th>
-        <th>成交量MA5</th>  
-<!--              
-        <th>殖利率</th>
-        <th>本益比</th>
-        <th>股價淨值比</th>       
--->        
-        <th>加入時間</th>
+        <th>(前次)收盤價</th>                            
+        <th>MA60</th>        
+        <th>成交量</th>        
         <th>Action</th>
       </tr>
     </thead>

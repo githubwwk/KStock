@@ -196,42 +196,52 @@ exports.showStockMonitor = function(req, res)
    
    console.log("req.query.current Done");
    
-   db.stockMonitor_FindAll(function(err, dataObj){  
+   function exec(callback)
+   {
+       let monitor_list_all; 
+       try {
+           monitor_list_all = wait.for(db.stockMonitor_FindAll);  
+       }catch(err){
+           console.log("ERROR - db.stockMonitor_FindAll() Fail!" + err); 
+           return callback(err);
+       }
 
-        /* get all stockId of dataObj */        
-        let srtpAllObj = {};
-        for(let monitorObj of dataObj)
-        {
-            for(let monitor of monitorObj.monitorList)
-            {                                
-                let temp = JSON.parse(monitor);                
-                try {
-                    let stockId = temp.stockId;
-                    srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
-                    let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
-                    let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
-                            
-                    let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');
-                    let srtp_date = moment(srtpAllObj[stockId].datetime).format("YYYY-MM-DD");
-                    if (moment(stockinfo_date).isSame(srtp_date)){
-                        srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
-                        srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
-                    }else {
-                        srtpAllObj[stockId].GS = currentGP.toFixed(2);
-                        srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
-                    }
-                } catch(err){
-                    console.log("WARNING - gStockRealTimePrice uninit!" + err); 
-                } /* try-catch */                 
-            } /* for */
-        }/* for */                         
+       /* get all stockId of dataObj */        
+       let srtpAllObj = {};
+       for(let monitorObj of monitor_list_all)
+       {
+                for(let monitor of monitorObj.monitorList)
+                {                                
+                    let temp = JSON.parse(monitor);                
+                    try {
+                        let stockId = temp.stockId;
+                        srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
+                        let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
+                        let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
+                                
+                        let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');
+                        let srtp_date = moment(srtpAllObj[stockId].datetime).format("YYYY-MM-DD");
+                        if (moment(stockinfo_date).isSame(srtp_date)){
+                            srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
+                            srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
+                        }else {
+                            srtpAllObj[stockId].GS = currentGP.toFixed(2);
+                            srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+                        }
+                    } catch(err){
+                        console.log("WARNING - gStockRealTimePrice uninit!" + err); 
+                    } /* try-catch */                 
+                } /* for */
+            }/* for */                         
 
-        res.render( 'stockMonitorList', {
-	                 result : dataObj,
-                     srtpAllObj : srtpAllObj,
-                     title : 'KStock Server'
+            res.render( 'stockMonitorList', {
+                        monitor_list_all : monitor_list_all,
+                        srtpAllObj : srtpAllObj,
+                        title : 'KStock Server'
                     });	                 
-   });
+            return callback(null);        
+   } /* function - exec */
+   wait.launchFiber(exec, function(err, result){}); 
 };
 
 exports.removeStockMonitor = function(req, res)
@@ -258,7 +268,7 @@ exports.removeStockMonitor = function(req, res)
 
 exports.showFG8IndexCheck = function(req, res)
 {
-        res.render( 'FG8IndexCheck', {});	
+    res.render( 'FG8IndexCheck', {});	
 }
 
 //**********************************************************
@@ -269,20 +279,26 @@ exports.showStockRealTimeAnalysisResult = function(req, res)
    function exec(callback_exec)
    {        
         let description = 'Real Time Analysis Result';               
-        let montiorNameList = wait.for(db.stockMonitor_GetMonitorNameList);
+        let monitor_name_list = wait.for(db.stockMonitor_GetMonitorNameList);
         let srtpAllObj = {};
+        let RTAnalyzeResult = {};
 
         if (twStockRTP.gStockRealTimeAnalyzeResult != undefined)
         {
-                res.render( 'stockRealtimeAnalyzeResult', {
-                    title : 'KStock Server',
-                    description : description,                                        
-                    RTAnalyzeResult : twStockRTP.gStockRealTimeAnalyzeResult,
-                    monitor_list : montiorNameList,                    
-                });	           
+            srtpAllObj = twStockRTP.gStockRealTimeAnalyzeResult.srtpAllObj;    
+            RTAnalyzeResult = twStockRTP.gStockRealTimeAnalyzeResult.analyzeResult;           
+            
+            res.render( 'stockRealtimeAnalyzeResult', {
+                        title : 'KStock Server',
+                        description : description,         
+                        srtpAllObj : srtpAllObj,                               
+                        RTAnalyzeResult : RTAnalyzeResult,
+                        monitor_name_list : monitor_name_list,                    
+                      });	           
         }else{
-            console.log("ERROR - db.showStockRealTime() twStockRTP.gStockRealTimeAnalyzeResult is undefined!");
-            res.send(503);
+            let err = "ERROR - db.showStockRealTime() twStockRTP.gStockRealTimeAnalyzeResult is undefined!";
+            console.log(err);
+            res.status(503).send(err);;
         }	
    }/* exec */    
 

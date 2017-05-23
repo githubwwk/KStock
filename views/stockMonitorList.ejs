@@ -56,7 +56,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
     
 
 var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>; /* realtime stock price */
-var g_monitor_list_all = <%- JSON.stringify(result) %>;  /* monitor stock info object */ 
+var g_monitor_list_all = <%- JSON.stringify(monitor_list_all) %>;  /* monitor stock info object */ 
 var g_stock_info_list = g_monitor_list_all[0].monitorList;        
 var g_monitor_list_all_lookup_dict = {};
 
@@ -82,7 +82,7 @@ function btn_remove_monitor(item)
     var stockId = item.value;
     console.log("Remove Stock:" + stockId);
     var URLs = "remove_stock_monitor";
-    //debugger;
+    
     bootbox.confirm("Remove out monitor list", function(result) {            	
         if (result == true){                	
             var compose = {};
@@ -96,7 +96,7 @@ function btn_remove_monitor(item)
 		           contentType: "application/json; charset=utf-8",
 
 		           success: function(res){
-                    //debugger;
+                    
                     /* Reinit g_monitor_list_all and table data. */
                     let monitor_name = $( "#stock_monitor_sel option:selected").text();   
                     g_monitor_list_all = res;
@@ -122,7 +122,7 @@ function _f_showStockDailyInfo_v20(stockObj)
 
    /*********************************************/
    /* Special condition */
-   //debugger;
+   
    if ((parseFloat(stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_03)*10) < 13)  /* 1.3 times is teacher's experience */
    {
       console.log("Skip:" + stockObj.stockInfo.stockName);     
@@ -137,7 +137,7 @@ function _f_showStockDailyInfo_v20(stockObj)
    }
    
    /*********************************************/
-   //debugger;
+   
    var dataDateTempList = stockObj.result_StockInfo.date.split('/');
    var dataDateStr =  dataDateTempList[1] + '-' + dataDateTempList[2]; /* MM/DD */
 
@@ -183,7 +183,7 @@ function _f_showStockDailyInfo_v20(stockObj)
           var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';                                              
           var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
     }
-    debugger;
+
     TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
     temp_html = '<tr>' + 
                 '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
@@ -212,7 +212,7 @@ function _f_showStockDailyInfo_v20(stockObj)
                        '<td>' + dataDateStr + '</td>' +                        
                        '<td>' + remove_btn_html + dispersion_info_btn_html +'</td>' + 
                        '</tr>';       
-                       //debugger;       
+                              
            $('#stock_info_tbl_body').append(temp_html);
 
            //idx ++;  
@@ -227,14 +227,20 @@ function _f_showStockDailyInfo_v10(stock)
 
            /*********************************************/
            /* Special condition */
-           //debugger;
-           if ((parseFloat(stockObj.stockDailyInfo.TV_times.TV_times)*10) < 13)
-           {
-              console.log("Skip:" + stockObj.stockInfo.stockName);
-              console.log("Skip TV times:" + stockObj.stockDailyInfo.TV_times.TV_times);
-              // Skip
-              //continue;
-           }
+           
+           try {
+              if ((parseFloat(stockObj.stockDailyInfo.TV_times.TV_times)*10) < 13)
+              {
+                  console.log("Skip:" + stockObj.stockInfo.stockName);
+                  console.log("Skip TV times:" + stockObj.stockDailyInfo.TV_times.TV_times);
+                  // Skip
+                  //continue;
+              }
+           }catch(err){
+              console.log("DEBUG - Err:" + err);
+              console.log("DEBUG - Stock Id:" + stockId);
+              console.dir(stockObj);
+           }   
 
            if ((Math.round(stockObj.stockDailyInfo.TV/1000)) < 100)
            {
@@ -244,7 +250,7 @@ function _f_showStockDailyInfo_v10(stock)
               //continue;
            }
            /*********************************************/
-           //debugger;
+           
 
            var dataDateTempList = stockObj.stockDailyInfo.date.split('/');
            var dataDateStr =  dataDateTempList[1] + '-' + dataDateTempList[2]; /* MM/DD */
@@ -271,8 +277,7 @@ function _f_showStockDailyInfo_v10(stock)
                          '<span class="label label-success">' + stockObj.stockDailyInfo.CP + '</span>':
                          '<span class="label label-danger">' + stockObj.stockDailyInfo.CP + '</span>';
 
-           //var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';
-          debugger;
+           //var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';          
                    try {
                        var currentPrice = g_stock_all_obj[stockId].currentPrice;                        
                        var today_cp_html = '<span class="label label-default" style="display:block">' + 
@@ -342,7 +347,7 @@ function showStockDailyInfo(stock_info_list)
           if(stock.ver == 'v2.0')
           {
             /* For format v2.0 */          
-            //debugger;
+            
             _f_showStockDailyInfo_v20(stock);
           }else{            
             _f_showStockDailyInfo_v10(stock);
@@ -385,7 +390,7 @@ function showStockDailyInfo(stock_info_list)
         $( "#stock_monitor_sel" ).change(function() {
           let monitor_name = $( "#stock_monitor_sel option:selected").text();         
           let monitor = g_monitor_list_all_lookup_dict[monitor_name];
-          //debugger;
+          
           showStockDailyInfo(monitor.monitorList);          
         });        
 	}); /* document - ready() */

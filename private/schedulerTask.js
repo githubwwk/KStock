@@ -19,13 +19,17 @@ function updateTwStockTwsePRE()
     var dateStr = moment().format('YYYY-MM-DD');    
     utility.timestamp('updateTwStockTwsePRE()+++');
     twStockTwsePRE.getTwsePRE(dateStr, function(err, result){
-        console.log("updateTwStockTwsePRE()");
-        //console.dir(result);
-        let resultDbObj = {};
-        resultDbObj.date = result.date;
-        resultDbObj.data = JSON.stringify(result.stock_list);
-        db.twseStockPRE_Update(result.date, resultDbObj);
-        utility.timestamp('updateTwStockTwsePRE()---');
+    	 if(err != null){
+    	 	  console.log("ERROR - getTwsePRE fail." + err);
+    	 	  return;
+    	 } 
+       console.log("updateTwStockTwsePRE()");
+       //console.dir(result);
+       let resultDbObj = {};
+       resultDbObj.date = result.date;
+       resultDbObj.data = JSON.stringify(result.stock_list);
+       db.twseStockPRE_Update(result.date, resultDbObj);
+       utility.timestamp('updateTwStockTwsePRE()---');
     });
         
 }

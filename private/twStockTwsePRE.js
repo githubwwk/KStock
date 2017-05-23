@@ -151,11 +151,14 @@ exports.getTwsePRE = function(dateStr, callback_filber)
                    };    
 
     function exec(callback)
-    {         
-         var data_list = wait.for(getDatafromWeb, options_default);
-         //var result = wait.for(writeDataDbFile, data_list);
-         
-         return callback(null, data_list);
+    {    
+    	   try {  
+         		var data_list = wait.for(getDatafromWeb, options_default);
+         		//var result = wait.for(writeDataDbFile, data_list);         
+            return callback(null, data_list);
+         }catch(err){
+           	return callback(err);
+         }   
     }
 
     wait.launchFiber(exec, callback_filber);

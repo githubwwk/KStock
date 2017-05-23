@@ -17,12 +17,12 @@ var stockInfoCrawler = require('./twStockDailyInfoCrawler.js');
 // Variable
 //**************************************************
 var gStockRealTimePrice = {};
-exports.gStockRealTimePrice;
-var gStockRealTimeAnalyzeResult = {};
-exports.gStockRealTimeAnalyzeResult;
+var gStockRealTimeAnalyzeResult = {}; /* Real-time analyze stock result. */
 var gLocalFileDbDir = 'daily_stock_price';
-var gStockAllObj;
-exports.gStockAllObj;
+var gStockAllInfoObj;  /* All stock information, name and id ....*/
+
+exports.gStockRealTimePrice;  /* All stock real time price*/
+exports.gStockRealTimeAnalyzeResult = {};
 
 //******************************************
 // data_reconstruct()
@@ -372,32 +372,59 @@ function getRealTimeStockPrice(stockid_list, callback)
         }        
 }
 
-//******************************************
-// _f_check_realtime_TV_GSP()
-//******************************************
-function _f_check_realtime_TV_GSP()
+function _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult)
 {
-  let result = {};  
+    srtpObj[stockId] = stockRealTimePrice[stockId];                             
+    if (analyzeResult[type] == undefined){
+        analyzeResult[type] = [];                    
+    }                
+
+    let lastCP = stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.CP;
+    let currentGP = parseFloat(srtpObj[stockId].currentPrice) - lastCP;                
+    srtpObj[stockId].GS = currentGP.toFixed(2);
+    srtpObj[stockId].GSP = ((currentGP/lastCP)*100).toFixed(1);                
+    analyzeResult[type].push(stockInfoCrawler.gStockDailyInfo[stockId]);    
+}
+
+//******************************************
+// _f_analyze_realtime_stock()
+//******************************************
+function _f_analyze_realtime_stock(stockRealTimePrice)
+{
+  let analyzeResult = {};
+  let srtpObj = {}; /* store real-time price */ 
 
   while (stockInfoCrawler.gStockDailyInfo == undefined)
   {
       console.log("Wait stockInfoCrawler.gStockDailyInfo...");
       wait.for(utility.sleepForMs, 1000);
   }
-
+ 
+  /* Check last stock id in list whether it is ready. */
   while (stockInfoCrawler.gStockDailyInfo['9958'] == undefined)
   {
       console.log("Wait stockInfoCrawler.gStockDailyInfo['9958']...");
       wait.for(utility.sleepForMs, 1000);
   }
 
-  for (let stockId of gStockAllObj.stockIdList)
+  for (let stockId of gStockAllInfoObj.stockIdList)
   {       
-     try {
+     //try {
           let times = 1;
           /* Transfer datetime: 2017-05-02 09:22-44, remove '-44' */
           let re = /\-[0-9]*$/g;
-          let temp_datetime = gStockRealTimePrice[stockId].datetime;
+          let temp_datetime;
+          try {
+            temp_datetime = stockRealTimePrice[stockId].datetime;
+          } 
+          catch(err)
+          {
+            console.log("ERROR - Undefined RealTimePrice Object:");  
+            console.log("Stock ID:" + stockId);  
+            console.dir(stockRealTimePrice[stockId]);
+            continue;
+          } /* try -catch */
+
           temp_datetime = temp_datetime.replace(re, '');
           
           if(_f_isDuringSpecialTime(temp_datetime, '09:05', '09:15'))
@@ -405,7 +432,7 @@ function _f_check_realtime_TV_GSP()
               /* 09:10 check, TV is over 1/10 TVMA30 */ 
               times = 10;
           }
-          else if(_f_isDuringSpecialTime(temp_datetime, '09:25', '19:35'))          
+          else if(_f_isDuringSpecialTime(temp_datetime, '09:25', '09:35'))          
           {
               /* 09:30 check, TV  is over 1/3 TVMA03. */
               times = 3.3333;
@@ -416,55 +443,83 @@ function _f_check_realtime_TV_GSP()
               times = 0.5
           } 
           
-          /* check Realtime TV */
-          if((parseInt(gStockRealTimePrice[stockId].tv)*times) > (parseInt(stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03)))
+          try {
+             if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV == undefined){}
+          } 
+          catch(err)
           {
-             if (parseInt(gStockRealTimePrice[stockId].tv) > 1000)
-             { 
-                let stockObj = {};                
-                stockObj.RtInfo = gStockRealTimePrice[stockId];                             
-                result['RTPAndTvRise'].push(stockInfoCrawler.gStockDailyInfo[stockId]);
-             }
-          }            
-          
-          /* Price Rise over 5% */
-          if(parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP) > 5)
-          {
-              console.log("[GSP UP 5%][StockId]:" + stockId);
-              let stockObj = {};
-              
-              stockObj.RtInfo = gStockRealTimePrice[stockId];             
-              
-              gStockDailyInfo[stockId].stockInfo = gAllStocksObj.stockObjDict[stockId];     
-              result['priceRiseOver5'].push(stockInfoCrawler.gStockDailyInfo[stockId]);
-          }  
-          
-          /* Price fall over 5% */
-          if(parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.GSP) < -5)
-          {
-              console.log("[GSP DOWN 5% StockId]:" + stockId);
-              let stockObj = {};
-              
-              stockObj.RtInfo = gStockRealTimePrice[stockId];             
-              
-              result['priceFallOver5'].push(stockInfoCrawler.gStockDailyInfo[stockId]);
-          }  
+              console.log("ERROR - Undefined result_TV Object:");  
+              console.log("Stock ID:" + stockId);                
+              continue;
+          }
 
-      } catch(err){
-          console.log("ERROR - Compare TVMA Error! (" + stockId + ')' + err);
-      } /* try-catch */           
+          /* check Realtime TV */
+          if((parseInt(stockRealTimePrice[stockId].tv)*times) > (parseInt(stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03)))
+          {
+            let type = 'MA03_compare';
+             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
+             {          
+                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
+             }
+          }   
+
+           /* Check through MA60 */ 
+          let yesterday_cp = stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.CP;
+          let current_cp = parseFloat(stockRealTimePrice[stockId].currentPrice);
+          let MA60 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA60);  
+          if((yesterday_cp < MA60) && (current_cp >= MA60))
+          {
+             let type = 'MA60_Through_UP';
+             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
+             {          
+                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
+             }              
+          } 
+            
+          if((yesterday_cp > MA60) && (current_cp <= MA60))
+          {
+             let type = 'MA60_Through_DOWN';
+             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
+             {          
+                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
+             }              
+          }          
+
+          /* Check MA5 through MA20 real-time */
+          let MA20 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA20);  
+          let MA5 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA5);  
+          let MA20_2nd =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA20);  
+          let MA5_2dn =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA5);            
+          (MA20*20) - (MA20_2nd*20)
+          if((yesterday_cp > MA60) && (current_cp <= MA60))
+          {
+             let type = 'MA60_Through_DOWN';
+             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
+             {          
+                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
+             }              
+          }    
+
+      //} catch(err){
+      //    console.log("ERROR - Compare TVMA Error! (" + stockId + ')' + err);
+      //} /* try-catch */           
   } /* for */
-  //console.dir(result);
+
+  let result = {}; 
+  
+  result.srtpAllObj = srtpObj;
+  result.analyzeResult = analyzeResult;
+
   return result;
 }
 
 //******************************************
 // updateRealTimeStockPrice()
 //******************************************
-exports.updateRealTimeStockPrice = function()
+function _f_updateRealTimeStockPrice(stockInfoObj)
 {
     utility.timestamp('updateRealTimeStockPrice()+++');
-    if (gStockAllObj == undefined) 
+    if (stockInfoObj == undefined) 
     {    
         return;
     }
@@ -474,21 +529,22 @@ exports.updateRealTimeStockPrice = function()
         return;
     }
 
-    if(_f_isDuringOpeningtime())
-    { 
-        /* get real time price */  
-        getRealTimeStockPrice(gStockAllObj.stockIdList, function(err, result){
-            gStockRealTimePrice = result;
-            exports.gStockRealTimePrice = gStockRealTimePrice;
-            //console.dir(gStockRealTimePrice);
-            
-            /* Do someting, check TV MA */
-            gStockRealTimeAnalyzeResult = _f_check_realtime_TV_GSP();
-            exports.gStockRealTimeAnalyzeResult = gStockRealTimeAnalyzeResult;
-
-            utility.timestamp('updateRealTimeStockPrice() Done!');
-        });        
-    }
+    /* 09:00 ~ 13:30 */
+    /* get real time price */  
+    let testmode = true;
+    getRealTimeStockPrice(stockInfoObj.stockIdList, function(err, result) 
+    {
+        gStockRealTimePrice = result;
+        exports.gStockRealTimePrice = gStockRealTimePrice;      
+       
+        if(_f_isDuringOpeningtime() || testmode == true)
+        {                 
+           /* Do someting, check TV MA */
+           let result_analyze  = _f_analyze_realtime_stock(gStockRealTimePrice);
+           exports.gStockRealTimeAnalyzeResult = result_analyze;                       
+           utility.timestamp('updateRealTimeStockPrice() Done!');
+        }
+    });
 }; 
 
 function _f_init_scheduler()
@@ -505,7 +561,7 @@ function _f_init_scheduler()
     rule.dayOfWeek = [1, 2, 3, 4, 5]; /* Monday to Friday */
     let j = schedule.scheduleJob(rule, function(){
         console.log('scheduleJob: updateTwStockTwsePRE()');
-        exports.updateRealTimeStockPrice();
+        _f_updateRealTimeStockPrice(gStockAllInfoObj);
     });
 }
 
@@ -517,18 +573,11 @@ exports.init = function()
     console.log("INFO - twStockRealTimePrice init()");
     function exec(callback)
     {
-        gStockAllObj = _f_initStockIdList();
-        exports.gStockAllObj= gStockAllObj
-        //gStockAllObj.stockIdList = ['2498', '2454', '1101']; /* For Test only */
-        getRealTimeStockPrice(gStockAllObj.stockIdList, function(err, result){            
-            gStockRealTimePrice = result;
-            exports.gStockRealTimePrice = gStockRealTimePrice;
-            //console.dir(gStockRealTimePrice);
-            /* Do someting, check TV MA */
-            gStockRealTimeAnalyzeResult =  _f_check_realtime_TV_GSP();
-            exports.gStockRealTimeAnalyzeResult = gStockRealTimeAnalyzeResult;
-            _f_init_scheduler();
-        });
+        gStockAllInfoObj = _f_initStockIdList();        
+        //gStockAllInfoObj.stockIdList = ['2498', '2454', '1101']; /* For Test only */
+        _f_updateRealTimeStockPrice(gStockAllInfoObj); 
+        _f_init_scheduler();
+
         return callback(null);
     }
     wait.launchFiber(exec, function(){});

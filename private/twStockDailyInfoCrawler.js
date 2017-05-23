@@ -19,7 +19,7 @@ var utility = require("./utility.js");
 var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
 var ENABLE_A01 = false;
 var ENABLE_A02 = false;
-var ENABLE_A03 = false;
+var ENABLE_A03 = true;
 var ENABLE_A04 = true;
 var ENABLE_A05 = true;
 
@@ -42,34 +42,26 @@ function _f_stock_data_reconstruct(raw_data_list)
 {
     let stock_data_dict = {};
 
-    for (let i=2 ; i < raw_data_list[0].length ; i ++)
-    {
-       let row_data_list = [];
+    for (let i=0 ; i < raw_data_list.length ; i ++)
+    {       
        let stock_data = {};
 
-       for (let j=0; j<raw_data_list.length ; j++)
-       {
-           //console.log(i + '-' + j + ' '+ raw_data_list[j][i]);
-           row_data_list.push(raw_data_list[j][i]);
-       }
-       //console.dir(row_data_list);
 
        try {
-            stock_data.date = row_data_list[0];
-            stock_data.TV = parseInt(row_data_list[1].replace(/,/g, '')); /* Trading Volume 成交張數 */
+            stock_data.date = raw_data_list[i][0];
+            stock_data.TV = parseInt(raw_data_list[i][1].replace(/,/g, '')); /* Trading Volume 成交張數 */
             //stock_data.TO =  parseInt(row_data_list[2].replace(/,/g, '')); /* TurnOver in value 成交量 */
-            stock_data.OP = row_data_list[3]; /* Open Price 開盤價 */
-            stock_data.DH = row_data_list[4]; /* Day High 最高價 */
-            stock_data.DL = row_data_list[5]; /* Day Low 最低價 */
-            stock_data.CP = parseFloat(row_data_list[6].replace(/,/g, '')); /* Closing Price 收盤價*/
-            stock_data.GS = parseFloat(row_data_list[7].replace(/,/g, '')); /* Gross Spread:漲跌價差 */
+            stock_data.OP = raw_data_list[i][3]; /* Open Price 開盤價 */
+            stock_data.DH = raw_data_list[i][4]; /* Day High 最高價 */
+            stock_data.DL = raw_data_list[i][5]; /* Day Low 最低價 */
+            stock_data.CP = parseFloat(raw_data_list[i][6].replace(/,/g, '')); /* Closing Price 收盤價*/
+            stock_data.GS = parseFloat(raw_data_list[i][7].replace(/,/g, '')); /* Gross Spread:漲跌價差 */
             stock_data.GSP =  (stock_data.GS/(stock_data.CP-stock_data.GS)*100).toFixed(1); /* Gross Spread percentage */
-            //stock_data.NT = row_data_list[8]; /* Number of Transactions 成交筆數 */
+            //stock_data.NT = rraw_data_list[i][8]; /* Number of Transactions 成交筆數 */
        }catch(err){
             console.log("ERROR get raw data fail!" + err)
        } /* try-catch */
-
-       row_data_list = [];
+     
        stock_data_dict[stock_data.date] = stock_data;  /* DATE Key */
        //console.dir(stock_data);
     } /* for i */
@@ -180,57 +172,28 @@ function _f_getStockMonthData(stockId, year, month)
 function _f_getStockDatafromWeb(stockId, year, month, callback_web)
 {
     console.log("Get Data from Web:" + stockId + ' month:' + month);
+    let dateStr = moment([parseInt(year), parseInt(month)-1, 1]).format("YYYYMMDD");
+    let URL = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=' + dateStr +'&stockNo=' + stockId + '&_=';
 
-    let body = {'download': '',
-                'query_year': '0',   /* 2017, set by main */
-                'query_month' : '0', /* 2, set by main */
-                'CO_ID': '0',        /* 2454, set by main */
-                'query-button' : '%E6%9F%A5%E8%A9%A2'};
-
-    let options = {
-        url : 'http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAYMAIN.php',
-        method: "POST",
-        form : body,
-        headers: {'Content-Type' : 'application/x-www-form-urlencoded'}
-    };
-
-   options.form.CO_ID = stockId;
-   options.form.query_year = year;
-   options.form.query_month = month;
-
-   let stock_data_dict = {};
-   request( options, function (error, response, body) {
-
-        if (!error && response.statusCode == 200) {
-            //console.log(body)
-            let table_html = body.match(/\<table.*\<\/table\>/g);
-
-            try {
-                let $ = cheerio.load(table_html[0]);
-                cheerioTableparser($);
-                let data = $("table").parsetable(false, false, true);
-                stock_data_dict = _f_stock_data_reconstruct(data);
-            } catch  (err) {
-                console.log("ERROR - Get HTML table error!" + err);
+    let cookie = '';
+    let stock_data_dict = {};
+    request( URL, function (error, response, body) {          
+            if (!error && response.statusCode == 200) {
+                let stockObj = JSON.parse(body); 
+                //console.dir(cookie);
+                stock_data_dict = _f_stock_data_reconstruct(stockObj.data); ///< data is a list.
+                return callback_web(null, stock_data_dict);
+            }else{
+                try {
+                    console.log("ERROR - _f_getStockDatafromWeb() statusCode:" + response.statusCode);    
+                    return callback_web(response.statusCode, error);
+                }catch(err){
+                    return callback_web(-1, error);
+                }
             }
-        }else{
-            console.log("ERROR - getDatafromWeb() response!!!" + response);
-            console.dir(options);
-            return callback_web('getDatafromWeb - Invalid response, please retrys');
-        }
-
-
-        if (Object.keys(stock_data_dict).length == 0)
-        {
-            console.log("ERROR - getDatafromWeb() body!!!" + body);
-            console.log("ERROR - getDatafromWeb() response!!!" + response);
-            console.dir(options);
-        }
-        return callback_web(null, stock_data_dict);
+             
     });
 }
-
-
 
 //******************************************
 // stockAnalyze()
@@ -599,7 +562,8 @@ function _f_getRecentSixMonthData(stockId)
         }
 
         let query_year = data_year_int.toString();
-        let query_month = data_month_int.toString();
+        let query_month = data_month_int.toString();        
+
         let temp_data_dict;
 
         try{
