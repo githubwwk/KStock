@@ -149,6 +149,7 @@ function btn_dispersion_info(item)
   var g_stock_info_id_dict = {}; 
   var g_monitor_list = <%- JSON.stringify(monitor_list)%>;
   var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>; 
+  var g_analyze_category = "<%- analyze_category %>";
 
   $(document).ready(function(){
         
@@ -209,7 +210,7 @@ function btn_dispersion_info(item)
 
             for (stockObj of stock_info_list)
             {
-               //debugger;
+               debugger;
                var stockId = stockObj.stockInfo.stockId;
                stock_info_id_dict[stockId] = stockObj;
 

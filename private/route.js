@@ -78,8 +78,18 @@ exports.showStockAnalysisDateList = function(req, res)
                 case 'A05':                    
                     analyze_category = 'stockDaily_A05';
                     render_file = 'stockInfoAnalyzeResult';
-                    description = 'Test';
-                break;                                                
+                    description = '季線下彎';
+                break;   
+                case 'A06':                    
+                    analyze_category = 'stockDaily_A06';
+                    render_file = 'stockInfoAnalyzeResult';
+                    description = '今天為60日內最低成交量';
+                break;   
+                case 'A07':                    
+                    analyze_category = 'stockDaily_A07';
+                    render_file = 'stockInfoAnalyzeResult';
+                    description = '今天為60日內最高成交量';
+                break;                                                                          
                 default:
                     console.log("ERROR - Invalid Type:" + req.query.type);
                     res.send(503);
@@ -136,6 +146,7 @@ exports.showStockAnalysisDateList = function(req, res)
                 //console.dir(dataObj);
                 res.render( render_file, {
                     title : 'KStock Server',
+                    analyze_category : analyze_category,
                     description : description,
                     monitor_list : montiorNameList,
                     srtpAllObj : srtpAllObj,

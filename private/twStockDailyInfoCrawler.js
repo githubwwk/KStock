@@ -22,6 +22,8 @@ var ENABLE_A02 = false;
 var ENABLE_A03 = true;
 var ENABLE_A04 = true;
 var ENABLE_A05 = true;
+var ENABLE_A06 = true;
+var ENABLE_A07 = true;
 
 //******************************************
 // Global Variable
@@ -248,6 +250,22 @@ function _f_genMATV(date_list, data_dict)
          let temp_RTVMA05 = 0;  /* For realtime check TV, include last date. */
          let temp_RTVMA03 = 0;  /* For realtime check TV, include last date. */        
 
+         let tv_list = [];
+         for (let i=0; i<=60 ; i++)
+         {
+             /* Get MAX and min during 60 days */
+             let tv =Math.round((data_dict[date_list[i]].TV)/1000);
+             if (tv == 0){
+                 /* Skip incorrect TV data */
+                 console.log("ERROR: tv is 0: " + data_dict[date_list[i]].TV);
+                 continue;
+             }
+             tv_list.push(tv);
+         }
+         tv_list.sort(function(a, b){
+             return a - b;
+         });
+
          for (let i=0; i<=10 ; i++)
          {
               if(i<10)
@@ -286,6 +304,10 @@ function _f_genMATV(date_list, data_dict)
 
          result.TV = Math.round(data_dict[date_list[1]].TV/1000); /* Yesterday TV */        
          result.RTV = Math.round(data_dict[date_list[0]].TV/1000); /* last (Today, after close market) TV */        
+
+         /* MAX and min during 60 days */ 
+         result.TV_MAX = tv_list[tv_list.length-1];
+         result.TV_min = tv_list[0];
 
     } catch(err){
           console.log("ERROR - _f_genMATV()" + err);
@@ -351,6 +373,10 @@ function stockAnalyze_03(stockInfoObj)
 
 } /* stockAnalyze_03() */
 
+//******************************************
+// stockAnalyze_04()
+//******************************************
+
 function stockAnalyze_04(stockInfoObj)
 {
     /********************/ 
@@ -394,6 +420,10 @@ function stockAnalyze_04(stockInfoObj)
     } /* for */       
 }
 
+//******************************************
+// stockAnalyze_05()
+// MA60 Bend down
+//******************************************
 function stockAnalyze_05(stockInfoObj)
 {
     let result_type = 'stockDaily_A05';
@@ -422,21 +452,7 @@ function stockAnalyze_05(stockInfoObj)
         let diff = parseFloat(result_MA.MA60_list[i]) +  parseFloat(result_MA.MA60_list[i-1]);
         diff = diff.toFixed(2);
         diff_list.push(parseFloat(diff));
-        /*
-        if (i > 0)                    
-        {
-            let a;
-            let b;
-            a = (diff_list[i] >= 0)?true:false;
-            b = (diff_list[i-1] >= 0)?true:false;            
-            if ((a ^ b) && (result_TV.RTVMA_03 > 1000))
-            {
-                //console.dir(diff_list);
-                //gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);   
-                //break;
-            }
-        }
-        */
+
     }        
 
     console.log("CP:" + stockInfoObj.result_StockInfo.CP);
@@ -447,26 +463,11 @@ function stockAnalyze_05(stockInfoObj)
                 gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);   
                 //break;
     }
-    return;
 
     let diff_MA_list = [];
     let diff_MA_temp_list = [];
     for (let i=0; i<diff_list.length-5 ; i++)
     {
-        /*
-        diff_MA_list[i] = diff_list[i] + 
-                          diff_list[i + 1] +  
-                          diff_list[i + 2] ;
-                          //diff_list[i + 3] + 
-                          //diff_list[i + 4];  
-        let temp = (diff_MA_list[i]/result_MA.MA60_list[i])*1000;        
-        diff_MA_temp_list.push(temp);             
-        if (temp < -10){
-            gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
-            break;
-        }             
-        */
-
             let a;
             let b;
             a = (diff_list[i] >= 0)?true:false;
@@ -479,9 +480,56 @@ function stockAnalyze_05(stockInfoObj)
             }
 
     }
-
-    console.log("GG");     
 }
+
+//******************************************
+// stockAnalyze_06()
+// TV is lowest during 60 days.
+//******************************************
+function stockAnalyze_06(stockInfoObj)
+{
+    let result_type = 'stockDaily_A06';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;    
+
+    if (gStockDailyAnalyzeResult[result_type] == undefined)
+    {
+       gStockDailyAnalyzeResult[result_type] = [];
+    }                       
+   
+    let matchConditional = false   
+
+    if ((result_TV.RTV == result_TV.TV_min) && (result_TV.RTV > 500))
+    {            
+       gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);   
+    }
+}
+
+//******************************************
+// stockAnalyze_07()
+// TV is highest during 60 days.
+//******************************************
+function stockAnalyze_07(stockInfoObj)
+{
+    let result_type = 'stockDaily_A07';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;    
+
+    if (gStockDailyAnalyzeResult[result_type] == undefined)
+    {
+       gStockDailyAnalyzeResult[result_type] = [];
+    }                       
+   
+    let matchConditional = false   
+
+    if ((result_TV.RTV == result_TV.TV_MAX) && (result_TV.RTV > 500))
+    {            
+       gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);   
+    }
+}
+
 //******************************************
 // readDataDbFile()
 //******************************************
@@ -754,6 +802,17 @@ function _f_stockDailyChecker(stockId)
     {
         stockAnalyze_05(gStockDailyInfo[stockId]);        
     }/* if */    
+
+    if (ENABLE_A06) 
+    {
+        stockAnalyze_06(gStockDailyInfo[stockId]);        
+    }/* if */      
+
+    if (ENABLE_A07) 
+    {
+        stockAnalyze_07(gStockDailyInfo[stockId]);        
+    }/* if */  
+
 }/* stockDailyChecker() - END */
 
 

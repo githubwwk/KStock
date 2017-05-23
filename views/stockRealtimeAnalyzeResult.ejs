@@ -102,7 +102,7 @@ function btn_dispersion_info(item)
                 compose.stockInfo = {};              
                 compose.stockInfo = g_stock_info_id_dict[stockId];                
                 compose.monitor_name = monitorName; /* select value is monitor name */
-                debugger;
+                //debugger;
                 $.ajax({
                       url: URLs,
                       data: JSON.stringify(compose),
@@ -163,22 +163,12 @@ function btn_dispersion_info(item)
 
         /* Init HTML Content */  
         initHtmlContent();
-        /* Init Date Select */                
-
         
         /* Reload current type data */
         $( "#stock_analyze_type_sel" ).change(function() {
-/*        	
-          g_current_del_type = $( "#stock_analyze_type_sel option:selected").text();         
-          for (var type of gAnalyzeTypeList)
-          {
-              console.log(type);
-              if (type == g_current_del_type)break;
-
-          }   
           debugger;
-*/          
-          var stock_info_list = g_realtime_analyze_result_obj[type];          
+          let sel_type = $( "#stock_analyze_type_sel option:selected").text();       
+          var stock_info_list = g_realtime_analyze_result_obj[sel_type];          
           g_stock_info_id_dict = showStockDailyInfo(stock_info_list);
 
           $('#span_current_type').html(type);
@@ -190,10 +180,11 @@ function btn_dispersion_info(item)
 
         function showStockDailyInfo(stock_info_list)
         {
+            if (stock_info_list == undefined)return;
+
             var temp_html = '';
             var stock_info_id_dict = {};
-            var idx = 0;
-
+            var idx = 0;          
             gCurrentPageStockUrlList = []; /* Clean Stock URL list */
 
             /* sort by Gross Spread (漲跌) */                      
@@ -268,8 +259,7 @@ function btn_dispersion_info(item)
                     var today_cp_html = '<span class="label label-default" style="display:block">' + 
                                         currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
                                         g_stock_all_obj[stockId].GS + '</span>';                                        
-                    
-                    debugger;
+                                        
                     //var tv_delta_str = parseInt(g_stock_all_obj[stockId].tv) -  Math.round(stockObj.result_TV.RTV);         
                     var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
                     var price_delta_p_str = (((price_delta/parseFloat(stockObj.result_StockInfo.CP))*100).toFixed(1)).toString();
@@ -284,7 +274,7 @@ function btn_dispersion_info(item)
                     var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
                }
                var rt_tv_html = g_stock_all_obj[stockId].tv;
-               debugger;
+               //debugger;
                TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
                temp_html = '<tr>' + 
                            '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
@@ -308,10 +298,7 @@ function btn_dispersion_info(item)
         function genTypeSelectInfo(typeList)
         {
             var html = '';
-            //console.dir(stockDateList);
-            //stockDateList.sort();
-            typeList.sort();
-            //console.dir(stockDateList);
+            typeList.sort();            
             for(type of typeList)
             {                
                 html += '<option>' + type + '</option>';
