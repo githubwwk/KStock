@@ -57,7 +57,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
 
 var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>; /* realtime stock price */
 var g_monitor_list_all = <%- JSON.stringify(monitor_list_all) %>;  /* monitor stock info object */ 
-var g_stock_info_list = g_monitor_list_all[0].monitorList;        
+var g_stock_info_list = g_monitor_list_all[0].monitorList;   /* Set first element to be init content */     
 var g_monitor_list_all_lookup_dict = {};
 
 function btn_dispersion_info(item)
@@ -360,22 +360,24 @@ function showStockDailyInfo(stock_info_list)
 
 	$(document).ready(function(){        
         
-        initHtmlContent(g_monitor_list_all);
-        showStockDailyInfo(g_stock_info_list);           
+        initHtmlContent(g_monitor_list_all);                
           		    
         function genMonitorSelectInfo(monitor_list_all)
         {  
             var html = '';            
             monitor_list_all.sort(function(a, b) {
-               return a.name > b.name;
+               //return a.name < b.name;
+               return a.name.localeCompare(b.name);
             });
 
-            for(monitor of monitor_list_all)
+            debugger;            
+            for(let i=0 ; i<monitor_list_all.length ; i++)
             {       
+                let monitor = monitor_list_all[i];
                 g_monitor_list_all_lookup_dict[monitor.name] = monitor;         
-                html += '<option>' + monitor.name + '</option>';                
+                html += '<option value="' + i +'">' + monitor.name + '</option>';                                
             } /* for */
-            $('#stock_monitor_sel').append(html);            
+            $('#stock_monitor_sel').append(html);                       
         }
 
         function initHtmlContent(monitor_list_all)
@@ -384,7 +386,9 @@ function showStockDailyInfo(stock_info_list)
            {
               g_monitor_list_all_lookup_dict[monitor.name] = monitor;  
            }
+           debugger;
            genMonitorSelectInfo(monitor_list_all);
+           showStockDailyInfo(monitor_list_all[0].monitorList); 
         } 
 
         $( "#stock_monitor_sel" ).change(function() {

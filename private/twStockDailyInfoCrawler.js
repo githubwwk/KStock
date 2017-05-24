@@ -25,6 +25,14 @@ var ENABLE_A05 = true;
 var ENABLE_A06 = true;
 var ENABLE_A07 = true;
 
+var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : false}, 
+                        {'api' : stockAnalyze_02, 'enable' : false},
+                        {'api' : stockAnalyze_03, 'enable' : true},
+                        {'api' : stockAnalyze_04, 'enable' : true},
+                        {'api' : stockAnalyze_05, 'enable' : true},
+                        {'api' : stockAnalyze_06, 'enable' : true},
+                        {'api' : stockAnalyze_07, 'enable' : true}];
+
 //******************************************
 // Global Variable
 //******************************************
@@ -203,14 +211,6 @@ function _f_getStockDatafromWeb(stockId, year, month, callback_web)
 
 var TV_TIMES_CONDITION = 1.5;
 
-/* 帶量超過5日均量1.5倍 */
-function stockAnalyze_01(stock_id, data_dict)
-{
-    let result = {};
-    
-    return result;
-} /* stockAnalyze_01 */
-
 function _f_genPriceAndTVSerialData(date_list, data_dict)
 {
     let result = {};
@@ -317,58 +317,75 @@ function _f_genMATV(date_list, data_dict)
 
 }
 
-/* 現貨價穿過MA60 */
-function stockAnalyze_02(date_list, data_dict, result_MA)
+//******************************************
+// stockAnalyze_01()
+//  => 多頭排列 P>MA5>MA10>MA20>MA60 
+//  => 空頭排列 P<MA5<MA10<MA20<MA60
+//******************************************
+function stockAnalyze_01(stock_id, data_dict)
 {
-   let result = {};
-   let date_key = date_list[0];
-   let temp_CP = data_dict[date_key].CP;
-   let temp_GS = data_dict[date_key].GS;
+   let type = 'stockDaily_A03';
+   let stockId = stockInfoObj.stockId;
+   let result_MA = stockInfoObj.result_MA;
+   let result_TV = stockInfoObj.result_TV;
 
-   if ((temp_CP > result_MA.MA60) && ((temp_CP - temp_GS) < result_MA.MA60)) 
-   {
-        console.log("[Key Date][N->P]:" + key);
-        console.log("[CP]" + data_dict[key].CP);
-        console.log("[GS]" + data_dict[key].GS);
-        console.log("[GSP]" + data_dict[key].GSP + '%');
-        console.log(result_MA);
-        //data_dict[key].TV_times = check_TV_times(0, data_dict, key_list);
 
-        result.keyMoment = true;
-        data_dict[key].type = 'N->P';
-        keyDate = key;
-   }
-   else if((temp_CP < result_MA.MA60) && ((temp_CP - temp_GS) > result_MA.MA60))  
-   { /* DOWN */
-        console.log("[Key Date][P->N]:" + key);
-        console.log("[CP]" + data_dict[key].CP);
-        console.log("[GS]" + data_dict[key].GS);
-        console.log("[GSP]" + data_dict[key].GSP + '%');
-        console.log(result_MA);
-        //data_dict[key].TV_times = check_TV_times(0, data_dict, key_list);
-        result.keyMoment = true;
-        data_dict[key].type = 'P->N';
-        keyDate = key;
-    }/* if-else */
-        
-    //result.stockDailyInfo = data_dict[keyDate];    
+   if ((result_MA.diff < 10) && (result_TV.RTV > (result_TV.RTVMA_03*1.3)) && (parseInt(result_TV.RTV) > 500))
+   {                     
+       console.log("[MA diff<0.5%]:"  + stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);        
+       if (gStockDailyAnalyzeResult[type] == undefined)
+       {
+           gStockDailyAnalyzeResult[type] = [];
+       }                       
+       gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
+   } /* if */
+} /* stockAnalyze_01 */
 
-    return result;
-}/* function stockAnalyze_02() */
-
-function stockAnalyze_03(stockInfoObj)
+//******************************************
+// stockAnalyze_02()
+// 現貨價穿過MA60
+//******************************************
+function stockAnalyze_02(stockInfoObj)
 {
+    let type = 'stockDaily_A03';
     let stockId = stockInfoObj.stockId;
     let result_MA = stockInfoObj.result_MA;
     let result_TV = stockInfoObj.result_TV;
+
+
     if ((result_MA.diff < 10) && (result_TV.RTV > (result_TV.RTVMA_03*1.3)) && (parseInt(result_TV.RTV) > 500))
     {                     
         console.log("[MA diff<0.5%]:"  + stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);        
-        if (gStockDailyAnalyzeResult['stockDaily_A03'] == undefined)
+        if (gStockDailyAnalyzeResult[type] == undefined)
         {
-            gStockDailyAnalyzeResult['stockDaily_A03'] = [];
+            gStockDailyAnalyzeResult[type] = [];
         }                       
-        gStockDailyAnalyzeResult['stockDaily_A03'].push(gStockDailyInfo[stockId]);
+        gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
+    } /* if */
+
+}/* function stockAnalyze_02() */
+
+
+//******************************************
+// stockAnalyze_07()
+// 均線糾結
+//******************************************
+function stockAnalyze_03(stockInfoObj)
+{
+    let type = 'stockDaily_A03';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;
+
+
+    if ((result_MA.diff < 10) && (result_TV.RTV > (result_TV.RTVMA_03*1.3)) && (parseInt(result_TV.RTV) > 500))
+    {                     
+        console.log("[MA diff<0.5%]:"  + stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);        
+        if (gStockDailyAnalyzeResult[type] == undefined)
+        {
+            gStockDailyAnalyzeResult[type] = [];
+        }                       
+        gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
     } /* if */
 
 } /* stockAnalyze_03() */
@@ -763,55 +780,13 @@ function _f_stockDailyChecker(stockId)
     //gStockDailyInfo[stockId].result_CPTVserial = result_CPTVserial;
     gStockDailyInfo[stockId].result_StockInfo = result_StockInfo;
 
-    if (ENABLE_A02)
+    for (let stockAnalyzeAPIobj of stockAnalyzeAPIs)
     {
-      let result_check = stockAnalyze_02(date_list, data_dict, result_MA);
-
-      if (result_check.keyMoment == true)
-      {
-        //result_check.stockInfo = stockInfo;
-        console.dir(result_check);
-        writeCheckResultFile('A02', result_check);
-      }
+        if(stockAnalyzeAPIobj.enable)
+        {
+            stockAnalyzeAPIobj.api(gStockDailyInfo[stockId]);
+        } 
     }
-
-    if (ENABLE_A01)
-    {
-      let result_check = stockAnalyze_01(stockId, data_dict, true);
-
-      if (result_check.keyMoment == true)
-      {
-          //result_check.stockInfo = stockInfo;
-          console.dir(result_check);
-          writeCheckResultFile('A01', result_check);
-      }
-    }/* if */
-
-    /* A03 */
-    if (ENABLE_A03) 
-    {
-        stockAnalyze_03(gStockDailyInfo[stockId]);        
-    }/* if */ 
-
-    if (ENABLE_A04) 
-    {
-        stockAnalyze_04(gStockDailyInfo[stockId]);        
-    }/* if */ 
-
-    if (ENABLE_A05) 
-    {
-        stockAnalyze_05(gStockDailyInfo[stockId]);        
-    }/* if */    
-
-    if (ENABLE_A06) 
-    {
-        stockAnalyze_06(gStockDailyInfo[stockId]);        
-    }/* if */      
-
-    if (ENABLE_A07) 
-    {
-        stockAnalyze_07(gStockDailyInfo[stockId]);        
-    }/* if */  
 
 }/* stockDailyChecker() - END */
 
