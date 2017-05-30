@@ -163,13 +163,11 @@ function _f_showStockDailyInfo_v20(stockObj)
                  '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
                  '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
 
-   var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';
-
     try {
           var currentPrice = g_stock_all_obj[stockId].currentPrice;
-                       var today_cp_html = '<span class="label label-default" style="display:block">' + 
-                                        currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
-                                        g_stock_all_obj[stockId].GS + '</span>';  
+          var today_cp_html = '<span class="label label-default" style="display:block">' + 
+                               currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
+                               g_stock_all_obj[stockId].GS + '</span>';  
                                 
           var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
           var price_delta_p_str = (((price_delta/parseFloat(stockObj.result_StockInfo.CP))*100).toFixed(1)).toString();
@@ -343,11 +341,10 @@ function showStockDailyInfo(stock_info_list)
        }
 
        if ((stock.ver != undefined))
-       {
+       {          
           if(stock.ver == 'v2.0')
           {
-            /* For format v2.0 */          
-            
+            /* For format v2.0 */                      
             _f_showStockDailyInfo_v20(stock);
           }else{            
             _f_showStockDailyInfo_v10(stock);
@@ -369,8 +366,7 @@ function showStockDailyInfo(stock_info_list)
                //return a.name < b.name;
                return a.name.localeCompare(b.name);
             });
-
-            debugger;            
+                       
             for(let i=0 ; i<monitor_list_all.length ; i++)
             {       
                 let monitor = monitor_list_all[i];

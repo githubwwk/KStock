@@ -27,73 +27,51 @@ exports.gStockRealTimeAnalyzeResult = {};
 //******************************************
 // data_reconstruct()
 //******************************************
-function data_reconstruct(raw_data_list)
+function _f_stock_data_reconstruct(stockRtpObj)
 {
-    var organize_data_dict = {};  /* Put/Call Ratio dict */
-    var rank = 1;
-    var buy_type = 1;
-    var stock_list = [];
-
-    for (var i=2 ; i<raw_data_list[0].length; i ++)
-    {
-        var dataObj = {};
-        try {
-               
-            dataObj.stockId = raw_data_list[0][i];    /* Stock ID */
-            dataObj.stockName = raw_data_list[1][i];  /* Stock cname  */
-            dataObj.PRE = raw_data_list[2][i];      /* PRE 本益比 */
-            dataObj.YR = raw_data_list[3][i];     /* Yield rate 殖利率 */
-            dataObj.PBR = raw_data_list[4][i];   /* PBR(Price-Book Ratio) 股價淨值比 */
-                       
-            stock_list.push(dataObj);  /* Stock ID Key */                
-            
-
-        }catch(err){
-            console.log("ERROR get raw data fail!" + err)
-        } /* try-catch */
-                 
-    } /* for */
-    
-    organize_data_dict.stock_list = stock_list;
-        
-    return organize_data_dict;
+    var result = {};
+    try {
+        result.highPrice = stockRtpObj.h;
+        result.lowPrice = stockRtpObj.l;
+        result.currentPrice = stockRtpObj.z;  
+        result.tv = stockRtpObj.v;   /* Trading Volumn */
+        result.stockId = stockRtpObj.c;    
+        let ms_tlong = stockRtpObj.tlong;        
+        result.datetime = new moment(parseInt(ms_tlong)).format('YYYY-MM-DD HH:mm-ss');  
+    }catch(err){
+        console.log('ERROR - stockRealTimePrice getDatafromWeb()' + err);
+        console.dir(stockRtpObj);              
+    }    
+    return result;
 } /* function - stock_data_reconstruct */
 
-//******************************************
-// getDatafromWeb()
-//******************************************
-function getDatafromWeb(options, callback)
-{   
-    request( options, function (error, response, body) {
 
-        if (!error && response.statusCode == 200) {
-            
-            try {
-               let buffer = new Buffer(body);
-               let str = iconv.decode(buffer, 'utf8');           
+//******************************************
+// _f_getStockDatafromWeb()
+//******************************************
+function _f_getStockDatafromWeb(options, callback_web)
+{           
+    let stock_data_dict = {};
+    request( options, function (error, response, body) {          
+            if (!error && response.statusCode == 200) {
+                //console.log(body);
+                let stockObj = JSON.parse(body); 
+                
+                if (stockObj.msgArray == undefined){return callback_web(-1, error);}
 
-                var stockRealTimeObj = JSON.parse(body);                
-             
-                //console.dir(stockRealTimeObj);
-                var result = {};
-                result.highPrice = stockRealTimeObj.msgArray[0].h;
-                result.lowPrice = stockRealTimeObj.msgArray[0].l;
-                result.currentPrice = stockRealTimeObj.msgArray[0].z;  
-                result.tv = stockRealTimeObj.msgArray[0].v;   /* Trading Volumn */
-                result.stockId = stockRealTimeObj.msgArray[0].c;    
-                let ms_tlong = stockRealTimeObj.msgArray[0].tlong;        
-                result.datetime = new moment(parseInt(ms_tlong)).format('YYYY-MM-DD HH:mm-ss');  
-            } catch(err){
-                console.log('ERROR - stockRealTimePrice getDatafromWeb()' + err);
-                console.dir(options);
-                return callback('ERROR - stockRealTimePrice getDatafromWeb()' + err);                
+                stock_data_dict = _f_stock_data_reconstruct(stockObj.msgArray[0]); ///< data is a list.
+                return callback_web(null, stock_data_dict);
+            }else{
+                try {
+                    console.log("ERROR - _f_getStockDatafromWeb() statusCode:" + response.statusCode);    
+                    return callback_web(response.statusCode, error);
+                }catch(err){
+                    return callback_web(-1, error);
+                }
             }
-        }
-            
-        return callback(null, result);
+             
     });
 }
-
 //******************************************
 // getTwDate()
 //******************************************
@@ -133,75 +111,33 @@ function getCookie(callback_getcookie)
 }
 
 //******************************************
-// readStockPriceFromWeb
-//******************************************
-exports.readStockPriceFromWeb = function(stockid, callback_readPrice)
-{
-    console.log("readStockPriceFromWeb() StockId:" + stockid);
-    let options_default = {
-        url : '',
-        method: "GET",     
-        //headers: {'Cookie' : 'JSESSIONID=3278E47F1E44C7E414FD8FBAC2F6E7E9; _ga=GA1.3.360613230.1488807194; __utma=193825960.360613230.1488807194.1490979469.1491336371.21; __utmz=193825960.1490631663.15.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); JSESSIONID=872CA1FAAF045D62AB589040C5913BD1'}                     
-        headers:{}
-    };
-
-    let xtime = new moment().format('x'); /* Unix ms timestamp */    
-    //let xtime = new moment('2017-04-17 09:30:00', 'YYYY-MM-DD HH:mm:ss').format('x'); /* Unix ms timestamp */    
-    let stockId = stockid;
-    let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;
-    //var cookie_temp = 'JSESSIONID=3278E47F1E44C7E414FD8FBAC2F6E7E9; _ga=GA1.3.360613230.1488807194; __utma=193825960.360613230.1488807194.1490979469.1491336371.21; __utmz=193825960.1490631663.15.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); JSESSIONID=872CA1FAAF045D62AB589040C5913BD1'; 
-    let cookie_temp = '%COOKIE_STR%; _ga=GA1.3.360613230.1488807194; __utma=193825960.360613230.1488807194.1490979469.1491336371.21; __utmz=193825960.1490631663.15.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); %COOKIE_STR%'; 
-    //console.log(xtime);
-    //console.log(url); 
-
-    function exec(callback_exe)
-    {                          
-         let cookie = wait.for(getCookie); 
-         options_default.url = url;          
-         //options_default.headers.Cookie = replaceall(cookie_temp, '%COOKIE_STR%',cookie);   
-         options_default.headers.Cookie = cookie_temp.replace(/%COOKIE_STR%/g, cookie);     
-         try {
-             let data = wait.for(getDatafromWeb, options_default);          
-             callback_exe(null, data);        
-         }catch(err){
-             /* Do something for getDatafromWeb() error */
-         }
-         
-    } /* readStockPriceFromWeb() */
-
-    wait.launchFiber(exec, callback_readPrice);
-};
-
-//******************************************
 // _f_readAllStockPriceFromWeb
 //******************************************
 function _f_readAllStockPriceFromWeb(stockid_list, callback_readPrice)
 {    
+    
     let options_default = {
         url : '',
         method: "GET",             
         headers:{}
     };
 
-    let xtime = new moment().format('x'); /* Unix ms timestamp */           
-    //let xtime = new moment('2017-04-17 09:30:00', 'YYYY-MM-DD HH:mm:ss').format('x'); /* Unix ms timestamp, for testing */  
-    let cookie_temp = '%COOKIE_STR%; _ga=GA1.3.360613230.1488807194; __utma=193825960.360613230.1488807194.1490979469.1491336371.21; __utmz=193825960.1490631663.15.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); %COOKIE_STR%'; 
-    
-
+    let xtime = new moment().format('x'); /* Unix ms timestamp */               
+    //let cookie_temp = '%COOKIE_STR%; _ga=GA1.3.360613230.1488807194; __utma=193825960.360613230.1488807194.1490979469.1491336371.21; __utmz=193825960.1490631663.15.7.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); %COOKIE_STR%'; 
+    let cookie_temp = '%COOKIE_STR%; __utma=193825960.360613230.1488807194.1492798024.1493652322.29; __utmz=193825960.1492798024.28.13.utmcsr=123.194.172.32:3000|utmccn=(referral)|utmcmd=referral|utmcct=/; _ga=GA1.3.360613230.1488807194; %COOKIE_STR%';
     function exec(callback_exe)
     {                          
-         let cookie = wait.for(getCookie);                    
-         //options_default.headers.Cookie = replaceall(cookie_temp, '%COOKIE_STR%',cookie);   
+         let cookie = wait.for(getCookie);                             
          options_default.headers.Cookie = cookie_temp.replace(/%COOKIE_STR%/g, cookie);   
          let result = {};
 
          for (let stockId of stockid_list)
          { 
             console.log("Get RTP:" + stockId);
-            let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;     
+            let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;                 
             options_default.url = url; 
             try {
-                 let data = wait.for(getDatafromWeb, options_default);       
+                 let data = wait.for(_f_getStockDatafromWeb, options_default);       
                  //console.dir(data);               
                  result[stockId] = data;                                         
             }catch(err){
@@ -424,7 +360,11 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
             console.dir(stockRealTimePrice[stockId]);
             continue;
           } /* try -catch */
-
+          if (temp_datetime == undefined){
+              console.log("ERROR - temp_datetime: undefined");
+              console.dir(stockRealTimePrice[stockId]);
+              continue;
+          }
           temp_datetime = temp_datetime.replace(re, '');
           
           if(_f_isDuringSpecialTime(temp_datetime, '09:05', '09:15'))
@@ -553,7 +493,7 @@ function _f_init_scheduler()
 　　let times = [];
     
     /* Every 10 minute to update stock price. */
-　　for(let i=1; i<60; i=i+3){
+　　for(let i=0; i<60; i=i+3){
 　　　　times.push(i);
 　　}
 　　rule.minute = times;    
@@ -583,4 +523,4 @@ exports.init = function()
     wait.launchFiber(exec, function(){});
 };
 
-
+//exports.init();

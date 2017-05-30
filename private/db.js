@@ -147,10 +147,15 @@ exports.stockMonitor_Remove = function(name, stockId, callback)
             for (var i=0 ; i< docs[0].monitorList.length ; i++)
             {
                 var monitorObj = JSON.parse(docs[0].monitorList[i]);
-                if (monitorObj.stockId == stockId)
-                {
-                    docs[0].monitorList.splice(i, 1);                    
-                }
+                try {
+                    if (monitorObj.stockId == stockId)
+                    {
+                        docs[0].monitorList.splice(i, 1);                    
+                    }
+                } catch(err){
+                  /* handle null object */
+                   docs[0].monitorList.splice(i, 1); 
+                }    
 
             }
             //docs[0].monitorList.push(dataObj.monitorList[0]);

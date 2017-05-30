@@ -17,16 +17,9 @@ var utility = require("./utility.js");
 //******************************************
 
 var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
-var ENABLE_A01 = false;
-var ENABLE_A02 = false;
-var ENABLE_A03 = true;
-var ENABLE_A04 = true;
-var ENABLE_A05 = true;
-var ENABLE_A06 = true;
-var ENABLE_A07 = true;
 
-var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : false}, 
-                        {'api' : stockAnalyze_02, 'enable' : false},
+var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : true}, 
+                        {'api' : stockAnalyze_02, 'enable' : true},
                         {'api' : stockAnalyze_03, 'enable' : true},
                         {'api' : stockAnalyze_04, 'enable' : true},
                         {'api' : stockAnalyze_05, 'enable' : true},
@@ -52,10 +45,13 @@ function _f_stock_data_reconstruct(raw_data_list)
 {
     let stock_data_dict = {};
 
+    if(raw_data_list == undefined){
+        return null;
+    } 
+
     for (let i=0 ; i < raw_data_list.length ; i ++)
     {       
        let stock_data = {};
-
 
        try {
             stock_data.date = raw_data_list[i][0];
@@ -322,22 +318,25 @@ function _f_genMATV(date_list, data_dict)
 //  => 多頭排列 P>MA5>MA10>MA20>MA60 
 //  => 空頭排列 P<MA5<MA10<MA20<MA60
 //******************************************
-function stockAnalyze_01(stock_id, data_dict)
+function stockAnalyze_01(stockInfoObj)
 {
-   let type = 'stockDaily_A03';
-   let stockId = stockInfoObj.stockId;
-   let result_MA = stockInfoObj.result_MA;
-   let result_TV = stockInfoObj.result_TV;
+    let type = 'stockDaily_A01';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;
+    let cp = stockInfoObj.result_StockInfo.CP;
 
-
-   if ((result_MA.diff < 10) && (result_TV.RTV > (result_TV.RTVMA_03*1.3)) && (parseInt(result_TV.RTV) > 500))
-   {                     
-       console.log("[MA diff<0.5%]:"  + stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);        
-       if (gStockDailyAnalyzeResult[type] == undefined)
-       {
-           gStockDailyAnalyzeResult[type] = [];
-       }                       
-       gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
+   if ((cp >= result_MA.MA5) && (result_MA.MA5 >= result_MA.MA10) && (result_MA.MA10 >= result_MA.MA20) && (result_MA.MA20 >= result_MA.MA60))
+   {                         
+      if (result_TV.RTV > 1000)
+      //if ((result_TV.RTV == result_TV.TV_min))
+      {            
+         if (gStockDailyAnalyzeResult[type] == undefined)
+         {
+            gStockDailyAnalyzeResult[type] = [];
+         }                       
+            gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);      
+       }         
    } /* if */
 } /* stockAnalyze_01 */
 
@@ -347,27 +346,42 @@ function stockAnalyze_01(stock_id, data_dict)
 //******************************************
 function stockAnalyze_02(stockInfoObj)
 {
-    let type = 'stockDaily_A03';
+    let type = 'stockDaily_A02';
     let stockId = stockInfoObj.stockId;
     let result_MA = stockInfoObj.result_MA;
     let result_TV = stockInfoObj.result_TV;
+    let cp = stockInfoObj.result_StockInfo.CP;
 
+    if (((cp > result_MA.MA60_list[0]) && (result_MA.MA1_list[1] <= result_MA.MA60_list[1]) && (result_TV.RTV > 1000)) ||
+         ((cp < result_MA.MA60_list[0]) && (result_MA.MA1_list[1] >= result_MA.MA60_list[1]) && (result_TV.RTV > 1000)))  
+    {        
 
-    if ((result_MA.diff < 10) && (result_TV.RTV > (result_TV.RTVMA_03*1.3)) && (parseInt(result_TV.RTV) > 500))
-    {                     
-        console.log("[MA diff<0.5%]:"  + stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);        
+        /* Check 季線上彎 */             
+        let isMatch = true;
+/* 
+        for (let i=0 ; i<5 ; i++)
+        {
+            if (parseFloat(result_MA.MA60_list[i]).toFixed(4) < parseFloat(result_MA.MA60_list[i+1]).toFixed(4)) {
+                isMatch = false;
+                break;
+            }           
+        } 
+*/
         if (gStockDailyAnalyzeResult[type] == undefined)
         {
             gStockDailyAnalyzeResult[type] = [];
-        }                       
-        gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
+        }  
+
+        if (isMatch) {                     
+            gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
+        }
     } /* if */
 
 }/* function stockAnalyze_02() */
 
 
 //******************************************
-// stockAnalyze_07()
+// stockAnalyze_03()
 // 均線糾結
 //******************************************
 function stockAnalyze_03(stockInfoObj)
@@ -392,13 +406,11 @@ function stockAnalyze_03(stockInfoObj)
 
 //******************************************
 // stockAnalyze_04()
+//  MA5 through MA20 
 //******************************************
 
 function stockAnalyze_04(stockInfoObj)
 {
-    /********************/ 
-    /* MA5 through MA20 */
-    /********************/
     let result_type = 'stockDaily_A04';
     let stockId = stockInfoObj.stockId;
     let result_MA = stockInfoObj.result_MA;
@@ -439,7 +451,7 @@ function stockAnalyze_04(stockInfoObj)
 
 //******************************************
 // stockAnalyze_05()
-// MA60 Bend down
+// MA60 Bend down 季線下彎
 //******************************************
 function stockAnalyze_05(stockInfoObj)
 {
@@ -457,13 +469,13 @@ function stockAnalyze_05(stockInfoObj)
        gStockDailyAnalyzeResult[result_type] = [];
     }                       
 
-    let MA_list_len = result_MA.MA60_list.length;        
-    console.log("MA list Len:" + MA_list_len);
-    console.log("RTCMA_03:" + result_TV.RTVMA_03);
+    //let MA_list_len = result_MA.MA60_list.length;        
+    //console.log("MA list Len:" + MA_list_len);
+    //console.log("RTCMA_03:" + result_TV.RTVMA_03);
 
     /* MA60 diff value */
     let diff_list = [];
-    for (let i=1 ; i<MA_list_len ; i++)
+    for (let i=1 ; i<result_MA.MA60_list.length ; i++)
     {
         //let diff = result_MA.MA60_list[i] -  result_MA.MA60_list[i+1];
         let diff = parseFloat(result_MA.MA60_list[i]) +  parseFloat(result_MA.MA60_list[i-1]);
@@ -676,6 +688,7 @@ function _f_genMA(date_list, data_dict)
     {
         try {
             let price = data_dict[date_list[posi+i]].CP;
+
             price_MA60 += price;
 
             if (i < 20) {
@@ -705,6 +718,7 @@ function _f_genMA(date_list, data_dict)
     result.MA20_list = [];
     result.MA10_list = [];
     result.MA5_list = [];
+    result.MA1_list = []; ///< every day price.
 
     result.MA60_list.push(MA60.toFixed(4));
     result.MA20_list.push(MA20.toFixed(4));
@@ -726,7 +740,8 @@ function _f_genMA(date_list, data_dict)
         result.MA60_list.push(temp_price_MA60.toFixed(4));
         result.MA20_list.push(temp_price_MA20.toFixed(4));
         result.MA10_list.push(temp_price_MA10.toFixed(4));
-        result.MA5_list.push(temp_price_MA5.toFixed(4));        
+        result.MA5_list.push(temp_price_MA5.toFixed(4));    
+        result.MA1_list.push(data_dict[date_list[i]].CP);       
    }
 
 
