@@ -8,6 +8,7 @@ var utility = require('./utility.js');
 var twStockRTP = require('./twStockRealTimePrice.js');
 var twStockDailyInfo = require('./twStockDailyInfoCrawler.js');
 var twStockDispersion = require('./twStockDispersion.js');
+var twStockTradingRecord = require('./twStockTrdingRecord.js');
 var wait = require('wait.for');
 //=====================================
 // API
@@ -36,8 +37,8 @@ exports.default = function(req, res){
        dateStr = req.query.date;
    }
 
-   var result = {};     
-   res.sendfile('./public/index.html');	
+   var result = {};        
+   res.sendFile('./public/index.html' , { root : __dirname + '\\..'});
 	                   
 };
 
@@ -309,7 +310,7 @@ exports.showStockRealTimeAnalysisResult = function(req, res)
         }else{
             let err = "ERROR - db.showStockRealTime() twStockRTP.gStockRealTimeAnalyzeResult is undefined!";
             console.log(err);
-            res.status(503).send(err);;
+            res.status(503).send(err);
         }	
    }/* exec */    
 
@@ -343,6 +344,51 @@ exports.lookupStockDispersion = function(req, res)
     twStockDispersion.getStockDispersion(stockId, function(err, result) {
             let stock_dispersion = result;
             res.end(JSON.stringify(stock_dispersion)); 
-    });
-    
-}
+    });   
+};
+
+//**********************************************************
+//  For Transaction Record 
+//**********************************************************
+exports.showAllTransactionRecord = function(req, res)
+{
+    let result;
+    function exec(callback_exec)
+    {
+        let dataObj = req.body.transaction;
+
+        try {         
+            let result = wait.for(db.stockTransaction_FindAll);
+            res.render( 'stockAllTradingRecord', {
+                        title : 'Stock Transaction',
+                        transaction_list : result,                                 
+                       });	             
+        } catch(err) {
+           res.status(503).send(err);        
+        }                   
+    }
+    wait.launchFiber(exec, function(){});
+};
+
+exports.showTransaction = function(req, res)
+{
+
+};
+
+exports.editTransaction = function(req, res)
+{
+    let reasonObj = twStockTradingRecord.getReasonOfTradingList();
+    try {                 
+         res.render( 'stockNewTradingRecord', {
+                     title : 'Stock Transaction',
+                     reasonObj : reasonObj,                                 
+                   });	             
+    } catch(err) {
+         res.status(503).send(err);        
+    }          
+};
+
+exports.updateTransaction = function(req, res)
+{
+
+};

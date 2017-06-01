@@ -20,6 +20,9 @@ var stockMonitorSchema = new Schema({
   monitorList: [String]
 });
 
+var stockTransactionSchema = new Schema({    
+  transaction: String
+});
 
 var TWSE = mongoose.model('TWSE', stockSchema);
 var FG = mongoose.model('FG', stockSchema);
@@ -30,6 +33,7 @@ var STOCK_DAILY_A02 = mongoose.model('stockDaily_A02', stockSchema2);
 var STOCK_DAILY_A01 = mongoose.model('stockDaily_A01', stockSchema2);
 var STOCK_MONITOR = mongoose.model('stockMonitor', stockMonitorSchema);
 var STOCK_PRE = mongoose.model('stock_pre', stockSchema2);
+var STOCK_TRANSACTION = mongoose.model('stock_Transaction', stockTransactionSchema);
 
 //**********************************************************
 //  For Analysis 01
@@ -101,7 +105,7 @@ exports.stockMonitor_FindAll = function (callback)
             return callback(err);
         }
       });   
-}
+};
 
 exports.stockMonitor_Update = function(dataObj, callback)
 {
@@ -177,7 +181,7 @@ exports.stockMonitor_GetMonitorNameList = function (callback)
         });
         return callback(null, keys);
       });   
-}
+};
 
 //**********************************************************
 //  For twStockTwsePRE.js
@@ -288,4 +292,56 @@ exports.stockDailyAnalyzeResult_Find = function(category, date, callback)
             return callback('Not data');
         }
     });
+};
+
+//**********************************************************
+// Stock Transaction
+//**********************************************************
+exports.stockTransaction_FindAll = function (callback)
+{    
+    STOCK_TRANSACTION.find().lean().exec(function (err, dataObj){
+        if (dataObj.length){
+            console.log('STOCK_TRANSACTION.find successful!');
+            return callback(null, dataObj);
+        }else{
+            return callback(err);
+        }
+      });   
+};
+
+exports.stockTransaction_Update = function(dataObj, callback)
+{
+     STOCK_TRANSACTION.find({_id : ObjectID(dataObj._id)}, function (err, docs) {
+            
+        if (docs.length){          
+            console.log('STOCK_TRANSACTION.find successful!');
+
+            docs[0].transaction = dataObj.transaction;
+            docs[0].save(function(err){
+                console.log("STOCK_TRANSACTION save:" + err);
+                return callback(null, err);
+            });            
+            
+        }else{
+            /* New */            
+            var stockTransaction = new STOCK_TRANSACTION(dataObj);
+            stockTransaction.save(function(err){
+                  console.log('STOCK_TRANSACTION Created Done');  
+                  console.log("ERROR - " + err);         
+                  return callback(null, err)
+            });                          
+        } /* if-else */
+    });    
+};
+
+exports.stockMonitor_Remove = function(dataObj, callback)
+{
+     STOCK_TRANSACTION.remove({_id: ObjectID(dataObj._id)}, function(err, result) {
+            if (err) {
+                console.log(err);
+                return callback(err);
+            }
+            console.log(result);
+            return callback(null);
+     });
 };

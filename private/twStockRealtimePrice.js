@@ -19,7 +19,7 @@ var stockInfoCrawler = require('./twStockDailyInfoCrawler.js');
 var gStockRealTimePrice = {};
 var gStockRealTimeAnalyzeResult = {}; /* Real-time analyze stock result. */
 var gLocalFileDbDir = 'daily_stock_price';
-var gStockAllInfoObj;  /* All stock information, name and id ....*/
+var gStockAllInfoObj = {};  /* All stock information, name and id ....*/
 
 exports.gStockRealTimePrice;  /* All stock real time price*/
 exports.gStockRealTimeAnalyzeResult = {};
@@ -41,7 +41,7 @@ function _f_stock_data_reconstruct(stockRtpObj)
     }catch(err){
         console.log('ERROR - stockRealTimePrice getDatafromWeb()' + err);
         console.dir(stockRtpObj);              
-    }    
+    }        
     return result;
 } /* function - stock_data_reconstruct */
 
@@ -50,22 +50,33 @@ function _f_stock_data_reconstruct(stockRtpObj)
 // _f_getStockDatafromWeb()
 //******************************************
 function _f_getStockDatafromWeb(options, callback_web)
-{           
-    let stock_data_dict = {};
+{               
+    
     request( options, function (error, response, body) {          
             if (!error && response.statusCode == 200) {
                 //console.log(body);
-                let stockObj = JSON.parse(body); 
-                
-                if (stockObj.msgArray == undefined){return callback_web(-1, error);}
-
-                stock_data_dict = _f_stock_data_reconstruct(stockObj.msgArray[0]); ///< data is a list.
-                return callback_web(null, stock_data_dict);
-            }else{
+                let stockObj;
                 try {
+                    stockObj = JSON.parse(body); 
+                    console.log("[stockObj.msgArray.length]:" + stockObj.msgArray.length);
+                } catch(err){
+                    console.log(body);
+                    console.dir(options);
+                    return callback_web(-1, error);
+                }
+                if (stockObj.msgArray == undefined){
+                    console.log("ERROR msgArray is undefined.");
+                    console.log(body);
+                    console.dir(options);                    
+                    return callback_web(-1, error);
+                }
+
+                return callback_web(null, stockObj);
+            }else{            
+                try {                    
                     console.log("ERROR - _f_getStockDatafromWeb() statusCode:" + response.statusCode);    
-                    return callback_web(response.statusCode, error);
-                }catch(err){
+                    return callback_web(-1, error);
+                }catch(err){                    
                     return callback_web(-1, error);
                 }
             }
@@ -96,16 +107,17 @@ function getTwDate(dateStr)
 // getCookie()
 //******************************************
 function getCookie(callback_getcookie)
-{
-
+{    
     let cookie = '';
     request( 'http://mis.twse.com.tw/stock/fibest.jsp?stock=', function (error, response, body) {          
             if (!error && response.statusCode == 200) {
                 let header_cookie = response.headers['set-cookie'][0];
                 let temp_list = header_cookie.split(';');
                 cookie = temp_list[0]
-                //console.dir(cookie);
+                console.log("DEBUG - Cookie:" + cookie);
+                //request.shouldKeepAlive = false;                
             }
+            
             return callback_getcookie(null, cookie);
     });
 }
@@ -114,8 +126,7 @@ function getCookie(callback_getcookie)
 // _f_readAllStockPriceFromWeb
 //******************************************
 function _f_readAllStockPriceFromWeb(stockid_list, callback_readPrice)
-{    
-    
+{        
     let options_default = {
         url : '',
         method: "GET",             
@@ -128,22 +139,42 @@ function _f_readAllStockPriceFromWeb(stockid_list, callback_readPrice)
     function exec(callback_exe)
     {                          
          let cookie = wait.for(getCookie);                             
-         options_default.headers.Cookie = cookie_temp.replace(/%COOKIE_STR%/g, cookie);   
-         let result = {};
+         options_default.headers.Cookie = cookie;        
 
-         for (let stockId of stockid_list)
+         let result = {};
+         
+         /* Onetime to get 100 stock price */
+         for (let i=0; i<stockid_list.length ; i+=100)
          { 
-            console.log("Get RTP:" + stockId);
-            let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_' + stockId + '.tw&json=1&delay=0&_=' + xtime;                 
-            options_default.url = url; 
-            try {
-                 let data = wait.for(_f_getStockDatafromWeb, options_default);       
-                 //console.dir(data);               
-                 result[stockId] = data;                                         
-            }catch(err){
-                  result[stockId] = undefined;                  
+            /* Gen multiple stock id string */ 
+            let url_stockId_str = ''; 
+            let onetime_len = ((stockid_list.length - i) >= 100)?100:(stockid_list.length - i);
+            for(let j=0; j<onetime_len ; j++){ 
+              url_stockId_str += 'tse_' + stockid_list[i+j] + '.tw|';
             }
-            wait.for(utility.sleepForMs, 25); /* mis.twse.com.tw limitation. Should add delay. */ 
+            url_stockId_str = url_stockId_str.slice(0, -1);
+
+            /* Gen again Cookie */
+            let cookie = wait.for(getCookie);                             
+            options_default.headers.Cookie = cookie; 
+            
+            let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=' + url_stockId_str + '&json=1&delay=0&_=' + xtime;                 
+                
+            options_default.url = url; 
+           
+                 let stockObj = wait.for(_f_getStockDatafromWeb, options_default);    
+                 for (let msg of stockObj.msgArray)
+                 {
+                    let stock_data_dict = _f_stock_data_reconstruct(msg);  
+                    if (stock_data_dict.stockId != undefined)
+                    {                               
+                        result[stock_data_dict.stockId] = stock_data_dict;  
+                    }else{
+                        console.log("ERROR - Invalid msg object!");
+                    }
+                 }                                                           
+
+            wait.for(utility.sleepForMs, 100); /* mis.twse.com.tw limitation. Should add delay. */ 
          } /* for */
          callback_exe(null, result);
     } /* readStockPrice() */
@@ -396,7 +427,7 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
           /* check Realtime TV */
           if((parseInt(stockRealTimePrice[stockId].tv)*times) > (parseInt(stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03)))
           {
-            let type = 'MA03_compare';
+            let type = 'TVMA03_compare_' + times.toString();
              if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
              {          
                 _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
@@ -426,6 +457,7 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
           }          
 
           /* Check MA5 through MA20 real-time */
+/*          
           let MA20 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA20);  
           let MA5 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA5);  
           let MA20_2nd =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA20);  
@@ -439,7 +471,7 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
                 _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
              }              
           }    
-
+*/
       //} catch(err){
       //    console.log("ERROR - Compare TVMA Error! (" + stockId + ')' + err);
       //} /* try-catch */           
@@ -471,7 +503,7 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
 
     /* 09:00 ~ 13:30 */
     /* get real time price */  
-    let testmode = true;
+    let testmode = false;
     getRealTimeStockPrice(stockInfoObj.stockIdList, function(err, result) 
     {
         gStockRealTimePrice = result;

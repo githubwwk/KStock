@@ -68,6 +68,10 @@
                 console.log("[Go] Stock Dispersion");
                 href = './show_stock_dispersion';                
             break;
+            case '交易記錄':
+                console.log("Transaction Record");
+                href = './show_all_transaction_list';
+            break;
             default:
                 return;
         } /*switch */
@@ -127,13 +131,17 @@
                 </li>                
                 <li>
                     <a href="">RealTime</a>
-                </li>   
+                </li>
+                <li>
+                    <a href="">交易記錄</a>
+                </li>    
                 <li>
                     <a href="">大股東持股</a>
                 </li>  
                 <li>
                     <a href="">外資八大條件判讀</a>
-                </li>                                 
+                </li>  
+                                               
             </ul>
         </div>
         <!-- /#sidebar-wrapper -->
