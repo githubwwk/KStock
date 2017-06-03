@@ -116,8 +116,7 @@ function getCookie(callback_getcookie)
                 cookie = temp_list[0]
                 console.log("DEBUG - Cookie:" + cookie);
                 //request.shouldKeepAlive = false;                
-            }
-            
+            }            
             return callback_getcookie(null, cookie);
     });
 }
@@ -415,7 +414,16 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
           } 
           
           try {
-             if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV == undefined){}
+             if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV == undefined ||
+                 stockInfoCrawler.gStockDailyInfo[stockId].result_MA == undefined)
+             {
+                continue;
+             }
+
+             /* 量太小不看 */
+             if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03 < 500){
+                continue; 
+             }              
           } 
           catch(err)
           {
@@ -423,38 +431,53 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
               console.log("Stock ID:" + stockId);                
               continue;
           }
-
+           
+          /*************************************************/   
           /* check Realtime TV */
+          /*************************************************/
           if((parseInt(stockRealTimePrice[stockId].tv)*times) > (parseInt(stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03)))
           {
-            let type = 'TVMA03_compare_' + times.toString();
-             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
-             {          
-                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
-             }
+            let type = 'TVMA03_compare_' + times.toString();          
+            _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                  
           }   
+          /*************************************************/          
 
-           /* Check through MA60 */ 
+          /*************************************************/
+          /* Check through MA60 */ 
+          /*************************************************/
           let yesterday_cp = stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.CP;
           let current_cp = parseFloat(stockRealTimePrice[stockId].currentPrice);
           let MA60 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA60);  
           if((yesterday_cp < MA60) && (current_cp >= MA60))
           {
-             let type = 'MA60_Through_UP';
-             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
-             {          
-                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
-             }              
+             let type = 'MA60_Through_UP';          
+             _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                                 
           } 
             
           if((yesterday_cp > MA60) && (current_cp <= MA60))
           {
-             let type = 'MA60_Through_DOWN';
-             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
-             {          
-                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
-             }              
+             let type = 'MA60_Through_DOWN';        
+             _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                               
           }          
+          /*************************************************/
+
+          /*************************************************/
+          /* Check Price is MAX/min during 60 days.
+          /*************************************************/
+          let DURATION_MAX =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MAX);  
+          let DURATION_MIN =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MIN);
+          if (current_cp > DURATION_MAX){
+             let type = 'P > MAX(60)';         
+             _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                                
+          } 
+         
+          if (current_cp < DURATION_MIN){
+             let type = 'P < MIN(60)';        
+            _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                                 
+          }           
+          /*************************************************/
+          console.log(stockId + " CP:" + current_cp + ' min:' + DURATION_MIN + ' max:' + DURATION_MAX);
+          console.log(stockId + " CP:" + current_cp + ' MA60:' + MA60);
 
           /* Check MA5 through MA20 real-time */
 /*          

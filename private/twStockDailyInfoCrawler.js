@@ -224,8 +224,6 @@ function _f_genPriceAndTVSerialData(date_list, data_dict)
     result.CP_SD = CP_SerialData;
     result.TV_SD = TV_SerialData;
     return result;
-
-
 }
 
 function _f_genMATV(stockId, date_list, data_dict)
@@ -234,7 +232,7 @@ function _f_genMATV(stockId, date_list, data_dict)
 
     if(date_list.lenght < 60)
     {
-        return undefined;
+        return null;
     }
 
     try {
@@ -308,7 +306,7 @@ function _f_genMATV(stockId, date_list, data_dict)
 
     } catch(err){
           console.log("ERROR - _f_genMATV()" + err);
-          result = undefined;
+          result = null;
     }
    return result;
 
@@ -629,7 +627,7 @@ function _f_getRecentSixMonthData(stockId)
     // Get 6 month stock data
     //*********************************
     let data_dict = {};
-    for(let i=0 ; i<6 ; i++ )
+    for(let i=0 ; i<9 ; i++ )
     {
         let data_month_int = parseInt(MONTH) - i;
         let data_year_int = parseInt(YEAR);
@@ -674,23 +672,28 @@ function _f_genMA(stockId, date_list, data_dict)
     let price_MA60 = 0;
     let price_MA20 = 0;
     let price_MA10 = 0;
-    let price_MA5 = 0;
-    let check_days = 60;
-    let MA_LIST_LEN = 30;
+    let price_MA5 = 0;    
+    let MA_LIST_LEN = 60;
+    let check_max_MA_days = 60;
+    let MAX = 0;
+    let MIN = 0;
 
-    if (date_list.length < (check_days + MA_LIST_LEN))
+    if (date_list.length < (check_max_MA_days + MA_LIST_LEN))
     {
            /* W/o valid data over 60 */
+           console.log("ERROR -StockId:" + stockId);
            console.log("ERROR calMA() - date_list.length:" + date_list.length);
            return null;
     }
 
-    for(let i=0 ; i<check_days ; i++)
+    for(let i=0 ; i<check_max_MA_days ; i++)
     {
         try {
             let price = data_dict[date_list[posi+i]].CP;
 
-            price_MA60 += price;
+            if (i < 60) {
+                price_MA60 += price;
+            }
 
             if (i < 20) {
                 price_MA20 += price;
@@ -743,13 +746,31 @@ function _f_genMA(stockId, date_list, data_dict)
         result.MA10_list.push(temp_price_MA10.toFixed(4));
         result.MA5_list.push(temp_price_MA5.toFixed(4));
         result.MA1_list.push(data_dict[date_list[i]].CP);
-   }
 
+        /* get MAX price during MA_LIST_LEN(30) */
+        let cp = data_dict[date_list[i]].CP;
+        /* init */
+        if(MIN == 0 && MAX == 0)
+        {
+            MIN = cp;
+            MAX = cp;
+        }
+
+        if ((cp != 0) && (cp > MAX)){
+            MAX = cp;
+        }        
+
+        if ((cp != 0) && (cp < MIN)){
+            MIN = cp;
+        }
+    } /*for */
 
     result.MA60 = MA60.toFixed(4);
     result.MA20 = MA20.toFixed(4);
     result.MA10 = MA10.toFixed(4);
     result.MA5 = MA5.toFixed(4);
+    result.MAX = MAX;
+    result.MIN = MIN;
 
     let temp_MA_list = [];
     temp_MA_list.push(MA60);
@@ -774,17 +795,23 @@ function _f_stockDailyChecker(stockId)
 
     let date_list = _f_genDateList(data_dict);
 
-    if(date_list.length < 90)
+    if(date_list.length < 120)
     {
         /* calculate MA60 and gen 30 element to MA60_list */
         /* Cannot calculate MA60, so skip. */
+        console.log("WARNING - W/o enough data for analyzing." + stockId);
         return;
     }
     //console.log("DEBUG - [StockId]:" + stockId + " [Len of data_dic]:" + date_list.length);
 
     gStockDailyInfo[stockId] = {};
-    let result_MA = _f_genMA(stockId, date_list, data_dict);
+    let result_MA = _f_genMA(stockId, date_list, data_dict);    
     let result_TV = _f_genMATV(stockId, date_list, data_dict);
+    if((result_MA == null) || (result_TV == null)){
+        /* Skip, not enough data len. */
+        return;
+    }
+
     let result_CPTVserial = _f_genPriceAndTVSerialData(date_list, data_dict);
     let result_StockInfo = data_dict[date_list[0]];
 

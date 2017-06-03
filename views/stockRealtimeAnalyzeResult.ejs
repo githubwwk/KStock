@@ -55,12 +55,15 @@ function btn_dispersion_info(item)
   var stockId = item.value;
 	let URL = '/lookup_stock_dispersion';
   $('#dispersion_chart').empty();	
-
+  let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
+  let title = stockName + ' (' + stockId + ')';
+  $('#dispersion-modal-title').text(title);  
+  
   try { 
       $('#AR_Modal').modal('show');  
       $.get(URL, { stockId: stockId}, function(data){	       
           stock_dispersion = JSON.parse(data);
-          show_dispersion_chart(stock_dispersion, 'ar_dispersion_chart');           
+          show_dispersion_chart(stock_dispersion, 'ar_dispersion_chart');                                      
     });	
   }catch (err){
     alert('Error!');
@@ -281,7 +284,7 @@ function btn_dispersion_info(item)
                            '<td>' + stockObj.stockInfo.stockName + '</td>' +
                            '<td>' + today_cp_html + '</td>' + 
                            '<td>' + rt_tv_html + '</td>' + 
-                           '<td>' + price_delta_html + '</td>' + 
+                           /* '<td>' + price_delta_html + '</td>' + */
                            '<td>' + cp_html + '</td>' +                                                                                  
                            '<td>' + parseFloat(stockObj.result_MA.MA60).toFixed(2) + '</td>' + 
                            '<td>' + Math.round(stockObj.result_TV.RTV) + '</td>' + 
@@ -355,7 +358,7 @@ function btn_dispersion_info(item)
         <th>Name</th>
         <th>即時價格</th>         
         <th>即時量</th>       
-        <th>Delta</th>    
+       <!-- <th>Delta</th> -->    
         <th>(前次)收盤價</th>                            
         <th>MA60</th>        
         <th>成交量</th>        
@@ -377,7 +380,7 @@ function btn_dispersion_info(item)
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">大股東持股超過1000張</h4>
+        <h4 class="modal-title" id="dispersion-modal-title">大股東持股超過1000張</h4>
       </div>
       <div class="modal-body" >
         <div id="ar_dispersion_chart" style="width: 580px; height: 400px;"></div>      

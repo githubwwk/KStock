@@ -55,16 +55,21 @@ tr:nth-child(even) {background-color: #f2f2f2}
   <script type="text/javascript">
     
 
-var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>; /* realtime stock price */
+var g_stock_all_rtp_obj = <%- JSON.stringify(srtpAllObj) %>; /* realtime stock price */
 var g_monitor_list_all = <%- JSON.stringify(monitor_list_all) %>;  /* monitor stock info object */ 
 var g_stock_info_list = g_monitor_list_all[0].monitorList;   /* Set first element to be init content */     
 var g_monitor_list_all_lookup_dict = {};
+var g_stock_info_id_dict = {}; /* All stock object, key is stockid */
 
 function btn_dispersion_info(item)
 {
   var stockId = item.value;
 	let URL = '/lookup_stock_dispersion';
   $('#dispersion_chart').empty();
+  debugger;
+  let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
+  let title = stockName + ' (' + stockId + ')';
+  $('#dispersion-modal-title').text(title);
 
   try { 
       $('#monitor_Modal').modal('show');  
@@ -119,7 +124,7 @@ function btn_remove_monitor(item)
 function _f_showStockDailyInfo_v20(stockObj)
 {            
    var stockId = stockObj.stockId;                  
-
+   
    /*********************************************/
    /* Special condition */
    
@@ -164,12 +169,12 @@ function _f_showStockDailyInfo_v20(stockObj)
                  '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
 
     try {
-          var currentPrice = g_stock_all_obj[stockId].currentPrice;
+          var currentPrice = g_stock_all_rtp_obj[stockId].currentPrice;
           var today_cp_html = '<span class="label label-default" style="display:block">' + 
-                               currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
-                               g_stock_all_obj[stockId].GS + '</span>';  
+                               currentPrice + '<br>' + '('  + g_stock_all_rtp_obj[stockId].GSP +'%) '+ 
+                               g_stock_all_rtp_obj[stockId].GS + '</span>';  
                                 
-          var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
+          var price_delta = (parseFloat(g_stock_all_rtp_obj[stockId].currentPrice) - parseFloat(stockObj.result_StockInfo.CP));
           var price_delta_p_str = (((price_delta/parseFloat(stockObj.result_StockInfo.CP))*100).toFixed(1)).toString();
           var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';
 
@@ -275,14 +280,14 @@ function _f_showStockDailyInfo_v10(stock)
                          '<span class="label label-success">' + stockObj.stockDailyInfo.CP + '</span>':
                          '<span class="label label-danger">' + stockObj.stockDailyInfo.CP + '</span>';
 
-           //var today_cp_html = '<span class="label label-default">' + g_stock_all_obj[stockId].currentPrice + '</span>';          
+           //var today_cp_html = '<span class="label label-default">' + g_stock_all_rtp_obj[stockId].currentPrice + '</span>';          
                    try {
-                       var currentPrice = g_stock_all_obj[stockId].currentPrice;                        
+                       var currentPrice = g_stock_all_rtp_obj[stockId].currentPrice;                        
                        var today_cp_html = '<span class="label label-default" style="display:block">' + 
-                                        currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
-                                        g_stock_all_obj[stockId].GS + '</span>';                              
+                                        currentPrice + '<br>' + '('  + g_stock_all_rtp_obj[stockId].GSP +'%) '+ 
+                                        g_stock_all_rtp_obj[stockId].GS + '</span>';                              
 
-                        var price_delta = (parseFloat(g_stock_all_obj[stockId].currentPrice) - parseFloat(stockObj.stockDailyInfo.CP));
+                        var price_delta = (parseFloat(g_stock_all_rtp_obj[stockId].currentPrice) - parseFloat(stockObj.stockDailyInfo.CP));
                         var price_delta_p_str = (((price_delta/parseFloat(stockObj.stockDailyInfo.CP))*100).toFixed(1)).toString();
                         var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';
 
@@ -332,9 +337,10 @@ function showStockDailyInfo(stock_info_list)
     //var idx = 0;  
      $('#stock_info_tbl_body').empty();
     for (var stock of stock_info_list)
-    {
+    {       
        stock = JSON.parse(stock);         
-       
+       g_stock_info_id_dict[stock.stockId] = stock;
+         
        if (stock == undefined){
          /* Skip */
          continue;
@@ -454,7 +460,7 @@ function showStockDailyInfo(stock_info_list)
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Modal Header</h4>
+        <h4 class="modal-title" id="dispersion-modal-title">Modal Header</h4>
       </div>
       <div class="modal-body" >
         <div id="dispersion_chart" style="width: 580px; height: 400px;"></div>      

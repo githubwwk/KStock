@@ -334,7 +334,7 @@ exports.stockTransaction_Update = function(dataObj, callback)
     });    
 };
 
-exports.stockMonitor_Remove = function(dataObj, callback)
+exports.stockTransaction_Remove = function(dataObj, callback)
 {
      STOCK_TRANSACTION.remove({_id: ObjectID(dataObj._id)}, function(err, result) {
             if (err) {

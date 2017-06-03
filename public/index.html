@@ -36,9 +36,10 @@
 
     $('li a').click(function (e) {
         e.preventDefault();
-        //console.log($(this).text());
-        //alert($(this).find("a").text());                        
-        var menu_button_event = $(this).text();
+        
+        //var menu_button_event = $(this).text();
+        var menu_button_event = $(this).attr('id');
+        
         var href = '';
         switch(menu_button_event)
         {
@@ -60,15 +61,15 @@
                 console.log('Real Time Stock');
                 href = './show_stock_realtime';
             break;
-            case '外資八大條件判讀':  
+            case 'FG8Index':  
                 console.log('FG 8 Index Check');
                 href = './show_fg8index_check';             
             break;
-            case '大股東持股':
+            case 'Dispersion':
                 console.log("[Go] Stock Dispersion");
                 href = './show_stock_dispersion';                
             break;
-            case '交易記錄':
+            case 'Trading':
                 console.log("Transaction Record");
                 href = './show_all_transaction_list';
             break;
@@ -105,53 +106,29 @@
                         KStock Server
                     </a>
                 </li>
-                <li>
-                    <a href="">A01</a>
-                </li>
-                <li>
-                    <a href="">A02</a>
-                </li>
-                <li>
-                    <a href="">A03</a>
-                </li>     
-                <li>
-                    <a href="">A04</a>
-                </li>    
-                <li>
-                    <a href="">A05</a>
-                </li>  
-                <li>
-                    <a href="">A06</a>
-                </li>     
-                <li>
-                    <a href="">A07</a>
-                </li>                                                                      
-                <li>
-                    <a href="">Monitor</a>
-                </li>                
-                <li>
-                    <a href="">RealTime</a>
-                </li>
-                <li>
-                    <a href="">交易記錄</a>
-                </li>    
-                <li>
-                    <a href="">大股東持股</a>
-                </li>  
-                <li>
-                    <a href="">外資八大條件判讀</a>
-                </li>  
-                                               
-            </ul>
+                <li><a href="" id="A01">A01 (均線多頭空頭排列)</a></li>                
+                <li><a href="" id="A02">A02 (穿過MA60)</a></li>                
+                <li><a href="" id="A03">A03 (均線糾結)</a></li>                     
+                <li><a href="" id="A04">A04 (MA5穿過MA20)</a></li>                    
+              <!--  <li><a href="" id="A05">A05</a></li>  -->
+                <li><a href="" id="A06">A06 (60日最低量)</a></li>                     
+                <li><a href="" id="A07">A07 (60日最高量)</a></li>                                                                                      
+                <li><a href="" id="Monitor">Monitor</a></li>                                
+                <li><a href="" id="RealTime">RealTime</a></li>                
+                <li><a href="" id="Trading">交易記錄</a></li>                    
+                <li><a href="" id="Dispersion">大股東持股</a></li>                  
+                <li><a href="" id="FG8Index">外資八大條件判讀</a></li>                                                                 
+            </ul>            
         </div>
+                 
         <!-- /#sidebar-wrapper -->
 
         <!-- Page Content -->
         <div id="page-content-wrapper">
             <div class="container-fluid">
-                <div class="row">                                                                 
+                <div class="row">               
                          <div class="col-lg-12">
-                             <a href="#menu-toggle" class="btn btn-warning" id="menu-toggle">Menu</a>
+                             <a href="#menu-toggle" class="btn btn-warning" id="menu-toggle">Menu 只要遵守交易策略，我一定能穩定獲利</a>
                          </div>   
                          <div class="col-lg-12"> 
                              <div id="content">
