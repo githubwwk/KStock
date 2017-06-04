@@ -87,8 +87,7 @@ function btn_pricechart_info(item)
       $('#PRICE_Modal').modal('show');  
       $.get(URL, { stockId: stockId}, function(data){	       
           let result = JSON.parse(data);
-          let stock_price_obj = {};
-          debugger;
+          let stock_price_obj = {};          
           stock_price_obj.MA1_list = result.MA1_list;
           stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
@@ -358,10 +357,10 @@ function btn_dispersion_info(item)
                            '<td>' + today_cp_html + '</td>' + 
                            '<td>' + price_delta_html + '</td>' + 
                            '<td>' + cp_html + '</td>' + 
-                           '<td>' + GS + '</td>' + 
+                           //'<td>' + GS + '</td>' + 
                            '<td>' + GSP + '</td>' + 
                            //'<td>' + type + '</td>' +                                                       
-                           '<td>' + parseFloat(stockObj.result_MA.MA60).toFixed(2) + '</td>' + 
+                           //'<td>' + parseFloat(stockObj.result_MA.MA60).toFixed(2) + '</td>' + 
                            /*
                            '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
                            '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
@@ -458,10 +457,10 @@ function btn_dispersion_info(item)
         <th align="right">現價</th>         
         <th align="right">Delta</th>    
         <th>(當時)收盤價</th>         
-        <th>(當時)漲跌</th>
+<!--    <th>(當時)漲跌</th> -->
         <th>(當時)漲跌幅</th>
 <!--    <th>Type</th> -->            
-        <th>MA60</th>
+<!--    <th>MA60</th> -->
 <!--    <th>MA20</th> -->
 <!--    <th>MA10</th> -->
 <!--    <th>MA5</th> -->

@@ -55,8 +55,7 @@ function btn_pricechart_info(item)
 {
   var stockId = item.value;
 	let URL = '/get_stock_price';
-  $('#dispersion_chart').empty();	
-  debugger;
+  $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
   let title = stockName + ' (' + stockId + ')';
   $('#price-modal-title').text(title);
@@ -65,9 +64,13 @@ function btn_pricechart_info(item)
       $('#PRICE_Modal').modal('show');  
       $.get(URL, { stockId: stockId}, function(data){	       
           let result = JSON.parse(data);
-          let stock_price_obj = result.MA1_list;
+          let stock_price_obj = {};          
+          stock_price_obj.MA1_list = result.MA1_list;
+          stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
-          stock_price_obj.reverse();
+          stock_price_obj.MA1_list.reverse();
+          stock_price_obj.MA60_list.reverse();
+
           if(_f_isDuringOpeningtime())
           {
             stock_price_obj.push(stockRtpObj.currentPrice);

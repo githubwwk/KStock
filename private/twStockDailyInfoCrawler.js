@@ -20,7 +20,7 @@ var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop ca
 
 var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : true},
                         {'api' : stockAnalyze_02, 'enable' : true},
-                        {'api' : stockAnalyze_03, 'enable' : true},
+                        {'api' : stockAnalyze_03, 'enable' : false},
                         {'api' : stockAnalyze_04, 'enable' : true},
                         {'api' : stockAnalyze_05, 'enable' : false},
                         {'api' : stockAnalyze_06, 'enable' : true},
