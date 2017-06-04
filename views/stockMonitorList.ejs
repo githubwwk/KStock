@@ -13,19 +13,12 @@ table {
   text-align:center;
 }
 
-table thead tr{
-    display:block;
+th {
+    height: 8px;
 }
 
-table th,table td{
-    width:100px;//fixed width
-}
-
-
-table  tbody{
-  display:block;
-  height:500px;
-  overflow:auto;//set tbody to auto
+table thead tr th{
+  text-align:center;
 }
 
 tr:nth-child(even) {background-color: #f2f2f2}
@@ -60,6 +53,42 @@ var g_monitor_list_all = <%- JSON.stringify(monitor_list_all) %>;  /* monitor st
 var g_stock_info_list = g_monitor_list_all[0].monitorList;   /* Set first element to be init content */     
 var g_monitor_list_all_lookup_dict = {};
 var g_stock_info_id_dict = {}; /* All stock object, key is stockid */
+
+function _f_isDuringOpeningtime()
+{
+    let today = moment().format('YYYY-MM-DD');
+    let sart_time = today +' 09:00';
+    let end_time = today +' 13:35';
+    return moment().isBetween(sart_time, end_time);
+}
+
+function btn_pricechart_info(item)
+{
+  var stockId = item.value;
+	let URL = '/get_stock_price';
+  $('#dispersion_chart').empty();	
+  debugger;
+  let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
+  let title = stockName + ' (' + stockId + ')';
+  $('#price-modal-title').text(title);
+
+  try { 
+      $('#PRICE_Modal').modal('show');  
+      $.get(URL, { stockId: stockId}, function(data){	       
+          let result = JSON.parse(data);
+          let stock_price_obj = result.MA1_list;
+          let stockRtpObj = result.stockRtpObj;
+          stock_price_obj.reverse();
+          if(_f_isDuringOpeningtime())
+          {
+            stock_price_obj.push(stockRtpObj.currentPrice);
+          }
+          show_stockprice_chart(stock_price_obj, 'ar_price_chart');           
+    });	
+  }catch (err){
+    alert('Error!' + err);
+  }	    
+} /* btn_dispersion_info */
 
 function btn_dispersion_info(item)
 {
@@ -164,6 +193,11 @@ function _f_showStockDailyInfo_v20(stockObj)
    var dispersion_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_dsps_btn_' + stockId + '" value="' +
                          stockId + '" onclick="btn_dispersion_info(this)"><span class="glyphicon glyphicon-info-sign"></span></button>';
 
+   var price_chart_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_price_btn_' + 
+                                   stockId + '" value="' + stockId + 
+                                   '" onclick="btn_pricechart_info(this)"><span class="glyphicon glyphicon-flash"></span></button>';
+
+
    var cp_html = (stockObj.result_StockInfo.GSP < 0) ?
                  '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
                  '<span class="label label-danger">' + stockObj.result_StockInfo.CP + '</span>';
@@ -203,7 +237,7 @@ function _f_showStockDailyInfo_v20(stockObj)
                        '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
                        '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
                        */
-                       '<td><span class="badge">' + TV_times + '</span></td>' +  
+                       '<td><span class="badge" style="font-size : 8px;">' + TV_times + '</span></td>' +  
                        '<td>' + Math.round(stockObj.result_TV.RTV) + '</td>' + 
                        '<td>' + Math.round(stockObj.result_TV.RTVMA_05) + '</td>' +                             
 
@@ -213,7 +247,7 @@ function _f_showStockDailyInfo_v20(stockObj)
                        '<td>' + stockObj.stockInfo.PBR + '</td>' + 
                        */
                        '<td>' + dataDateStr + '</td>' +                        
-                       '<td>' + remove_btn_html + dispersion_info_btn_html +'</td>' + 
+                       '<td>' + remove_btn_html + dispersion_info_btn_html + price_chart_info_btn_html + '</td>' + 
                        '</tr>';       
                               
            $('#stock_info_tbl_body').append(temp_html);
@@ -464,6 +498,27 @@ function showStockDailyInfo(stock_info_list)
       </div>
       <div class="modal-body" >
         <div id="dispersion_chart" style="width: 580px; height: 400px;"></div>      
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRICE_Modal -->
+<div id="PRICE_Modal" class="modal" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title" id="price-modal-title">Price Chart</h4>
+      </div>
+      <div class="modal-body" >
+        <div id="ar_price_chart" style="width: 580px; height: 400px;"></div>      
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

@@ -41,6 +41,9 @@ app.get('/show_transaction_detial', route.showTransaction);
 app.get('/edit_transaction_detial', route.editTransaction);
 app.post('/update_transaction_detial', route.updateTransaction);
 
+/* Price */
+app.get('/get_stock_price', route.getStockPrice);
+
 /* Other */
 app.get('/show_fg8index_check', route.showFG8IndexCheck);
 /************************************************/

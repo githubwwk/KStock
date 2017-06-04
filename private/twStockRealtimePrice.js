@@ -315,7 +315,6 @@ function getRealTimeStockPrice(stockid_list, callback)
 
         if (bGetRealTimeFromWeb)
         {
-
             _f_readAllStockPriceFromWeb(stockid_list, function(err, result){        
                 stockRealTimePrice = result;
             
@@ -558,6 +557,11 @@ function _f_init_scheduler()
         console.log('scheduleJob: updateTwStockTwsePRE()');
         _f_updateRealTimeStockPrice(gStockAllInfoObj);
     });
+}
+
+exports.getStockRealTimePrice= function(stockId)
+{
+    return gStockRealTimePrice[stockId];
 }
 
 //******************************************

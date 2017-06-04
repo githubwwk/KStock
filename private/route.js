@@ -392,3 +392,18 @@ exports.updateTransaction = function(req, res)
 {
 
 };
+
+//**********************************************************
+//  For Stock Price 
+//**********************************************************
+exports.getStockPrice = function(req, res)
+{
+    let stockId = req.query.stockId;
+    let stockDailyInfoObj = twStockDailyInfo.getStockPriceArray(stockId);
+    let stockRtpObj = twStockRTP.getStockRealTimePrice(stockId);
+    let result = {};
+    result.MA1_list = stockDailyInfoObj.result_MA.MA1_list;
+    result.MA60_list = stockDailyInfoObj.result_MA.MA60_list;
+    result.stockRtpObj = stockRtpObj
+    res.end(JSON.stringify(result));     
+};

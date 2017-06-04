@@ -22,7 +22,7 @@ var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : true},
                         {'api' : stockAnalyze_02, 'enable' : true},
                         {'api' : stockAnalyze_03, 'enable' : true},
                         {'api' : stockAnalyze_04, 'enable' : true},
-                        {'api' : stockAnalyze_05, 'enable' : true},
+                        {'api' : stockAnalyze_05, 'enable' : false},
                         {'api' : stockAnalyze_06, 'enable' : true},
                         {'api' : stockAnalyze_07, 'enable' : true}];
 
@@ -248,8 +248,8 @@ function _f_genMATV(stockId, date_list, data_dict)
          for (let i=0; i<=60 ; i++)
          {
              /* Get MAX and min during 60 days */
-             let tv =Math.round((data_dict[date_list[i]].TV)/1000);
-             if (tv == 0){
+             let tv = Math.round((data_dict[date_list[i]].TV)/1000);
+             if (tv == 0 || date_list[i] == '106/06/03'){ /* 6/3外資放假 skip*/
                  /* Skip incorrect TV data */                 
                  //console.log("ERROR: tv is 0: stock:" + stockId);
                  //console.dir(data_dict[date_list[i]]);
@@ -616,7 +616,7 @@ function writeCheckResultFile(typeName, stockObj)
 }
 
 //******************************************
-// _f_stockDailyChecker()
+// _f_getRecentSixMonthData()
 //******************************************
 function _f_getRecentSixMonthData(stockId)
 {
@@ -745,7 +745,7 @@ function _f_genMA(stockId, date_list, data_dict)
         result.MA20_list.push(temp_price_MA20.toFixed(4));
         result.MA10_list.push(temp_price_MA10.toFixed(4));
         result.MA5_list.push(temp_price_MA5.toFixed(4));
-        result.MA1_list.push(data_dict[date_list[i]].CP);
+        //result.MA1_list.push(data_dict[date_list[i]].CP);
 
         /* get MAX price during MA_LIST_LEN(30) */
         let cp = data_dict[date_list[i]].CP;
@@ -764,6 +764,15 @@ function _f_genMA(stockId, date_list, data_dict)
             MIN = cp;
         }
     } /*for */
+
+    /* Keep all price data */
+    for (let i=0 ; i<date_list.length ; i++)
+    {
+        if (data_dict[date_list[i]].CP != 0)
+        {
+            result.MA1_list.push(data_dict[date_list[i]].CP);
+        }
+    }
 
     result.MA60 = MA60.toFixed(4);
     result.MA20 = MA20.toFixed(4);
@@ -881,6 +890,11 @@ function _f_writeAnalyzeResultToDb(analyzeResultDict)
         });
     }
 }
+
+exports.getStockPriceArray = function(stockId)
+{
+    return gStockDailyInfo[stockId];
+};
 
 //******************************************
 //  Init()
