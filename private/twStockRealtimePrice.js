@@ -525,7 +525,7 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
 
     /* 09:00 ~ 13:30 */
     /* get real time price */  
-    let testmode = false;
+    let testmode = true;
     getRealTimeStockPrice(stockInfoObj.stockIdList, function(err, result) 
     {
         gStockRealTimePrice = result;

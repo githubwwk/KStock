@@ -69,7 +69,11 @@ function btn_pricechart_info(item)
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
   let title = stockName + ' (' + stockId + ')';
-  $('#price-modal-title').text(title);
+  //$('#price-modal-title').text(title);
+  var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
+  let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>';  
+  $('#price-modal-title').html('');
+  $('#price-modal-title').append(stock_url);
 
   try { 
       $('#PRICE_Modal').modal('show');  
@@ -79,13 +83,12 @@ function btn_pricechart_info(item)
           stock_price_obj.MA1_list = result.MA1_list;
           stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
-          stock_price_obj.MA1_list.reverse();
-          stock_price_obj.MA60_list.reverse();
-
           if(_f_isDuringOpeningtime())
           {
-            stock_price_obj.push(stockRtpObj.currentPrice);
+            stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);
           }
+          stock_price_obj.MA1_list.reverse();
+          stock_price_obj.MA60_list.reverse();
           show_stockprice_chart(stock_price_obj, 'ar_price_chart');           
     });	
   }catch (err){
@@ -200,6 +203,8 @@ function _f_showStockDailyInfo_v20(stockObj)
                                    stockId + '" value="' + stockId + 
                                    '" onclick="btn_pricechart_info(this)"><span class="glyphicon glyphicon-flash"></span></button>';
 
+   var fin_report_btn_html = '<a href="https://statementdog.com/analysis/tpe/' + stockId + '" class="btn btn-default btn-xs" role="button" target="_blank">' +
+                             '<span class="glyphicon glyphicon glyphicon-piggy-bank"></span></a>';
 
    var cp_html = (stockObj.result_StockInfo.GSP < 0) ?
                  '<span class="label label-success">' + stockObj.result_StockInfo.CP + '</span>':
@@ -249,7 +254,8 @@ function _f_showStockDailyInfo_v20(stockObj)
                        '<td>' + stockObj.stockInfo.PRE + '</td>' + 
                        '<td>' + stockObj.stockInfo.PBR + '</td>' + 
                        */
-                       '<td>' + dataDateStr + '</td>' +                        
+                       '<td>' + dataDateStr + '</td>' +   
+                       '<td>' + fin_report_btn_html + '</td>' +                     
                        '<td>' + remove_btn_html + dispersion_info_btn_html + price_chart_info_btn_html + '</td>' + 
                        '</tr>';       
                               
@@ -257,114 +263,6 @@ function _f_showStockDailyInfo_v20(stockObj)
 
            //idx ++;  
          
-}
-
-function _f_showStockDailyInfo_v10(stock)
-{
-           //console.dir(stock);
-           var stockObj = stock.stockObj;
-           var stockId = stock.stockId;                          
-
-           /*********************************************/
-           /* Special condition */
-           
-           try {
-              if ((parseFloat(stockObj.stockDailyInfo.TV_times.TV_times)*10) < 13)
-              {
-                  console.log("Skip:" + stockObj.stockInfo.stockName);
-                  console.log("Skip TV times:" + stockObj.stockDailyInfo.TV_times.TV_times);
-                  // Skip
-                  //continue;
-              }
-           }catch(err){
-              console.log("DEBUG - Err:" + err);
-              console.log("DEBUG - Stock Id:" + stockId);
-              console.dir(stockObj);
-           }   
-
-           if ((Math.round(stockObj.stockDailyInfo.TV/1000)) < 100)
-           {
-              console.log("Skip:" + stockObj.stockInfo.stockName);
-              console.log("Skip TV:" + Math.round(stockObj.stockDailyInfo.TV/1000));
-              // Skip
-              //continue;
-           }
-           /*********************************************/
-           
-
-           var dataDateTempList = stockObj.stockDailyInfo.date.split('/');
-           var dataDateStr =  dataDateTempList[1] + '-' + dataDateTempList[2]; /* MM/DD */
-
-           var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
-          
-           var type = (stockObj.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
-          
-           var GS = (stockObj.stockDailyInfo.GS < 0) ?
-                    '<font color=\"green\">' + stockObj.stockDailyInfo.GS + '</font>' :
-                    '<font color=\"red\">' + stockObj.stockDailyInfo.GS + '</font>';
-
-           var GSP = (stockObj.stockDailyInfo.GSP < 0) ?
-                    '<font color=\"green\">' + stockObj.stockDailyInfo.GSP + '%</font>' :
-                    '<font color=\"red\">' + stockObj.stockDailyInfo.GSP + '%</font>';
-
-           var remove_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_rm_btn_' + stockId + '" value="' +
-                             stockId + '" onclick="btn_remove_monitor(this)"><span class="glyphicon glyphicon-trash"></span></button>';
-
-           var dispersion_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_dsps_btn_' + stockId + '" value="' +
-                             stockId + '" onclick="btn_dispersion_info(this)"><span class="glyphicon glyphicon-info-sign"></span></button>';
- 
-           var cp_html = (stockObj.stockDailyInfo.GSP < 0) ?
-                         '<span class="label label-success">' + stockObj.stockDailyInfo.CP + '</span>':
-                         '<span class="label label-danger">' + stockObj.stockDailyInfo.CP + '</span>';
-
-           //var today_cp_html = '<span class="label label-default">' + g_stock_all_rtp_obj[stockId].currentPrice + '</span>';          
-                   try {
-                       var currentPrice = g_stock_all_rtp_obj[stockId].currentPrice;                        
-                       var today_cp_html = '<span class="label label-default" style="display:block">' + 
-                                        currentPrice + '<br>' + '('  + g_stock_all_rtp_obj[stockId].GSP +'%) '+ 
-                                        g_stock_all_rtp_obj[stockId].GS + '</span>';                              
-
-                        var price_delta = (parseFloat(g_stock_all_rtp_obj[stockId].currentPrice) - parseFloat(stockObj.stockDailyInfo.CP));
-                        var price_delta_p_str = (((price_delta/parseFloat(stockObj.stockDailyInfo.CP))*100).toFixed(1)).toString();
-                        var price_delta_str =  price_delta.toFixed(2).toString() + '<p> (' + price_delta_p_str + '%)';
-
-                        var price_delta_html = (price_delta >= 0)?
-                                              '<font color=\"red\"><b>' + price_delta_str + '</b></font>':
-                                              '<font color=\"green\"><b>' + price_delta_str + '</b></font>';                     
-                   } catch(err){
-                        var currentPrice = 'Error';
-                        var today_cp_html = '<span class="label label-default">' + currentPrice + '</span>';                                              
-                        var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
-                   }
-
-           temp_html = '<tr>' + 
-                       '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
-                       '<td>' + stockObj.stockInfo.stockName + '</td>' +                           
-                       '<td>' + today_cp_html + '</td>' + 
-                       '<td>' + price_delta_html + '</td>' + 
-                       '<td>' + cp_html + '</td>' + 
-                       '<td>' + GS + '</td>' + 
-                       '<td>' + GSP + '</td>' + 
-                       '<td>' + type + '</td>' +                                                        
-                       '<td>' + stockObj.stockDailyInfo.MA.MA60 + '</td>' + 
-                       /*
-                       '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
-                       '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
-                       '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
-                       */
-                       '<td><span class="badge">' + stockObj.stockDailyInfo.TV_times.TV_times + '</span></td>' +  
-                       '<td>' + Math.round(stockObj.stockDailyInfo.TV/1000) + '</td>' + 
-                       '<td>' + Math.round(stockObj.stockDailyInfo.TV_times.TVMA_05/1000) + '</td>' +                            
-
-                       /*  
-                       '<td>' + stockObj.stockInfo.YR + '</td>' + 
-                       '<td>' + stockObj.stockInfo.PRE + '</td>' + 
-                       '<td>' + stockObj.stockInfo.PBR + '</td>' + 
-                       */
-                       '<td>' + dataDateStr + '</td>' + 
-                       '<td>' + remove_btn_html + dispersion_info_btn_html + '</td>' + 
-                       '</tr>';              
-           $('#stock_info_tbl_body').append(temp_html);
 }
     
 function showStockDailyInfo(stock_info_list)
@@ -479,6 +377,7 @@ function showStockDailyInfo(stock_info_list)
         <th>本益比</th>
         <th>股價淨值比</th>       
 -->        
+        <th>財報</th>
         <th>Action</th>
       </tr>
     </thead>
@@ -518,7 +417,7 @@ function showStockDailyInfo(stock_info_list)
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title" id="price-modal-title">Price Chart</h4>
+        <h4 class="modal-title" id="price-modal-title"></h4>
       </div>
       <div class="modal-body" >
         <div id="ar_price_chart" style="width: 580px; height: 400px;"></div>      
