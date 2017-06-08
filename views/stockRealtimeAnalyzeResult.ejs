@@ -54,6 +54,7 @@ function _f_isDuringOpeningtime()
 function btn_pricechart_info(item)
 {
   var stockId = item.value;
+  gCurrentPriceChartStockId = stockId;
 	let URL = '/get_stock_price';
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
@@ -87,8 +88,8 @@ function btn_pricechart_info(item)
 } /* btn_dispersion_info */
 
 function btn_dispersion_info(item)
-{
-  var stockId = item.value;
+{    
+  var stockId = item.value;  
 	let URL = '/lookup_stock_dispersion';
   $('#dispersion_chart').empty();	
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
@@ -192,7 +193,12 @@ function btn_dispersion_info(item)
   var g_monitor_name_list = <%- JSON.stringify(monitor_name_list)%>;
   var g_realtime_analyze_result_obj = <%- JSON.stringify(RTAnalyzeResult) %>; 
   var gAnalyzeTypeList = Object.keys(g_realtime_analyze_result_obj);
-    
+ 
+  /* For previous and next botton (price chart) */
+  var gStockIdList = []; 
+  var gStockIdIndexDict = {}; 
+  var gCurrentPriceChartStockId = ''; 
+
   $(document).ready(function(){
         
         /* TODO: List all date for user */
@@ -204,19 +210,41 @@ function btn_dispersion_info(item)
         initHtmlContent();
         
         /* Reload current type data */
-        $( "#stock_analyze_type_sel" ).change(function() {
-          debugger;
+        $( "#stock_analyze_type_sel" ).change(function() {          
           let sel_type = $( "#stock_analyze_type_sel option:selected").text();       
           var stock_info_list = g_realtime_analyze_result_obj[sel_type];          
           g_stock_info_id_dict = showStockDailyInfo(stock_info_list);
-
-          $('#span_current_type').html(type);
+          $('#span_current_type').html('');
+          $('#span_current_type').html(sel_type);
         });
 
         $("#open_all_stock_url_btn").click(function() {
           window.open('https://stock.cnyes.com/market/TSE:3032:STOCK', '_blank');
         });   
         
+        $("#btn_previous_stock_price_chart").click(function() {  
+            debugger;        
+            console.log("btn_previous_stock_price_chart+++");
+            let currentStockId = gCurrentPriceChartStockId;             
+            let index = gStockIdIndexDict[currentStockId];                      
+            let pindex = ((index-1) < 0)?(gStockIdList.length-1):(index-1);                        
+            let pstockId = gStockIdList[pindex];
+            let item = {};
+            item.value = pstockId;
+            btn_pricechart_info(item);
+        });
+
+        $("#btn_next_stock_price_chart").click(function() {
+            console.log("btn_next_stock_price_chart+++");
+            let currentStockId = gCurrentPriceChartStockId;             
+            let index = gStockIdIndexDict[currentStockId];                      
+            let nindex = ((index+1) >= gStockIdList.length)?0:(index+1);                        
+            let nstockId = gStockIdList[nindex];
+            let item = {};
+            item.value = nstockId;
+            btn_pricechart_info(item);            
+        });
+
         function showStockDailyInfo(stock_info_list)
         {
             
@@ -240,12 +268,16 @@ function btn_dispersion_info(item)
             stock_info_list.sort(compare);
             
             /* Clean HTML content */
-            $('#stock_info_tbl_body').empty();
-            let i=0;
-            for (stockObj of stock_info_list)
+            $('#stock_info_tbl_body').empty();            
+            gStockIdList = [];            
+            gStockIdIndexDict = {};
+            for(let i=0 ; i<stock_info_list.length ; i++)
             {
-               i++;
+               let stockObj = stock_info_list[i];
                var stockId = stockObj.stockInfo.stockId;
+               gStockIdList[i] = stockId;              
+               gStockIdIndexDict[stockId] = i;
+
                stock_info_id_dict[stockId] = stockObj;
 
                /*********************************************/
@@ -385,7 +417,6 @@ function btn_dispersion_info(item)
 
 <!-- <span class="label label-default" id='span_description'><%=description%></span> -->
 <div class="row" id="div_description">
-
   <div class="col-sm-10">  
    <span class="label label-info" id='span_current_type' style="display:none"></span>
    <p>

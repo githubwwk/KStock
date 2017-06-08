@@ -50,8 +50,7 @@ function _f_stock_data_reconstruct(stockRtpObj)
 // _f_getStockDatafromWeb()
 //******************************************
 function _f_getStockDatafromWeb(options, callback_web)
-{               
-    
+{                   
     request( options, function (error, response, body) {          
             if (!error && response.statusCode == 200) {
                 //console.log(body);
@@ -161,17 +160,24 @@ function _f_readAllStockPriceFromWeb(stockid_list, callback_readPrice)
                 
             options_default.url = url; 
            
-                 let stockObj = wait.for(_f_getStockDatafromWeb, options_default);    
-                 for (let msg of stockObj.msgArray)
-                 {
-                    let stock_data_dict = _f_stock_data_reconstruct(msg);  
-                    if (stock_data_dict.stockId != undefined)
-                    {                               
-                        result[stock_data_dict.stockId] = stock_data_dict;  
-                    }else{
-                        console.log("ERROR - Invalid msg object!");
-                    }
-                 }                                                           
+            let stockObj;
+            try {
+                stockObj = wait.for(_f_getStockDatafromWeb, options_default);    
+            }catch(err){
+                /*server error, skip this round. */
+                wait.for(utility.sleepForMs, 100); /* mis.twse.com.tw limitation. Should add delay. */ 
+                continue;
+            }
+            for (let msg of stockObj.msgArray)
+            {
+                let stock_data_dict = _f_stock_data_reconstruct(msg);  
+                if (stock_data_dict.stockId != undefined)
+                {                               
+                    result[stock_data_dict.stockId] = stock_data_dict;  
+                }else{
+                    console.log("ERROR - Invalid msg object!");
+                }
+            } /* for */                                                           
 
             wait.for(utility.sleepForMs, 100); /* mis.twse.com.tw limitation. Should add delay. */ 
          } /* for */
@@ -344,10 +350,19 @@ function _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeRe
         analyzeResult[type] = [];                    
     }                
 
-    let lastCP = stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.CP;
-    let currentGP = parseFloat(srtpObj[stockId].currentPrice) - lastCP;                
-    srtpObj[stockId].GS = currentGP.toFixed(2);
-    srtpObj[stockId].GSP = ((currentGP/lastCP)*100).toFixed(1);                
+    let stockDailyInfo = stockInfoCrawler.gStockDailyInfo[stockId];          
+    let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');    
+    let srtp_date = moment(srtpObj[stockId].datetime).format("YYYY-MM-DD");
+    if (moment(stockinfo_date).isSame(srtp_date)){
+        srtpObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
+        srtpObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
+    }else {
+        let lastCP =stockDailyInfo.result_StockInfo.CP;
+        let currentGP = parseFloat(srtpObj[stockId].currentPrice) - lastCP;  
+        srtpObj[stockId].GS = currentGP.toFixed(2);
+        srtpObj[stockId].GSP = ((currentGP/lastCP)*100).toFixed(1);
+    }    
+              
     analyzeResult[type].push(stockInfoCrawler.gStockDailyInfo[stockId]);    
 }
 
@@ -465,12 +480,12 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
           /*************************************************/
           let DURATION_MAX =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MAX);  
           let DURATION_MIN =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MIN);
-          if (current_cp > DURATION_MAX){
+          if (current_cp >= DURATION_MAX){
              let type = 'P > MAX(60)';         
              _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                                
           } 
          
-          if (current_cp < DURATION_MIN){
+          if (current_cp <= DURATION_MIN){
              let type = 'P < MIN(60)';        
             _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                                 
           }           

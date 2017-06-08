@@ -77,6 +77,7 @@ function _f_isDuringOpeningtime()
 function btn_pricechart_info(item)
 {
   var stockId = item.value;
+  gCurrentPriceChartStockId = stockId;
 	let URL = '/get_stock_price';
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
@@ -213,6 +214,11 @@ function btn_dispersion_info(item)
   var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>; 
   var g_analyze_category = "<%- analyze_category %>";
 
+  /* For previous and next botton (price chart) */
+  var gStockIdList = []; 
+  var gStockIdIndexDict = {}; 
+  var gCurrentPriceChartStockId = '';
+
   $(document).ready(function(){
         
         /* TODO: List all date for user */
@@ -226,7 +232,6 @@ function btn_dispersion_info(item)
         /* Init HTML Content */  
         initHtmlContent();
         /* Init Date Select */                
-
 
         $( "#stock_date_sel" ).change(function() {
           g_stock_date = $( "#stock_date_sel option:selected").text();         
@@ -246,6 +251,29 @@ function btn_dispersion_info(item)
         $("#open_all_stock_url_btn").click(function() {
           window.open('https://stock.cnyes.com/market/TSE:3032:STOCK', '_blank');
         });   
+
+        $("#btn_previous_stock_price_chart").click(function() {  
+            debugger;        
+            console.log("btn_previous_stock_price_chart+++");
+            let currentStockId = gCurrentPriceChartStockId;             
+            let index = gStockIdIndexDict[currentStockId];                      
+            let pindex = ((index-1) < 0)?(gStockIdList.length-1):(index-1);                        
+            let pstockId = gStockIdList[pindex];
+            let item = {};
+            item.value = pstockId;
+            btn_pricechart_info(item);
+        });
+
+        $("#btn_next_stock_price_chart").click(function() {
+            console.log("btn_next_stock_price_chart+++");
+            let currentStockId = gCurrentPriceChartStockId;             
+            let index = gStockIdIndexDict[currentStockId];                      
+            let nindex = ((index+1) >= gStockIdList.length)?0:(index+1);                        
+            let nstockId = gStockIdList[nindex];
+            let item = {};
+            item.value = nstockId;
+            btn_pricechart_info(item);            
+        });
 
         function showStockDailyInfo(stock_info_list)
         {
@@ -269,11 +297,15 @@ function btn_dispersion_info(item)
             
             /* Clean HTML content */
             $('#stock_info_tbl_body').empty();
-            let i=0;
-            for (stockObj of stock_info_list)
+            gStockIdList = [];            
+            gStockIdIndexDict = {};
+            for(let i=0 ; i<stock_info_list.length ; i++)
             {
-               i++;
+               let stockObj = stock_info_list[i];
                var stockId = stockObj.stockInfo.stockId;
+               gStockIdList[i] = stockId;              
+               gStockIdIndexDict[stockId] = i;
+               
                stock_info_id_dict[stockId] = stockObj;
 
                /*********************************************/
@@ -523,6 +555,10 @@ function btn_dispersion_info(item)
         <h4 class="modal-title" id="price-modal-title"></h4>
       </div>
       <div class="modal-body" >
+        <div class="btn-group"  style="margin:0 auto;">
+          <button type="button" class="btn btn-default" id="btn_previous_stock_price_chart"><span class="glyphicon glyphicon-arrow-left"></span></button>
+          <button type="button" class="btn btn-default" id="btn_next_stock_price_chart"><span class="glyphicon glyphicon-arrow-right"></span></button> 
+        </div>        
         <div id="ar_price_chart" style="width: 580px; height: 400px;"></div>      
       </div>
       <div class="modal-footer">

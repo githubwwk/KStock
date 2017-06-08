@@ -26,13 +26,14 @@ function show_dispersion_chart(stock_dispersion, show_div_name)
 		        show : true,
 		        feature : {
 		            mark : {show: false},
-		            dataView : {show: true, readOnly: false},
+		            dataView : {show: false, readOnly: false},
 		            magicType : {show: false, type: ['line']},
 		            restore : {show: false},
 		            saveAsImage : {show: false}
 		        }
 		    },
 		    calculable : false,
+			animation : false,
 		    xAxis : [
 		        {
 		            type : 'category',
@@ -85,9 +86,7 @@ function show_dispersion_chart(stock_dispersion, show_div_name)
 }
 
 function show_stockprice_chart(stock_price_obj, show_div_name)
-{
-    debugger;
-
+{    
     var chart = document.getElementById(show_div_name);
     if (chart == null){
         let err = "ERROR! getElementById() Null:" + show_div_name;
@@ -114,6 +113,7 @@ function show_stockprice_chart(stock_price_obj, show_div_name)
 		        }
 		    },
 		    calculable : false,
+			animation : false,
 		    xAxis : [
 		        {
 		            type : 'category',
