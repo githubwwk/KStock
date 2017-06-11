@@ -377,7 +377,7 @@ function _f_analyze_realtime_stock(stockRealTimePrice)
   while (stockInfoCrawler.gStockDailyInfo == undefined)
   {
       console.log("Wait stockInfoCrawler.gStockDailyInfo...");
-      wait.for(utility.sleepForMs, 1000);
+      wait.for(utility.sleepForMs, 3000);
   }
  
   /* Check last stock id in list whether it is ready. */
