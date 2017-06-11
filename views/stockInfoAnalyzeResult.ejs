@@ -81,7 +81,9 @@ function btn_pricechart_info(item)
 	let URL = '/get_stock_price';
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
-  let title = stockName + ' (' + stockId + ')';
+  let market = g_stock_info_id_dict[stockId].stockInfo.market;
+
+  let title = market + ' ' + stockName + ' (' + stockId + ')';
   //$('#price-modal-title').text(title);
   var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
   let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>'; 
@@ -387,6 +389,7 @@ function btn_dispersion_info(item)
                }
 
                TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
+               debugger;
                temp_html = '<tr>' + 
                            '<td>#' + i + '</td>' + 
                            '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
@@ -394,24 +397,11 @@ function btn_dispersion_info(item)
                            '<td>' + today_cp_html + '</td>' + 
                            '<td>' + price_delta_html + '</td>' + 
                            '<td>' + cp_html + '</td>' + 
-                           //'<td>' + GS + '</td>' + 
                            '<td>' + GSP + '</td>' + 
-                           //'<td>' + type + '</td>' +                                                       
-                           //'<td>' + parseFloat(stockObj.result_MA.MA60).toFixed(2) + '</td>' + 
-                           /*
-                           '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
-                           '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
-                           '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
-                           */
                            '<td><span class="badge" style="font-size : 8px;" >' + TV_times + '</span></td>' +  
                            '<td>' + Math.round(stockObj.result_TV.RTV) + '</td>' + 
-                           '<td>' + Math.round(stockObj.result_TV.RTVMA_05) + '</td>' +                            
-                           /* 
-                           '<td>' + stockInfo.stockInfo.YR + '</td>' + 
-                           '<td>' + stockInfo.stockInfo.PRE + '</td>' + 
-                           '<td>' + stockInfo.stockInfo.PBR + '</td>' + 
-                           '<td>' + dataDateStr + '</td>' +
-                           */           
+                           '<td>' + Math.round(stockObj.result_TV.RTVMA_05) + '</td>' +                                                       
+                           '<td>' + stockObj.stockInfo.market + '</td>' +         
                            '<td>' + fin_report_btn_html + '</td>' +                 
                            '<td>' + add_btn_html + dispersion_info_btn_html + price_chart_info_btn_html+ '</td>' + 
                            '</tr>';
@@ -505,6 +495,7 @@ function btn_dispersion_info(item)
         <th>成交量比</th>
         <th>成交量</th>
         <th>成交量MA5</th>  
+        <th>市場</th>  
 <!--              
         <th>殖利率</th>
         <th>本益比</th>

@@ -133,8 +133,7 @@ function getDatafromWeb(request_header, dateStr, callback)
 //******************************************
 
 exports.getStockDispersion = function(stockId, callback)
-{
-   
+{   
     // console.log(tw_date);
 
     function exec(callback_exec)
@@ -215,7 +214,7 @@ exports.getStockDispersion = function(stockId, callback)
     }
 
     wait.launchFiber(exec, callback);
-}
+};
 
 /*
 exports.getStockDispersion('5269', function(err, result)

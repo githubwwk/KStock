@@ -1,7 +1,5 @@
-﻿
-"use strict"
+﻿"use strict"
 var request = require('request');
-//var fs = require('fs');
 var fs = require("fs-extra");
 var moment = require('moment');
 var wait = require('wait.for');
@@ -11,6 +9,7 @@ var merge = require('merge');
 var fs = require("fs-extra");
 var db = require("./db.js");
 var utility = require("./utility.js");
+var otcStockDailyInfoCrawler = require("./twOTCStockDailyInfoCrawler.js");
 
 //******************************************
 // Setting
@@ -77,11 +76,11 @@ function _f_stock_data_reconstruct(raw_data_list)
 } /* function - _f_stock_data_reconstruct */
 
 //******************************************
-// _f_getStockMonthData()
+// _f_readLastSyncTimeLog()
 //******************************************
 function _f_readLastSyncTimeLog(stockId)
 {
-    let lastSyncTime_dir = './db/dail_stock_info/' + stockId + '/lastSyncTime.log';
+    let lastSyncTime_dir = './db/daily_stock_info/' + stockId + '/lastSyncTime.log';
 
     try {
       var content = fs.readFileSync(lastSyncTime_dir);
@@ -97,7 +96,7 @@ function _f_writeLastSyncTimeLog(stockId)
     let lastSyncTimeObj = {};
     lastSyncTimeObj.time = moment().format('YYYY-MM-DD HH:mm:ss');
 
-    let lastSyncTime_dir = './db/dail_stock_info/' + stockId;
+    let lastSyncTime_dir = './db/daily_stock_info/' + stockId;
     fs.ensureDirSync(lastSyncTime_dir);
     let lastSyncTime_file = lastSyncTime_dir + '/lastSyncTime.log';
 
@@ -122,10 +121,24 @@ function _f_isAfterClosingtime()
     return moment().isAfter(end_time);
 }
 
-function _f_getStockMonthData(stockId, year, month)
+/******************************************/
+/* _f_getStockMonthData()                 */
+/* get daily infor from local disk or web */
+/******************************************/
+function _f_getStockMonthData(market, stockId, year, month)
 {
-    /* try open on local DB */
-    let db_dir = './db/dail_stock_info/';
+    /* try open on local DB */    
+    let db_dir = './db/daily_stock_info/';
+    let getStockfromWeb_Fn = _f_getStockDatafromWeb;
+    if (market == 'OTC'){        
+        getStockfromWeb_Fn = otcStockDailyInfoCrawler.getOtcStockInfoFromWeb;
+    }
+
+    /* if db folder is not exist, create new folder. */
+    if (!fs.existsSync(db_dir)) {
+       fs.mkdirSync(db_dir);
+    }
+
     let stock_db_file  = db_dir + stockId + '/' + year + '_' + month + '.db';
     let current_month = moment().month() + 1;
     let temp_data_dict;
@@ -136,7 +149,7 @@ function _f_getStockMonthData(stockId, year, month)
         if(lastSyncTimeObj == undefined)
         {
             /* First sync. */
-            temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);
+            temp_data_dict = wait.for(getStockfromWeb_Fn, stockId, year, month);
             _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict);
             _f_writeLastSyncTimeLog(stockId);
         }else{
@@ -145,14 +158,14 @@ function _f_getStockMonthData(stockId, year, month)
 
            if(moment(lastSyncTimeObj.time).isBefore(last_open_end_time))
            {
-                temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);
+                temp_data_dict = wait.for(getStockfromWeb_Fn, stockId, year, month);
                 _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict);
                 _f_writeLastSyncTimeLog(stockId);
            }else{
                 try{
                     temp_data_dict = _f_readDataDbFile(stock_db_file);
                 }catch(err){
-                    temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);
+                    temp_data_dict = wait.for(getStockfromWeb_Fn, stockId, year, month);
                     _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict);
                     _f_writeLastSyncTimeLog(stockId);
                 }
@@ -164,7 +177,7 @@ function _f_getStockMonthData(stockId, year, month)
         try{
             temp_data_dict = _f_readDataDbFile(stock_db_file);
         }catch(err){
-            temp_data_dict = wait.for(_f_getStockDatafromWeb, stockId, year, month);
+            temp_data_dict = wait.for(getStockfromWeb_Fn, stockId, year, month);
             _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict);
         }
     }
@@ -180,13 +193,11 @@ function _f_getStockDatafromWeb(stockId, year, month, callback_web)
     console.log("Get Data from Web:" + stockId + ' month:' + month);
     let dateStr = moment([parseInt(year), parseInt(month)-1, 1]).format("YYYYMMDD");
     let URL = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=' + dateStr +'&stockNo=' + stockId + '&_=';
-
-    let cookie = '';
+    
     let stock_data_dict = {};
     request( URL, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 let stockObj = JSON.parse(body);
-                //console.dir(cookie);
                 stock_data_dict = _f_stock_data_reconstruct(stockObj.data); ///< data is a list.
                 return callback_web(null, stock_data_dict);
             }else{
@@ -247,8 +258,17 @@ function _f_genMATV(stockId, date_list, data_dict)
          let tv_list = [];
          for (let i=0; i<=60 ; i++)
          {
-             /* Get MAX and min during 60 days */
-             let tv = Math.round((data_dict[date_list[i]].TV)/1000);
+             /* Get MAX and min during 60 days */             
+             let tv;
+             if(gAllStocksObj.otcStockIdList.indexOf(stockId) > -1)
+             {
+                /* OTC TV already div 1000 */ 
+                tv = Math.round(data_dict[date_list[i]].TV);
+                data_dict[date_list[i]].TV = data_dict[date_list[i]].TV*1000;
+             }else{
+                /* TSE format should div 1000 */ 
+                tv = Math.round((data_dict[date_list[i]].TV)/1000);
+             }   
              if (tv == 0 || date_list[i] == '106/06/03'){ /* 6/3外資放假 skip*/
                  /* Skip incorrect TV data */                 
                  //console.log("ERROR: tv is 0: stock:" + stockId);
@@ -307,9 +327,8 @@ function _f_genMATV(stockId, date_list, data_dict)
     } catch(err){
           console.log("ERROR - _f_genMATV()" + err);
           result = null;
-    }
-   return result;
-
+    }    
+    return result;
 }
 
 //******************************************
@@ -319,6 +338,8 @@ function _f_genMATV(stockId, date_list, data_dict)
 //******************************************
 function stockAnalyze_01(stockInfoObj)
 {
+    //console.dir(stockInfoObj);
+
     let type = 'stockDaily_A01';
     let stockId = stockInfoObj.stockId;
     let result_MA = stockInfoObj.result_MA;
@@ -326,7 +347,7 @@ function stockAnalyze_01(stockInfoObj)
     let cp = stockInfoObj.result_StockInfo.CP;
 
    if ((cp >= result_MA.MA5) && (result_MA.MA5 >= result_MA.MA10) && (result_MA.MA10 >= result_MA.MA20) && (result_MA.MA20 >= result_MA.MA60))
-   {
+   {      
       if (result_TV.RTV > 1000)
       //if ((result_TV.RTV == result_TV.TV_min))
       {
@@ -618,7 +639,7 @@ function writeCheckResultFile(typeName, stockObj)
 //******************************************
 // _f_getRecentSixMonthData()
 //******************************************
-function _f_getRecentSixMonthData(stockId)
+function _f_getRecentSixMonthData(market, stockId)
 {
     let MONTH = moment().month() + 1;
     let YEAR = moment().year();
@@ -643,7 +664,7 @@ function _f_getRecentSixMonthData(stockId)
         let temp_data_dict;
 
         try{
-            temp_data_dict = _f_getStockMonthData(stockId, query_year, query_month);
+            temp_data_dict = _f_getStockMonthData(market, stockId, query_year, query_month);
             data_dict = merge(data_dict, temp_data_dict); /* Merge Data Dict */
         } catch(err){
             console.log(err);
@@ -797,10 +818,14 @@ function _f_genMA(stockId, date_list, data_dict)
     return result;
 }
 
-function _f_stockDailyChecker(stockId)
+/******************************/
+/* market: TSE(上市) OTC(上櫃)                       
+/******************************/
+function _f_stockDailyChecker(market, stockId)
 {
+    console.log(market + ' ' + stockId);
     let daily_check_result = {};
-    let data_dict = _f_getRecentSixMonthData(stockId);
+    let data_dict = _f_getRecentSixMonthData(market, stockId);
 
     let date_list = _f_genDateList(data_dict);
 
@@ -818,6 +843,8 @@ function _f_stockDailyChecker(stockId)
     let result_TV = _f_genMATV(stockId, date_list, data_dict);
     if((result_MA == null) || (result_TV == null)){
         /* Skip, not enough data len. */
+        console.log("ERROR - result_MA is null");
+        console.log("ERROR - result_TV is null");
         return;
     }
 
@@ -826,7 +853,11 @@ function _f_stockDailyChecker(stockId)
 
     gStockDailyInfo[stockId].ver = 'v2.0';   /* From 2017.5.8 Konrad change format, so ejs has to check version for parsing. */
     gStockDailyInfo[stockId].stockId = stockId;
-    gStockDailyInfo[stockId].stockInfo = gAllStocksObj.stockObjDict[stockId];
+    if (market == 'TSE'){
+        gStockDailyInfo[stockId].stockInfo = gAllStocksObj.stockObjDict[stockId];
+    }else{
+        gStockDailyInfo[stockId].stockInfo = gAllStocksObj.otcStockObjDict[stockId];
+    }
     gStockDailyInfo[stockId].result_MA = result_MA;
     gStockDailyInfo[stockId].result_TV = result_TV;
     //gStockDailyInfo[stockId].result_CPTVserial = result_CPTVserial;
@@ -835,7 +866,7 @@ function _f_stockDailyChecker(stockId)
     for (let stockAnalyzeAPIobj of stockAnalyzeAPIs)
     {
         if(stockAnalyzeAPIobj.enable)
-        {
+        {            
             stockAnalyzeAPIobj.api(gStockDailyInfo[stockId]);
         }
     }
@@ -852,12 +883,28 @@ function _f_initStockIdList()
     for(let stock of stock_list)
     {
         stockid_list.push(stock.stockId);
+        stock.market = 'TSE';
         stockObjDict[stock.stockId] = stock;
     } /* for */
 
+    let otcStockObj = otcStockDailyInfoCrawler.getOtcStockList();
+
+    let otcStockIdList = [];
+    let otcStockObjDict = {};
+    for(let stock of otcStockObj)
+    {
+        otcStockIdList.push(stock.stockId);
+        stock.market = 'OTC';
+        otcStockObjDict[stock.stockId] = stock;
+    }
+
+    //console.dir(otcStockIdList);
+    //console.dir(otcStockObjDict);
     let retObj = {};
     retObj.stockIdList = stockid_list;
     retObj.stockObjDict = stockObjDict;
+    retObj.otcStockIdList = otcStockIdList;
+    retObj.otcStockObjDict = otcStockObjDict;
     return retObj;
 
 } /* _f_initStockIdList */
@@ -899,30 +946,41 @@ exports.getStockPriceArray = function(stockId)
 //******************************************
 //  Init()
 //******************************************
+exports.ready = false;
+
 exports.init = function()
 {
     function exec(callback_fiber)
     {
          gAllStocksObj = _f_initStockIdList();
          let stockid_list = gAllStocksObj.stockIdList;
+         let market = '';
 
+         market = 'TSE';
          //let stockId = '3665';
-         for (let i=0 ; i< stockid_list.length ; i++)
+         for (let i=0 ; i<stockid_list.length ; i++)
          {
              let stockId = stockid_list[i];
-             _f_stockDailyChecker(stockId);
+             _f_stockDailyChecker(market, stockId);
          }
+
+         market = 'OTC';         
+         for (let i=0 ; i<gAllStocksObj.otcStockIdList.length ; i++)
+         {
+            let stockId = gAllStocksObj.otcStockIdList[i];
+            _f_stockDailyChecker(market, stockId);            
+         }   
          exports.gStockDailyInfo = gStockDailyInfo;
          //console.dir(gStockDailyInfo);
          exports.gStockDailyAnalyzeResult = gStockDailyAnalyzeResult;
 
          /* Write result to DB */
+         //console.dir(gStockDailyAnalyzeResult);
          _f_writeAnalyzeResultToDb(gStockDailyAnalyzeResult);
 
+         exports.ready = true;
          return callback_fiber(null);
     } /*for */
 
     wait.launchFiber(exec, function(){});
 };
-
-
