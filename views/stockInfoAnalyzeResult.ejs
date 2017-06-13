@@ -84,7 +84,6 @@ function btn_pricechart_info(item)
   let market = g_stock_info_id_dict[stockId].stockInfo.market;
 
   let title = market + ' ' + stockName + ' (' + stockId + ')';
-  //$('#price-modal-title').text(title);
   var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
   let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>'; 
   $('#price-modal-title').html('');

@@ -61,22 +61,22 @@ function _f_getStockDatafromWeb(options, callback_web)
                 } catch(err){
                     console.log(body);
                     console.dir(options);
-                    return callback_web(-1, error);
+                    return callback_web(-64, error);
                 }
                 if (stockObj.msgArray == undefined){
                     console.log("ERROR msgArray is undefined.");
                     console.log(body);
                     console.dir(options);                    
-                    return callback_web(-1, error);
+                    return callback_web(-70, error);
                 }
 
                 return callback_web(null, stockObj);
             }else{            
                 try {                    
                     console.log("ERROR - _f_getStockDatafromWeb() statusCode:" + response.statusCode);    
-                    return callback_web(-1, error);
+                    return callback_web(-77, error);
                 }catch(err){                    
-                    return callback_web(-1, error);
+                    return callback_web(-79, error);
                 }
             }
              
@@ -103,20 +103,27 @@ function getTwDate(dateStr)
 }
 
 //******************************************
-// getCookie()
+// _f_getCookie()
 //******************************************
-function getCookie(callback_getcookie)
+function _f_getCookie(callback__f_getCookie)
 {    
     let cookie = '';
     request( 'http://mis.twse.com.tw/stock/fibest.jsp?stock=', function (error, response, body) {          
             if (!error && response.statusCode == 200) {
-                let header_cookie = response.headers['set-cookie'][0];
+                let header_cookie;
+                try {
+                    header_cookie = response.headers['set-cookie'][0];
+                }catch(err){                    
+                    console.log("ERROR - Get Cookie Fail!");
+                    console.dir(response);
+                    return callback__f_getCookie(-118);
+                }
                 let temp_list = header_cookie.split(';');
                 cookie = temp_list[0]
                 console.log("DEBUG - Cookie:" + cookie);
                 //request.shouldKeepAlive = false;                
             }            
-            return callback_getcookie(null, cookie);
+            return callback__f_getCookie(null, cookie);
     });
 }
 
@@ -136,7 +143,12 @@ function _f_readAllStockPriceFromWeb(market, stockid_list, callback_readPrice)
     let cookie_temp = '%COOKIE_STR%; __utma=193825960.360613230.1488807194.1492798024.1493652322.29; __utmz=193825960.1492798024.28.13.utmcsr=123.194.172.32:3000|utmccn=(referral)|utmcmd=referral|utmcct=/; _ga=GA1.3.360613230.1488807194; %COOKIE_STR%';
     function exec(callback_exe)
     {                          
-         let cookie = wait.for(getCookie);                             
+         let cookie;
+         try {
+            cookie = wait.for(_f_getCookie);                             
+         }catch(err){
+            cookie = 'E2704076D95D227EF1DE59542C116D5E'; /* hard code */
+         }
          options_default.headers.Cookie = cookie;        
 
          let result = {};
@@ -152,12 +164,17 @@ function _f_readAllStockPriceFromWeb(market, stockid_list, callback_readPrice)
             }
             url_stockId_str = url_stockId_str.slice(0, -1);
 
+            /* ifaccess too many times, http://mis.twse.com.tw 
+             *  will block my request and return warning message. 
+             */    
+            
             /* Gen again Cookie */
-            let cookie = wait.for(getCookie);                             
+            //let cookie = wait.for(_f_getCookie);                               
+           
             options_default.headers.Cookie = cookie; 
             
             let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=' + url_stockId_str + '&json=1&delay=0&_=' + xtime;                 
-            console.log("@@@@" + url);    
+            console.log("URL:" + url);    
             options_default.url = url; 
            
             let stockObj;
@@ -165,7 +182,8 @@ function _f_readAllStockPriceFromWeb(market, stockid_list, callback_readPrice)
                 stockObj = wait.for(_f_getStockDatafromWeb, options_default);    
             }catch(err){
                 /*server error, skip this round. */
-                wait.for(utility.sleepForMs, 100); /* mis.twse.com.tw limitation. Should add delay. */ 
+                console.log("ERROR - _f_getStockDatafromWeb() Exception!");
+                wait.for(utility.sleepForMs, 3000); /* mis.twse.com.tw limitation. Should add delay. */ 
                 continue;
             }
             for (let msg of stockObj.msgArray)
@@ -573,7 +591,7 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
         exports.gStockRealTimeAnalyzeResult = result_analyze;                       
         utility.timestamp('updateRealTimeStockPrice() Done!');
     }    
-}; 
+} 
 
 function _f_init_scheduler()
 {
@@ -589,14 +607,14 @@ function _f_init_scheduler()
     rule.dayOfWeek = [1, 2, 3, 4, 5]; /* Monday to Friday */
     let j = schedule.scheduleJob(rule, function(){
         console.log('scheduleJob: updateTwStockTwsePRE()');
-        _f_updateRealTimeStockPrice(market, gStockAllInfoObj);
+        _f_updateRealTimeStockPrice(gStockAllInfoObj);
     });
 }
 
 exports.getStockRealTimePrice= function(stockId)
 {
     return gStockRealTimePrice[stockId];
-}
+};
 
 //******************************************
 // Utility
@@ -618,3 +636,4 @@ exports.init = function()
     wait.launchFiber(exec, function(){});
 };
 
+exports.init();

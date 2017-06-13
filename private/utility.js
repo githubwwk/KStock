@@ -146,7 +146,6 @@ exports.lastOpenDateOfWeek = function()
     }
     else if(todayOfWeek == 1)
     {                
-
         if (moment().isBefore(start_time))
         {
             lastOpenDay = moment().subtract(subtractMappting[todayOfWeek], 'day').format('YYYY-MM-DD');

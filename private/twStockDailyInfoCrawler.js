@@ -19,7 +19,7 @@ var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop ca
 
 var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : true},
                         {'api' : stockAnalyze_02, 'enable' : true},
-                        {'api' : stockAnalyze_03, 'enable' : false},
+                        {'api' : stockAnalyze_03, 'enable' : true},
                         {'api' : stockAnalyze_04, 'enable' : true},
                         {'api' : stockAnalyze_05, 'enable' : false},
                         {'api' : stockAnalyze_06, 'enable' : true},
@@ -154,9 +154,9 @@ function _f_getStockMonthData(market, stockId, year, month)
             _f_writeLastSyncTimeLog(stockId);
         }else{
            let lastOpenDate = utility.lastOpenDateOfWeek();
-           let last_open_end_time = lastOpenDate +' 14:00';
-
-           if(moment(lastSyncTimeObj.time).isBefore(last_open_end_time))
+           let last_open_end_time = lastOpenDate +' 14:00';           
+/* 0612 Konrad, here has some logical bug. please fix it. */
+           if(moment(lastSyncTimeObj.time).isBefore(last_open_end_time) && moment().isAfter(last_open_end_time))
            {
                 temp_data_dict = wait.for(getStockfromWeb_Fn, stockId, year, month);
                 _f_writeDataDbFile(db_dir, stockId, year, month, temp_data_dict);
@@ -171,7 +171,6 @@ function _f_getStockMonthData(market, stockId, year, month)
                 }
            }
         }
-
     }else{
         /* Not this month, could try to read data from file. */
         try{
@@ -338,8 +337,6 @@ function _f_genMATV(stockId, date_list, data_dict)
 //******************************************
 function stockAnalyze_01(stockInfoObj)
 {
-    //console.dir(stockInfoObj);
-
     let type = 'stockDaily_A01';
     let stockId = stockInfoObj.stockId;
     let result_MA = stockInfoObj.result_MA;
@@ -410,17 +407,19 @@ function stockAnalyze_03(stockInfoObj)
     let stockId = stockInfoObj.stockId;
     let result_MA = stockInfoObj.result_MA;
     let result_TV = stockInfoObj.result_TV;
+    let cp = stockInfoObj.result_StockInfo.CP;
 
-
-    if ((result_MA.diff < 10) && (result_TV.RTV > (result_TV.RTVMA_03*1.3)) && (parseInt(result_TV.RTV) > 500))
-    {
-        console.log("[MA diff<0.5%]:"  + stockId + ' [diff]:' + result_MA.diff.toFixed(2) + ' [TV]:' + result_TV.RTV);
-        if (gStockDailyAnalyzeResult[type] == undefined)
-        {
+   if ((cp <= result_MA.MA5) && (result_MA.MA5 <= result_MA.MA10) && (result_MA.MA10 <= result_MA.MA20) && (result_MA.MA20 <= result_MA.MA60))
+   {      
+      if (result_TV.RTV > 1000)      
+      {
+         if (gStockDailyAnalyzeResult[type] == undefined)
+         {
             gStockDailyAnalyzeResult[type] = [];
-        }
-        gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
-    } /* if */
+         }
+            gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
+       }
+   } /* if */
 
 } /* stockAnalyze_03() */
 
@@ -957,10 +956,13 @@ exports.init = function()
          let market = '';
 
          market = 'TSE';
-         //let stockId = '3665';
+         let skip_stock_list = ['1729'/* 必翔 */];
          for (let i=0 ; i<stockid_list.length ; i++)
          {
              let stockId = stockid_list[i];
+             if (skip_stock_list.indexOf(stockId)> -1){
+                 continue;
+             }
              _f_stockDailyChecker(market, stockId);
          }
 

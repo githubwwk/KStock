@@ -61,9 +61,9 @@ function _f_getOtcStockInfoFromWeb(stockId, year, month, callback)
                 }else{
                     try {
                         console.log("ERROR - _f_getDatafromWeb() statusCode:" + response.statusCode);
-                        return (response.statusCode, error);
+                        return callback(response.statusCode, error);
                     }catch(err){
-                        return (-1, error);
+                        return callback(-1, error);
                     }
                 }
     });          

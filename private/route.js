@@ -59,7 +59,7 @@ exports.showStockAnalysisDateList = function(req, res)
                 case 'A01':                    
                     analyze_category = 'stockDaily_A01';
                     render_file = 'stockInfoAnalyzeResult';
-                    description = '[漲]:過所有均線，量過5日均量1.5倍 [跌]:破MA5,MA10,MA20均線，量過5日1.5倍(價格>30)';
+                    description = '[漲]:過所有均線，量過5日均量1.5倍 ';
                 break;
                 case 'A02':                    
                     analyze_category = 'stockDaily_A02';
@@ -69,7 +69,7 @@ exports.showStockAnalysisDateList = function(req, res)
                 case 'A03':                    
                     analyze_category = 'stockDaily_A03';
                     render_file = 'stockInfoAnalyzeResult';
-                    description = '均線糾結 MA60/MA20/MA10/MA5 Bias<1%';
+                    description = '[跌]:破MA5,MA10,MA20均線，量過5日1.5倍(價格>30)';
                 break;   
                 case 'A04':                    
                     analyze_category = 'stockDaily_A04';
