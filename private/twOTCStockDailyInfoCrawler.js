@@ -113,10 +113,16 @@ function _f_getOtcStockIdfromWeb(date, callback)
 
 exports.getOtcStockList = function()
 {        
-    let db_dir = './db/otc_stock_info';
+    let db_dir = './db/otc_stock_info';    
+
     /* if db folder is not exist, create new folder. */
     if (!fs.existsSync(db_dir)) {
-       fs.mkdirSync(db_dir);
+       if (fs.existsSync('../db/otc_stock_info')) {
+          /* For twStockRealtimePrice.js UT */
+          db_dir = '../db/otc_stock_info';
+      }else{ 
+          fs.mkdirSync(db_dir);
+      }
     }
     let otcStockIdDbFile = 'otcStockId.db';
     let otcStockIdDbFile_path = db_dir + '/' + otcStockIdDbFile;

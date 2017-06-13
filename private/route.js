@@ -79,7 +79,7 @@ exports.showStockAnalysisDateList = function(req, res)
                 case 'A05':                    
                     analyze_category = 'stockDaily_A05';
                     render_file = 'stockInfoAnalyzeResult';
-                    description = '季線下彎';
+                    description = '均線糾結(帶量突跌破)';
                 break;   
                 case 'A06':                    
                     analyze_category = 'stockDaily_A06';
@@ -90,7 +90,12 @@ exports.showStockAnalysisDateList = function(req, res)
                     analyze_category = 'stockDaily_A07';
                     render_file = 'stockInfoAnalyzeResult';
                     description = '今天為60日內最高成交量';
-                break;                                                                          
+                break;            
+                case 'A08':                    
+                    analyze_category = 'stockDaily_A08';
+                    render_file = 'stockInfoAnalyzeResult';
+                    description = '60日突破新高、跌破新低';
+                break;                                                                                 
                 default:
                     console.log("ERROR - Invalid Type:" + req.query.type);
                     res.send(503);

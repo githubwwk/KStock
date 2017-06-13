@@ -11,9 +11,17 @@ var db = require("./db.js");
 var utility = require("./utility.js");
 var otcStockDailyInfoCrawler = require("./twOTCStockDailyInfoCrawler.js");
 
+let single_debug = false;
+
 //******************************************
 // Setting
 //******************************************
+
+if (single_debug){
+    var g_daily_stock_info_dir = '../db/daily_stock_info/';
+} else{
+    var g_daily_stock_info_dir = './db/daily_stock_info/';
+}
 
 var STOCK_DOWN_MIN_PRICE = 30; /* Skip when staock price less than 30 in drop case */
 
@@ -21,9 +29,11 @@ var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : true},
                         {'api' : stockAnalyze_02, 'enable' : true},
                         {'api' : stockAnalyze_03, 'enable' : true},
                         {'api' : stockAnalyze_04, 'enable' : true},
-                        {'api' : stockAnalyze_05, 'enable' : false},
+                        {'api' : stockAnalyze_05, 'enable' : true},
                         {'api' : stockAnalyze_06, 'enable' : true},
-                        {'api' : stockAnalyze_07, 'enable' : true}];
+                        {'api' : stockAnalyze_07, 'enable' : true},
+                        {'api' : stockAnalyze_08, 'enable' : true},];
+                        //{'api' : stockAnalyze_09, 'enable' : true}];
 
 //******************************************
 // Global Variable
@@ -80,7 +90,7 @@ function _f_stock_data_reconstruct(raw_data_list)
 //******************************************
 function _f_readLastSyncTimeLog(stockId)
 {
-    let lastSyncTime_dir = './db/daily_stock_info/' + stockId + '/lastSyncTime.log';
+    let lastSyncTime_dir = g_daily_stock_info_dir + stockId + '/lastSyncTime.log';
 
     try {
       var content = fs.readFileSync(lastSyncTime_dir);
@@ -96,7 +106,7 @@ function _f_writeLastSyncTimeLog(stockId)
     let lastSyncTimeObj = {};
     lastSyncTimeObj.time = moment().format('YYYY-MM-DD HH:mm:ss');
 
-    let lastSyncTime_dir = './db/daily_stock_info/' + stockId;
+    let lastSyncTime_dir = g_daily_stock_info_dir + stockId;
     fs.ensureDirSync(lastSyncTime_dir);
     let lastSyncTime_file = lastSyncTime_dir + '/lastSyncTime.log';
 
@@ -128,7 +138,7 @@ function _f_isAfterClosingtime()
 function _f_getStockMonthData(market, stockId, year, month)
 {
     /* try open on local DB */    
-    let db_dir = './db/daily_stock_info/';
+    let db_dir = g_daily_stock_info_dir;
     let getStockfromWeb_Fn = _f_getStockDatafromWeb;
     if (market == 'OTC'){        
         getStockfromWeb_Fn = otcStockDailyInfoCrawler.getOtcStockInfoFromWeb;
@@ -372,26 +382,11 @@ function stockAnalyze_02(stockInfoObj)
     if (((cp > result_MA.MA60_list[0]) && (result_MA.MA1_list[1] <= result_MA.MA60_list[1]) && (result_TV.RTV > 1000)) ||
          ((cp < result_MA.MA60_list[0]) && (result_MA.MA1_list[1] >= result_MA.MA60_list[1]) && (result_TV.RTV > 1000)))
     {
-
-        /* Check 季線上彎 */
-        let isMatch = true;
-/*
-        for (let i=0 ; i<5 ; i++)
-        {
-            if (parseFloat(result_MA.MA60_list[i]).toFixed(4) < parseFloat(result_MA.MA60_list[i+1]).toFixed(4)) {
-                isMatch = false;
-                break;
-            }
-        }
-*/
         if (gStockDailyAnalyzeResult[type] == undefined)
         {
             gStockDailyAnalyzeResult[type] = [];
-        }
-
-        if (isMatch) {
-            gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);
-        }
+        }        
+        gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);        
     } /* if */
 
 }/* function stockAnalyze_02() */
@@ -399,7 +394,7 @@ function stockAnalyze_02(stockInfoObj)
 
 //******************************************
 // stockAnalyze_03()
-// 均線糾結
+// 空頭排列
 //******************************************
 function stockAnalyze_03(stockInfoObj)
 {
@@ -470,7 +465,7 @@ function stockAnalyze_04(stockInfoObj)
 
 //******************************************
 // stockAnalyze_05()
-// MA60 Bend down 季線下彎
+// MA5, MA10, MA20 糾結 (紅K突破)(黑K跌破)
 //******************************************
 function stockAnalyze_05(stockInfoObj)
 {
@@ -478,56 +473,83 @@ function stockAnalyze_05(stockInfoObj)
     let stockId = stockInfoObj.stockId;
     let result_MA = stockInfoObj.result_MA;
     let result_TV = stockInfoObj.result_TV;
+    let cp = stockInfoObj.result_StockInfo.CP;
 
-    if (result_TV.RTVMA_03 < 1000){
+    if (result_TV.RTVMA_03 < 300){
         return;
     }
 
-    if (gStockDailyAnalyzeResult[result_type] == undefined)
+    let MA_temp0 = [];
+    let MA_temp1 = [];
+    let MA_temp2 = [];
+    
+    MA_temp0.push(parseFloat(result_MA.MA5_list[0]));
+    MA_temp0.push(parseFloat(result_MA.MA10_list[0]));
+    MA_temp0.push(parseFloat(result_MA.MA20_list[0]));
+    MA_temp1.push(parseFloat(result_MA.MA5_list[4]));
+    MA_temp1.push(parseFloat(result_MA.MA10_list[4]));
+    MA_temp1.push(parseFloat(result_MA.MA20_list[4]));    
+    MA_temp2.push(parseFloat(result_MA.MA5_list[9]));
+    MA_temp2.push(parseFloat(result_MA.MA10_list[9]));
+    MA_temp2.push(parseFloat(result_MA.MA20_list[9]));
+    MA_temp0.sort(function(a, b){
+        return a - b;
+    });
+    MA_temp1.sort(function(a, b){
+        return a - b;
+    });
+    MA_temp2.sort(function(a, b){
+        return a - b;
+    });    
+
+    /* latest day的均線糾結, 10 days的均線糾結 */
+    let bias0 = -1 *((MA_temp0[0] - MA_temp0[MA_temp0.length-1])/MA_temp0[0])*100;
+    let bias1 = -1 *((MA_temp1[0] - MA_temp1[MA_temp0.length-1])/MA_temp1[0])*100;
+    let bias2 = -1 *((MA_temp2[0] - MA_temp2[MA_temp0.length-1])/MA_temp2[0])*100;
+    /* 1-5 , 1-10, 1-30 斜率 */
+    let MA5_m_30_days = Math.abs(((result_MA.MA5_list[0] - result_MA.MA5_list[29])/result_MA.MA5_list[0])*100);
+    let MA5_m_15_days = Math.abs(((result_MA.MA5_list[0] - result_MA.MA5_list[14])/result_MA.MA5_list[0])*100);
+    let MA5_m_5_days = Math.abs(((result_MA.MA5_list[0] - result_MA.MA5_list[4])/result_MA.MA5_list[0])*100);
+    if ((MA5_m_30_days > 3.5) ||(MA5_m_15_days > 1.75) || (MA5_m_5_days > 1))
     {
-       gStockDailyAnalyzeResult[result_type] = [];
+        return;
     }
 
-    //let MA_list_len = result_MA.MA60_list.length;
-    //console.log("MA list Len:" + MA_list_len);
-    //console.log("RTCMA_03:" + result_TV.RTVMA_03);
-
-    /* MA60 diff value */
-    let diff_list = [];
-    for (let i=1 ; i<result_MA.MA60_list.length ; i++)
+   // if (stockId == '1434')
+    if(true)
     {
-        //let diff = result_MA.MA60_list[i] -  result_MA.MA60_list[i+1];
-        let diff = parseFloat(result_MA.MA60_list[i]) +  parseFloat(result_MA.MA60_list[i-1]);
-        diff = diff.toFixed(2);
-        diff_list.push(parseFloat(diff));
-
+        console.log("[bias]:" + bias0 + ' ' + bias1 + ' ' + bias2);        
+        console.log("[MA5 M]:" + MA5_m_5_days + ' ' + MA5_m_15_days + ' ' + MA5_m_30_days); 
+        console.log("[CP]:" + cp);       
+        console.log("[MAX]:" + result_MA.MAX);       
+        console.log("[min]:" + result_MA.MIN);
+        console.log("[RTV]:" + result_TV.RTV);
+        console.log("[RTVMA_03]:" + result_TV.RTVMA_03);
     }
 
-    //console.log("CP:" + stockInfoObj.result_StockInfo.CP);
-    let diff_temp = ((stockInfoObj.result_StockInfo.CP - (parseFloat(diff_list[0])/2))/stockInfoObj.result_StockInfo.CP)*100;
-    if ((diff_temp < 1) && (diff_temp > -1))
-    {
-                //console.dir(diff_list);
-                gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
-                //break;
-    }
 
-    let diff_MA_list = [];
-    let diff_MA_temp_list = [];
-    for (let i=0; i<diff_list.length-5 ; i++)
+    if ((bias0 < 2) && (bias1 < 2) && (bias2 < 2) &&
+        (cp >= MA_temp0[MA_temp0.length-1]) && 
+        (cp >= result_MA.MAX))
     {
-            let a;
-            let b;
-            a = (diff_list[i] >= 0)?true:false;
-            b = (diff_list[i-1] >= 0)?true:false;
-            if ((a ^ b) && (result_TV.RTVMA_03 > 1000))
-            {
-                //console.dir(diff_list);
-                gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
-                //break;
-            }
+        if (gStockDailyAnalyzeResult[result_type] == undefined)
+        {
+            gStockDailyAnalyzeResult[result_type] = [];
+        }        
+        gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);        
+    } /* if */  
 
-    }
+    if ((bias0 < 2) && (bias1 < 2) && (bias2 < 2) &&
+        (cp <= MA_temp0[0]) && 
+        (cp <= result_MA.MIN))
+    {
+        if (gStockDailyAnalyzeResult[result_type] == undefined)
+        {
+            gStockDailyAnalyzeResult[result_type] = [];
+        }        
+        gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);        
+    } /* if */        
+
 }
 
 //******************************************
@@ -577,6 +599,38 @@ function stockAnalyze_07(stockInfoObj)
        gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
     }
 }
+
+//******************************************
+// stockAnalyze_08()
+// Price is MAX
+//******************************************
+function stockAnalyze_08(stockInfoObj)
+{
+    let result_type = 'stockDaily_A08';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;
+    let cp = stockInfoObj.result_StockInfo.CP;
+
+    if (result_TV.RTVMA_03 < 500){
+        return;
+    }
+
+    if (gStockDailyAnalyzeResult[result_type] == undefined)
+    {
+       gStockDailyAnalyzeResult[result_type] = [];
+    }
+
+    if(stockId == '3532'){
+        console.log("@");
+    }
+
+    if ((cp >= result_MA.MAX) || (cp <= result_MA.MIN))
+    {
+       gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
+    }
+}
+
 
 //******************************************
 // readDataDbFile()
@@ -770,6 +824,11 @@ function _f_genMA(stockId, date_list, data_dict)
         /* get MAX price during MA_LIST_LEN(30) */
         let cp = data_dict[date_list[i]].CP;
         /* init */
+        if (cp == null){
+            /* Skip, web data is incorrect. */
+            continue;
+        }
+
         if(MIN == 0 && MAX == 0)
         {
             MIN = cp;
@@ -783,6 +842,7 @@ function _f_genMA(stockId, date_list, data_dict)
         if ((cp != 0) && (cp < MIN)){
             MIN = cp;
         }
+        
     } /*for */
 
     /* Keep all price data */
@@ -899,6 +959,9 @@ function _f_initStockIdList()
 
     //console.dir(otcStockIdList);
     //console.dir(otcStockObjDict);
+    otcStockIdList.sort();
+    stockid_list.sort();
+    
     let retObj = {};
     retObj.stockIdList = stockid_list;
     retObj.stockObjDict = stockObjDict;
@@ -986,3 +1049,8 @@ exports.init = function()
 
     wait.launchFiber(exec, function(){});
 };
+
+if (single_debug)
+{
+    exports.init();
+}

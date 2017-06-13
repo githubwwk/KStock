@@ -59,8 +59,9 @@ function _f_getStockDatafromWeb(options, callback_web)
                     stockObj = JSON.parse(body); 
                     console.log("[stockObj.msgArray.length]:" + stockObj.msgArray.length);
                 } catch(err){
-                    console.log(body);
-                    console.dir(options);
+                    console.log("ERROR - Body is empty");
+                    console.log("URL:" + options.url);
+                    console.log("Cookie:" + options.headers.Cookie);
                     return callback_web(-64, error);
                 }
                 if (stockObj.msgArray == undefined){
@@ -169,12 +170,15 @@ function _f_readAllStockPriceFromWeb(market, stockid_list, callback_readPrice)
              */    
             
             /* Gen again Cookie */
-            //let cookie = wait.for(_f_getCookie);                               
-           
+            try {
+              cookie = wait.for(_f_getCookie);                               
+            }catch(err){
+            }
+
             options_default.headers.Cookie = cookie; 
             
             let url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=' + url_stockId_str + '&json=1&delay=0&_=' + xtime;                 
-            console.log("URL:" + url);    
+            //console.log("URL:" + url);    
             options_default.url = url; 
            
             let stockObj;
@@ -400,15 +404,9 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
       console.log("Wait stockInfoCrawler to be ready...");
       wait.for(utility.sleepForMs, 3000);
   }
-  console.log("===========================");
+ 
   let tse_otc_stockid_list = stockInfoObj.stockIdList.concat(stockInfoObj.otcStockIdList);
-  console.log("===========================");
-  console.log(stockInfoObj.stockIdList);
-  console.log("===========================");
-  console.log(stockInfoObj.otcStockIdList);
-  console.log("===========================");
-  console.dir(tse_otc_stockid_list);
-  console.log("===========================");
+  
   for (let stockId of tse_otc_stockid_list)
   {       
      //try {
@@ -573,6 +571,9 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
 
     let StockRealTimePrice = {};
     StockRealTimePrice = merge(result_tse, result_otc);       
+
+    console.dir(StockRealTimePrice);
+
     /* Backup to file db, if not during 9:00~14:30, backup to file db. */
     if (( Object.keys(StockRealTimePrice).length > 0 ) && (!_f_isDuringOpeningtime()))
     {                       
@@ -629,7 +630,7 @@ exports.init = function()
         //gStockAllInfoObj.stockIdList = ['6220']; /* For Test only */
         
         _f_updateRealTimeStockPrice(gStockAllInfoObj);         
-        _f_init_scheduler();
+        //_f_init_scheduler();
 
         return callback(null);
     }

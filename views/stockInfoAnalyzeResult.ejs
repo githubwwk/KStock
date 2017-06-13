@@ -82,8 +82,8 @@ function btn_pricechart_info(item)
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
   let market = g_stock_info_id_dict[stockId].stockInfo.market;
-
-  let title = market + ' ' + stockName + ' (' + stockId + ')';
+  let no = '#' + g_stock_info_id_dict[stockId].no;
+  let title = no + ' ' + market + ' ' + stockName + ' (' + stockId + ')';
   var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
   let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>'; 
   $('#price-modal-title').html('');
@@ -117,7 +117,8 @@ function btn_dispersion_info(item)
   $('#dispersion_chart').empty();	
 
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
-  let title = stockName + ' (' + stockId + ')';
+  let no = '#' + g_stock_info_id_dict[stockId].no;
+  let title = no + ' ' + stockName + ' (' + stockId + ')';
   $('#dispersion-modal-title').text(title);
 
   try { 
@@ -308,6 +309,7 @@ function btn_dispersion_info(item)
                gStockIdIndexDict[stockId] = i;
                
                stock_info_id_dict[stockId] = stockObj;
+               stock_info_id_dict[stockId].no = i;  /* Just for user easy to know stock position of table */
 
                /*********************************************/
                /* Special condition */               
