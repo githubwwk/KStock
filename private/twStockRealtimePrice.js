@@ -600,7 +600,7 @@ function _f_init_scheduler()
 　　let times = [];
     
     /* Every 10 minute to update stock price. */
-　　for(let i=0; i<60; i=i+3){
+　　for(let i=0; i<60; i=i+10){
 　　　　times.push(i);
 　　}
 　　rule.minute = times;    
@@ -630,7 +630,7 @@ exports.init = function()
         //gStockAllInfoObj.stockIdList = ['6220']; /* For Test only */
         
         _f_updateRealTimeStockPrice(gStockAllInfoObj);         
-        //_f_init_scheduler();
+        _f_init_scheduler();
 
         return callback(null);
     }
