@@ -59,7 +59,8 @@ function btn_pricechart_info(item)
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
   let market = g_stock_info_id_dict[stockId].stockInfo.market;
-  let title = market + ' ' + stockName + ' (' + stockId + ') ';
+  let no = '#' + g_stock_info_id_dict[stockId].no;
+  let title = no + ' ' + market + ' ' + stockName + ' (' + stockId + ')';  
 
   var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
   let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>';  
@@ -281,7 +282,8 @@ function btn_dispersion_info(item)
                gStockIdIndexDict[stockId] = i;
 
                stock_info_id_dict[stockId] = stockObj;
-
+               stock_info_id_dict[stockId].no = i; 
+               
                /*********************************************/
                /* Special condition */               
                //if ((parseFloat(stockInfo.stockDailyInfo.TV_times.TV_times)*10) < 13)  /* 1.3 times is teacher's experience */

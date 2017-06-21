@@ -64,11 +64,19 @@ function _f_isDuringOpeningtime()
 
 function btn_pricechart_info(item)
 {
+  debugger;
   var stockId = item.value;
+  gCurrentPriceChartStockId = stockId;
 	let URL = '/get_stock_price';
   $('#dispersion_chart').empty();	  
-  let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
-  let title = stockName + ' (' + stockId + ')';
+  let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;  
+  let market = g_stock_info_id_dict[stockId].stockInfo.market;
+  if (market == undefined){
+    market = '';
+  }
+  let no = '#' + g_stock_info_id_dict[stockId].no;
+  let title = no + ' ' + market + ' ' + stockName + ' (' + stockId + ')';
+
   //$('#price-modal-title').text(title);
   var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
   let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>';  
@@ -156,7 +164,7 @@ function btn_remove_monitor(item)
 	}); /* bootbox */   
 }/* btn_remove_monitor */
 
-function _f_showStockDailyInfo_v20(stockObj)
+function _f_showStockDailyInfo(stockObj, no)
 {            
    var stockId = stockObj.stockId;                  
    
@@ -231,6 +239,7 @@ function _f_showStockDailyInfo_v20(stockObj)
 
     TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
     temp_html = '<tr>' + 
+                '<td>#' + no + '</td>' + 
                 '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 
                 '<td>' + stockObj.stockInfo.stockName + '</td>' +                           
                        '<td>' + today_cp_html + '</td>' + 
@@ -270,36 +279,60 @@ function showStockDailyInfo(stock_info_list)
     var temp_html = '';            
     
     //var idx = 0;  
-     $('#stock_info_tbl_body').empty();
-    for (var stock of stock_info_list)
+     $('#stock_info_tbl_body').empty();    
+    for(let i=0 ; i<stock_info_list.length ; i++)
     {       
-       stock = JSON.parse(stock);         
-       g_stock_info_id_dict[stock.stockId] = stock;
-         
+       let stock = JSON.parse(stock_info_list[i]);         
+       var stockId = stock.stockId;
+       g_stock_info_id_dict[stockId] = stock;
+       g_stock_info_id_dict[stockId].no = i; 
+
        if (stock == undefined){
          /* Skip */
          continue;
        }
 
-       if ((stock.ver != undefined))
-       {          
-          if(stock.ver == 'v2.0')
-          {
-            /* For format v2.0 */                      
-            _f_showStockDailyInfo_v20(stock);
-          }else{            
-            _f_showStockDailyInfo_v10(stock);
-          }
-       } else {
-           _f_showStockDailyInfo_v10(stock);
-       } /* if-else */    
+       
+       gStockIdList[i] = stockId;              
+       gStockIdIndexDict[stockId] = i;
+
+       _f_showStockDailyInfo(stock, i);                 
+
     } /* for */    		      	
 } /* showStockDailyInfo */
+
+/* For previous and next botton (price chart) */
+  var gStockIdList = []; 
+  var gStockIdIndexDict = {}; 
+  var gCurrentPriceChartStockId = '';
 
 	$(document).ready(function(){        
         
         initHtmlContent(g_monitor_list_all);                
-          		    
+
+        $("#btn_previous_stock_price_chart").click(function() {  
+            debugger;        
+            console.log("btn_previous_stock_price_chart+++");
+            let currentStockId = gCurrentPriceChartStockId;             
+            let index = gStockIdIndexDict[currentStockId];                      
+            let pindex = ((index-1) < 0)?(gStockIdList.length-1):(index-1);                        
+            let pstockId = gStockIdList[pindex];
+            let item = {};
+            item.value = pstockId;
+            btn_pricechart_info(item);
+        });
+
+        $("#btn_next_stock_price_chart").click(function() {
+            console.log("btn_next_stock_price_chart+++");
+            let currentStockId = gCurrentPriceChartStockId;             
+            let index = gStockIdIndexDict[currentStockId];                      
+            let nindex = ((index+1) >= gStockIdList.length)?0:(index+1);                        
+            let nstockId = gStockIdList[nindex];
+            let item = {};
+            item.value = nstockId;
+            btn_pricechart_info(item);            
+        });
+
         function genMonitorSelectInfo(monitor_list_all)
         {  
             var html = '';            
@@ -356,6 +389,7 @@ function showStockDailyInfo(stock_info_list)
   <table class="table">  
     <thead class="thead-inverse">    
      <tr>
+        <th>#</th>
         <th>ID</th>
         <th>Name</th>
         <th>(今日)收盤價</th>         
@@ -420,6 +454,10 @@ function showStockDailyInfo(stock_info_list)
         <h4 class="modal-title" id="price-modal-title"></h4>
       </div>
       <div class="modal-body" >
+        <div class="btn-group"  style="margin:0 auto;">
+          <button type="button" class="btn btn-default" id="btn_previous_stock_price_chart"><span class="glyphicon glyphicon-arrow-left"></span></button>
+          <button type="button" class="btn btn-default" id="btn_next_stock_price_chart"><span class="glyphicon glyphicon-arrow-right"></span></button> 
+        </div>        
         <div id="ar_price_chart" style="width: 580px; height: 400px;"></div>      
       </div>
       <div class="modal-footer">
