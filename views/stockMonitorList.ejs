@@ -91,10 +91,10 @@ function btn_pricechart_info(item)
           stock_price_obj.MA1_list = result.MA1_list;
           stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
-          if(_f_isDuringOpeningtime())
-          {
-            stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);
-          }
+          try
+          {            
+              stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);           
+          }catch(err){}
           stock_price_obj.MA1_list.reverse();
           stock_price_obj.MA60_list.reverse();
           show_stockprice_chart(stock_price_obj, 'ar_price_chart');           

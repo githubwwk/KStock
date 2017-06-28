@@ -97,10 +97,9 @@ function btn_pricechart_info(item)
           stock_price_obj.MA1_list = result.MA1_list;
           stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
-          if(_f_isDuringOpeningtime())
-          {
-            stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);
-          }
+          try {            
+                  stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);          
+          }catch(err){}
           stock_price_obj.MA1_list.reverse();
           stock_price_obj.MA60_list.reverse();
           show_stockprice_chart(stock_price_obj, 'ar_price_chart');           
@@ -255,7 +254,7 @@ function btn_dispersion_info(item)
         });   
 
         $("#btn_previous_stock_price_chart").click(function() {  
-            debugger;        
+            //debugger;        
             console.log("btn_previous_stock_price_chart+++");
             let currentStockId = gCurrentPriceChartStockId;             
             let index = gStockIdIndexDict[currentStockId];                      
@@ -390,7 +389,7 @@ function btn_dispersion_info(item)
                }
 
                TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
-               debugger;
+               //debugger;
                temp_html = '<tr>' + 
                            '<td>#' + i + '</td>' + 
                            '<td><a target=\"_blank\" href=\"' + web_link + '\">' + stockId + '</a></td>' + 

@@ -14,6 +14,16 @@ var stockInfoCrawler = require('./twStockDailyInfoCrawler.js');
 var otcStockDailyInfoCrawler = require("./twOTCStockDailyInfoCrawler.js");
 
 //**************************************************
+// Option
+//**************************************************
+let g_debug_mode = false;
+let g_local_db_dir = './db/'
+if(g_debug_mode)
+{
+    g_local_db_dir = '../db/';
+} 
+
+//**************************************************
 // Variable
 //**************************************************
 var gStockRealTimePrice = {};
@@ -46,6 +56,27 @@ function _f_stock_data_reconstruct(stockRtpObj)
 } /* function - stock_data_reconstruct */
 
 
+function _f_stock_google_finance_data_reconstruct(stockRtpObj)
+{
+    var result = {};
+    try {
+        result.highPrice = 'NA';
+        result.lowPrice = 'NA';
+        result.currentPrice = stockRtpObj.l;  
+        result.tv = 'NA';   /* Trading Volumn */
+        result.stockId = stockRtpObj.t;            
+        result.time = stockRtpObj.ltt;        
+        result.datetime = new moment(stockRtpObj.lt_dts).format("YYYY-MM-DD"); 
+        result.cp = stockRtpObj.cp;                         
+        result.c = stockRtpObj.c_fix;
+        console.log("Parse Google Finance:" + result.stockId); 
+    }catch(err){
+        console.log('ERROR - stockRealTimePrice getDatafromWeb()' + err);
+        console.dir(stockRtpObj);              
+    }        
+    return result;
+} /* function - stock_data_reconstruct */
+
 //******************************************
 // _f_getStockDatafromWeb()
 //******************************************
@@ -56,8 +87,9 @@ function _f_getStockDatafromWeb(options, callback_web)
                 //console.log(body);
                 let stockObj;
                 try {
-                    stockObj = JSON.parse(body); 
-                    console.log("[stockObj.msgArray.length]:" + stockObj.msgArray.length);
+                    body = body.replace('//', '');
+                    stockObj = JSON.parse(body);                     
+                    //console.log("[stockObj.msgArray.length]:" + stockObj.msgArray.length);
                 } catch(err){
                     console.log("ERROR - Body is empty");
                     console.log("URL:" + options.url);
@@ -209,6 +241,76 @@ function _f_readAllStockPriceFromWeb(market, stockid_list, callback_readPrice)
     wait.launchFiber(exec, callback_readPrice);
 }
 
+
+function _f_readAllStockPriceFromGoogleFinanceWeb(market, stockid_list, callback_readPrice)
+{
+    let options_default = {
+        url : '',
+        method: "GET",             
+        headers:{}
+    };
+
+    let result = {};
+    function exec(callback_exe)
+    {    
+        for (let i=0; i<stockid_list.length ; i+=100)
+        { 
+            /* http://finance.google.com/finance/info?client=ig&q=TSE:2330,TSE:1319 */
+            let url_stockId_str = ''; 
+            let onetime_len = ((stockid_list.length - i) >= 100)?100:(stockid_list.length - i);
+            for(let j=0; j<onetime_len ; j++){ 
+                url_stockId_str += market.toLowerCase() + ':' + stockid_list[i+j] + ',';
+            }
+            url_stockId_str = url_stockId_str.slice(0, -1);
+
+            let url = 'http://finance.google.com/finance/info?client=ig&q=' + url_stockId_str;  
+            options_default.url = url; 
+            
+            let stockObjList;
+            try {                 
+                    function getDataFromGoogleFinance(options, callback_GF)
+                    {
+                        request( options, function (error, response, body) {          
+                                    if (!error && response.statusCode == 200) {                                        
+                                        let stockObj;
+                                        try {
+                                            body = body.replace('//', '');
+                                            stockObj = JSON.parse(body);                                                         
+                                            return callback_GF(null, stockObj);
+                                        } catch(err){
+                                            console.log("ERROR - Body is empty");
+                                            console.log("URL:" + options.url);
+                                            return callback_GF(-259);
+                                        }                                                              
+                                    }else{                                                
+                                        return callback_GF(-261);
+                                    }                 
+
+                            });
+                    } /* function - getDataFromGoogleFinance() */    
+
+                    stockObjList = wait.for(getDataFromGoogleFinance, options_default);  
+
+                    for (let stockObj of stockObjList) 
+                    {
+                        let stock_data_dict = _f_stock_google_finance_data_reconstruct(stockObj);
+    
+                        if (stock_data_dict.stockId != undefined)
+                        {                               
+                            result[stock_data_dict.stockId] = stock_data_dict;  
+                        }else{
+                            console.log("ERROR - Invalid msg object!");
+                        }                    
+                    }/* for */                    
+            }catch(err){
+                continue;
+            }         
+        } /* for */
+        return callback_exe(null, result);
+    } /* function - exec() */
+    wait.launchFiber(exec, callback_readPrice);
+}
+
 //******************************************
 // _f_genLocalDbFileName()
 //******************************************
@@ -289,23 +391,21 @@ function _f_isAfterClosingtime()
 //******************************************
 function getRealTimeStockPrice(market, stockid_list, callback)
 {    
-        utility.timestamp('getRealTimeStockPrice()+++');    
-        
+        //utility.timestamp('getRealTimeStockPrice()+++');            
         let stockRealTimePrice;
         let bGetRealTimeFromWeb = true;
         
-        /* Check where should get price from local file or from web. */
-        
-        if (!_f_isDuringOpeningtime())
+        /* Check where should get price from local file or from web. */        
+        if (!_f_isDuringOpeningtime() && g_debug_mode == false )
         {            
             /* Check local file db exist or not. */
             let yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
             let today = moment().format('YYYY-MM-DD');            
 
             let filename = _f_genLocalDbFileName(today);
-            let filedir = './db/' + gLocalFileDbDir + '/' + filename;
+            let filedir = g_local_db_dir + gLocalFileDbDir + '/' + filename;
             let yesterdayFilename = _f_genLocalDbFileName(yesterday);
-            let yesterdayFiledir = './db/' + gLocalFileDbDir + '/' + yesterdayFilename;
+            let yesterdayFiledir = g_local_db_dir + gLocalFileDbDir + '/' + yesterdayFilename;
 
             if (fs.existsSync(filedir)) {                
                 /* 14:00~24:00 could read from today file data */
@@ -334,7 +434,7 @@ function getRealTimeStockPrice(market, stockid_list, callback)
 
                     /* During Friday 14:00 to Monday 8:95 */
                     let filename = _f_genLocalDbFileName(lastOpenDay);
-                    let filedir = './db/' + gLocalFileDbDir + '/' + filename;
+                    let filedir = g_local_db_dir + gLocalFileDbDir + '/' + filename;
 
                     if (fs.existsSync(filedir)) {                                            
                         stockRealTimePrice = utility.readDataDbFile(filedir);
@@ -350,12 +450,19 @@ function getRealTimeStockPrice(market, stockid_list, callback)
             }
         } /* if */
 
-        if (bGetRealTimeFromWeb)
+        if (bGetRealTimeFromWeb || g_debug_mode)        
         {
-            _f_readAllStockPriceFromWeb(market, stockid_list, function(err, result){        
-                stockRealTimePrice = result;                                                                      
-                return callback(null, stockRealTimePrice);    
-            });
+            if (market == 'tse'){
+                _f_readAllStockPriceFromGoogleFinanceWeb(market, stockid_list, function(err, result){ 
+                    stockRealTimePrice = result;                                                                      
+                    return callback(null, stockRealTimePrice);   
+                });
+            }else{
+                _f_readAllStockPriceFromWeb(market, stockid_list, function(err, result){        
+                    stockRealTimePrice = result;                                                                      
+                    return callback(null, stockRealTimePrice);    
+                });
+            }
         } else{
             return callback(null, stockRealTimePrice);   
         }        
@@ -481,7 +588,8 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
           /*************************************************/
           let yesterday_cp = stockInfoCrawler.gStockDailyInfo[stockId].result_StockInfo.CP;
           let current_cp = parseFloat(stockRealTimePrice[stockId].currentPrice);
-          let MA60 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA60);  
+          let MA60 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA60);
+
           if((yesterday_cp < MA60) && (current_cp >= MA60))
           {
              let type = 'MA60_Through_UP';          
@@ -547,7 +655,7 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
 //******************************************
 function _f_updateRealTimeStockPrice(stockInfoObj)
 {
-    utility.timestamp('updateRealTimeStockPrice()+++');
+    //utility.timestamp('updateRealTimeStockPrice()+++');
     if (stockInfoObj == undefined) 
     {    
         return;
@@ -565,14 +673,14 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
     let result_otc = {};    
     try {
         result_tse = wait.for(getRealTimeStockPrice, 'tse', stockInfoObj.stockIdList);      
-        result_otc = wait.for(getRealTimeStockPrice, 'otc', stockInfoObj.otcStockIdList);    
+        //result_otc = wait.for(getRealTimeStockPrice, 'otc', stockInfoObj.otcStockIdList);    
     } catch(err){
     }
 
     let StockRealTimePrice = {};
     StockRealTimePrice = merge(result_tse, result_otc);       
 
-    console.dir(StockRealTimePrice);
+    //console.dir(StockRealTimePrice);
 
     /* Backup to file db, if not during 9:00~14:30, backup to file db. */
     if (( Object.keys(StockRealTimePrice).length > 0 ) && (!_f_isDuringOpeningtime()))
@@ -583,9 +691,9 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
     }  
     gStockRealTimePrice = StockRealTimePrice;
     exports.gStockRealTimePrice = StockRealTimePrice;   
-
-    let testmode = true;   
-    if(_f_isDuringOpeningtime() || testmode == true)
+      
+    //if(_f_isDuringOpeningtime() || g_debug_mode == true)
+    if(true)
     {                 
         /* Do someting, check TV MA */
         let result_analyze  = _f_analyze_realtime_stock(stockInfoObj, StockRealTimePrice);
