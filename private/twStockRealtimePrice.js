@@ -3,8 +3,6 @@ var schedule = require('node-schedule');
 var request = require('request');
 var moment = require('moment');
 var wait = require('wait.for');
-var cheerio = require('cheerio');
-var cheerioTableparser = require('cheerio-tableparser');
 var iconv = require('iconv-lite');
 var fs = require('fs');
 var merge = require('merge');
@@ -60,10 +58,10 @@ function _f_stock_google_finance_data_reconstruct(stockRtpObj)
 {
     var result = {};
     try {
-        result.highPrice = 'NA';
-        result.lowPrice = 'NA';
+        result.highPrice = '-1';
+        result.lowPrice = '-1';
         result.currentPrice = stockRtpObj.l;  
-        result.tv = 'NA';   /* Trading Volumn */
+        result.tv = '-1';   /* Trading Volumn */
         result.stockId = stockRtpObj.t;            
         result.time = stockRtpObj.ltt;        
         result.datetime = new moment(stockRtpObj.lt_dts).format("YYYY-MM-DD"); 
@@ -244,6 +242,8 @@ function _f_readAllStockPriceFromWeb(market, stockid_list, callback_readPrice)
 
 function _f_readAllStockPriceFromGoogleFinanceWeb(market, stockid_list, callback_readPrice)
 {
+     console.log("DEBUG - _f_readAllStockPriceFromGoogleFinanceWeb()+++ ");
+
     let options_default = {
         url : '',
         method: "GET",             
@@ -391,7 +391,7 @@ function _f_isAfterClosingtime()
 //******************************************
 function getRealTimeStockPrice(market, stockid_list, callback)
 {    
-        //utility.timestamp('getRealTimeStockPrice()+++');            
+        utility.timestamp('getRealTimeStockPrice()+++');            
         let stockRealTimePrice;
         let bGetRealTimeFromWeb = true;
         
@@ -451,7 +451,7 @@ function getRealTimeStockPrice(market, stockid_list, callback)
         } /* if */
 
         if (bGetRealTimeFromWeb || g_debug_mode)        
-        {
+        {           
             if (market == 'tse'){
                 _f_readAllStockPriceFromGoogleFinanceWeb(market, stockid_list, function(err, result){ 
                     stockRealTimePrice = result;                                                                      
@@ -516,6 +516,11 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
   
   for (let stockId of tse_otc_stockid_list)
   {       
+      if (stockRealTimePrice[stockId] == undefined) {
+          console.log("ERROR - stockRealTimePrice[stockId] is undefined. " + stockId);
+          continue;
+      }
+
      //try {
           let times = 1;
           /* Transfer datetime: 2017-05-02 09:22-44, remove '-44' */
@@ -529,12 +534,14 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
             console.log("ERROR - Undefined RealTimePrice Object:");  
             console.log("Stock ID:" + stockId);  
             //console.dir(stockRealTimePrice[stockId]);
-            continue;
+            //continue;
           } /* try -catch */
+
           if (temp_datetime == undefined){
               console.log("ERROR - temp_datetime: undefined");
               //console.dir(stockRealTimePrice[stockId]);
-              continue;
+              //continue;
+              temp_datetime = 'Invalid';
           }
           temp_datetime = temp_datetime.replace(re, '');
           
@@ -558,11 +565,13 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
              if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV == undefined ||
                  stockInfoCrawler.gStockDailyInfo[stockId].result_MA == undefined)
              {
+                console.log("DEBUG - @562"); 
                 continue;
              }
 
              /* 量太小不看 */
              if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03 < 500){
+                console.log("DEBUG - @562");
                 continue; 
              }              
           } 
@@ -655,14 +664,16 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
 //******************************************
 function _f_updateRealTimeStockPrice(stockInfoObj)
 {
-    //utility.timestamp('updateRealTimeStockPrice()+++');
+    utility.timestamp('updateRealTimeStockPrice()+++');
     if (stockInfoObj == undefined) 
     {    
+        console.log("ERROR - _f_updateRealTimeStockPrice() stockInfoObj undefined");
         return;
     }
 
     if (gStockRealTimePrice == undefined) 
     {    
+        console.log("ERROR - _f_updateRealTimeStockPrice() gStockRealTimePrice undefined");
         return;
     }
 
@@ -673,8 +684,9 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
     let result_otc = {};    
     try {
         result_tse = wait.for(getRealTimeStockPrice, 'tse', stockInfoObj.stockIdList);      
-        //result_otc = wait.for(getRealTimeStockPrice, 'otc', stockInfoObj.otcStockIdList);    
+        result_otc = wait.for(getRealTimeStockPrice, 'otc', stockInfoObj.otcStockIdList);    
     } catch(err){
+        console.log("ERROR - getRealTimeStockPrice() exception!" + err);
     }
 
     let StockRealTimePrice = {};
@@ -687,7 +699,8 @@ function _f_updateRealTimeStockPrice(stockInfoObj)
     {                       
         let firstKey =  Object.keys(StockRealTimePrice)[0];
         let localDbFileName = _f_genLocalDbFileName(StockRealTimePrice[firstKey].datetime);
-        utility.writeDbFile(localDbFileName, gLocalFileDbDir, StockRealTimePrice);                       
+        utility.writeDbFile(localDbFileName, gLocalFileDbDir, StockRealTimePrice);      
+        console.log("INFO - Write RTP db:" + localDbFileName);                 
     }  
     gStockRealTimePrice = StockRealTimePrice;
     exports.gStockRealTimePrice = StockRealTimePrice;   
@@ -708,14 +721,14 @@ function _f_init_scheduler()
 　　let times = [];
     
     /* Every 10 minute to update stock price. */
-　　for(let i=0; i<60; i=i+10){
+　　for(let i=0; i<60; i=i+1){
 　　　　times.push(i);
 　　}
 　　rule.minute = times;    
     rule.hour = [9, 10, 11, 12, 13];  
     rule.dayOfWeek = [1, 2, 3, 4, 5]; /* Monday to Friday */
     let j = schedule.scheduleJob(rule, function(){
-        console.log('scheduleJob: updateTwStockTwsePRE()');
+        console.log('scheduleJob: _f_updateRealTimeStockPrice()');
         _f_updateRealTimeStockPrice(gStockAllInfoObj);
     });
 }
@@ -737,10 +750,17 @@ exports.init = function()
         gStockAllInfoObj = _f_initStockIdList();   
         //gStockAllInfoObj.stockIdList = ['6220']; /* For Test only */
         
-        _f_updateRealTimeStockPrice(gStockAllInfoObj);         
-        _f_init_scheduler();
+        while(true)
+        {
+            if(_f_isDuringOpeningtime() == true)
+            {
+                _f_updateRealTimeStockPrice(gStockAllInfoObj);   
+            }
+            wait.for(utility.sleepForMs, 120000); /* mis.twse.com.tw limitation. Should add delay. */       
+        }
+        //_f_init_scheduler();
 
-        return callback(null);
+        //return callback(null);
     }
     wait.launchFiber(exec, function(){});
 };
