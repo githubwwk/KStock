@@ -165,7 +165,7 @@ function _f_getStockMonthData(market, stockId, year, month)
         }else{
            let lastOpenDate = utility.lastOpenDateOfWeek();
            let last_open_end_time = lastOpenDate +' 14:00';           
-/* 0612 Konrad, here has some logical bug. please fix it. */
+           /* 0612 Konrad, here has some logical bug. please fix it. */
            if(moment(lastSyncTimeObj.time).isBefore(last_open_end_time) && moment().isAfter(last_open_end_time))
            {
                 temp_data_dict = wait.for(getStockfromWeb_Fn, stockId, year, month);
@@ -642,9 +642,14 @@ function _f_readDataDbFile(file_name)
       var content = fs.readFileSync(file_name);
       //console.log(content);
       var db = JSON.parse(content.toString());
+      if (Object.keys(db).length == 0){
+          /* Some Error reload from web */
+          console.log("ERROR - Invlid content from local db." + file_name);
+          throw Error("Invlid content from local db." + file_name);
+      }
       return db;
     }catch(err){
-        throw err;
+        throw err;        
     }
 }
 
@@ -850,7 +855,10 @@ function _f_genMA(stockId, date_list, data_dict)
     {
         if (data_dict[date_list[i]].CP != 0)
         {
-            result.MA1_list.push(data_dict[date_list[i]].CP);
+            if (data_dict[date_list[i]].CP != null)
+            {
+                result.MA1_list.push(data_dict[date_list[i]].CP);
+            }
         }
     }
 

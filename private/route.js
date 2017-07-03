@@ -45,6 +45,59 @@ exports.default = function(req, res){
 //**********************************************************
 //  For Analysis
 //**********************************************************
+function _f_genStockRTPAllObj(stockId)
+{
+    let srtpObj;
+    /* Generate Today GS an GSP */                        
+    try {
+         srtpObj = twStockRTP.getStockRealTimePrice(stockId);
+         let stockDailyInfo = twStockDailyInfo.getStockPriceArray(stockId);                            
+         let currentGS;
+         let currentGSP;
+         let currentCP;
+
+         let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');
+         let srtp_date = moment(srtpObj.datetime).format("YYYY-MM-DD");
+         if (moment(stockinfo_date).isSame(srtp_date))
+         {     
+             currentGS = stockDailyInfo.result_StockInfo.GS;
+             currentGSP = stockDailyInfo.result_StockInfo.GSP;
+             currentCP = stockDailyInfo.result_StockInfo.CP;
+
+             if (srtpObj.GS == null) {
+                 srtpObj.GS = currentGS;
+             }
+             if (srtpObj.GSP == null) { 
+                 srtpObj.GSP = currentGSP;
+             }
+             srtpObj.currentPrice = currentCP;
+         }else{
+             currentGP = srtpObj.currentPrice - stockDailyInfo.result_StockInfo.CP;
+             currentGSP = ((currentGS/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+                                
+             srtpObj.GS = currentGS;
+             srtpObj.GSP = currentGSP;
+         } /* if-else */
+
+         if ((srtpObj.GS == null) ||
+             (srtpObj.GSP == null) ||
+             (srtpObj.currentPrice == null))
+         {
+             console.log("ERROR - Invalid GS/GSP/CP value");
+             console.dir(srtpObj);                              
+             srtpObj.GS = 'NA';
+             srtpObj.GSP = 'NA';
+         } /* if */
+    } catch(err){
+         console.log("WARNING - gStockRealTimePrice uninit!" + err); 
+         let stockDailyInfo = twStockDailyInfo.getStockPriceArray(stockId);    
+         srtpObj = {};                             
+         srtpObj.currentPrice = stockDailyInfo.result_StockInfo.CP;
+         srtpObj.GS = stockDailyInfo.result_StockInfo.GS;    
+         srtpObj.GSP = stockDailyInfo.result_StockInfo.GSP;                                    
+    } /* try-catch */ 
+    return srtpObj;
+}
 
 exports.showStockAnalysisDateList = function(req, res)
 {
@@ -120,42 +173,17 @@ exports.showStockAnalysisDateList = function(req, res)
                     for(let stockObj of JSON.parse(stockDailyResultObj.data))
                     {
                         let stockId;
-                        if (stockObj.stockId !== undefined) {                            
-                            /* v2.0 format */
+
+                        if (stockObj.stockId !== undefined) {                                                        
                             stockId = stockObj.stockId;                            
-                        }else{
-                            /* v1.0 format */
-                            stockId = stockObj.stockInfo.stockId;                                
-                        }/* if-else */   
+                        }  
 
-                        /* Generate Today GS an GSP */                        
-                        try {
-                            srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
-                            let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
-                            let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
-                            
-                            let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');
-                            let srtp_date = moment(srtpAllObj[stockId].datetime).format("YYYY-MM-DD");
-                            if (moment(stockinfo_date).isSame(srtp_date)){
-                                srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
-                                srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
-                            }else {
-                                srtpAllObj[stockId].GS = currentGP.toFixed(2);
-                                srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
-                            }
-                        } catch(err){
-                                console.log("WARNING - gStockRealTimePrice uninit!" + err); 
-                                let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];    
-                                srtpAllObj[stockId] = {};                             
-                                srtpAllObj[stockId].currentPrice = stockDailyInfo.result_StockInfo.CP;
-                                srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
-                                srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;                                    
-
-                        } /* try-catch */ 
+                        /* Generate GS, GSP and CP */
+                        srtpAllObj[stockId] = _f_genStockRTPAllObj(stockId);
+                    
                     } /* for */
                 } /* for */    
-
-                //console.dir(dataObj);
+                
                 res.render( render_file, {
                     title : 'KStock Server',
                     analyze_category : analyze_category,
@@ -233,42 +261,21 @@ exports.showStockMonitor = function(req, res)
        let srtpAllObj = {};
        for(let monitorObj of monitor_list_all)
        {
-                for(let monitor of monitorObj.monitorList)
-                {                                
-                    let temp = JSON.parse(monitor);                
-                    let stockId = temp.stockId;
-                    srtpAllObj[stockId] = {};
-                    try {                        
-                        srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
-                        let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
-                        let currentGP = srtpAllObj[stockId].currentPrice - stockDailyInfo.result_StockInfo.CP;
-                                
-                        let stockinfo_date = utility.twDateToDcDate_ex(stockDailyInfo.result_StockInfo.date, '/', '-');
-                        let srtp_date = moment(srtpAllObj[stockId].datetime).format("YYYY-MM-DD");
-                        if (moment(stockinfo_date).isSame(srtp_date)){
-                            srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
-                            srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;
-                        }else {
-                            srtpAllObj[stockId].GS = currentGP.toFixed(2);
-                            srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
-                        }
-                    } catch(err){
-                        console.log("WARNING - gStockRealTimePrice uninit!" + err);             
-                        let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];      
-                        srtpAllObj[stockId] = {};       
-                        srtpAllObj[stockId].currentPrice = stockDailyInfo.result_StockInfo.CP;
-                        srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
-                        srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;                           
-                    } /* try-catch */                 
-                } /* for */
-            }/* for */                         
+          for(let monitor of monitorObj.monitorList)
+          {                                
+               let temp = JSON.parse(monitor);                
+               let stockId = temp.stockId;
+               /* Generate GS, GSP and CP */
+               srtpAllObj[stockId] = _f_genStockRTPAllObj(stockId);;
+          } /* for */
+       }/* for */                         
 
-            res.render( 'stockMonitorList', {
-                        monitor_list_all : monitor_list_all,
-                        srtpAllObj : srtpAllObj,
-                        title : 'KStock Server'
-                    });	                 
-            return callback(null);        
+       res.render( 'stockMonitorList', {
+                   monitor_list_all : monitor_list_all,
+                   srtpAllObj : srtpAllObj,
+                   title : 'KStock Server'
+                  });	                 
+       return callback(null);        
    } /* function - exec */
    wait.launchFiber(exec, function(err, result){}); 
 };

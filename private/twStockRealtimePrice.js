@@ -65,8 +65,8 @@ function _f_stock_google_finance_data_reconstruct(stockRtpObj)
         result.stockId = stockRtpObj.t;            
         result.time = stockRtpObj.ltt;        
         result.datetime = new moment(stockRtpObj.lt_dts).format("YYYY-MM-DD"); 
-        result.cp = stockRtpObj.cp;                         
-        result.c = stockRtpObj.c_fix;
+        result.GSP = stockRtpObj.cp;   /* 漲跌幅 */                     
+        result.GS = stockRtpObj.c_fix; /* 漲跌 */
         console.log("Parse Google Finance:" + result.stockId); 
     }catch(err){
         console.log('ERROR - stockRealTimePrice getDatafromWeb()' + err);

@@ -76,6 +76,7 @@ function _f_isDuringOpeningtime()
 
 function btn_pricechart_info(item)
 {
+  debugger;
   var stockId = item.value;
   gCurrentPriceChartStockId = stockId;
 	let URL = '/get_stock_price';
@@ -98,7 +99,7 @@ function btn_pricechart_info(item)
           stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
           try {            
-                  stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);          
+                  stock_price_obj.MA1_list.push(parseFloat(stockRtpObj.currentPrice).toFixed(2));          
           }catch(err){}
           stock_price_obj.MA1_list.reverse();
           stock_price_obj.MA60_list.reverse();
