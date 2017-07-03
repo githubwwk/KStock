@@ -565,13 +565,13 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
              if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV == undefined ||
                  stockInfoCrawler.gStockDailyInfo[stockId].result_MA == undefined)
              {
-                console.log("DEBUG - @562"); 
+                console.log("WARNING - result_TV or result_MA is undefined. " + stockId); 
                 continue;
              }
 
              /* 量太小不看 */
              if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03 < 500){
-                console.log("DEBUG - @562");
+                console.log("INFO - RTVMA_03 is less than 500." + stockId);
                 continue; 
              }              
           } 
@@ -752,7 +752,7 @@ exports.init = function()
         
         while(true)
         {
-            if(_f_isDuringOpeningtime() == true)
+            if(_f_isDuringOpeningtime() == true || Object.keys(gStockRealTimePrice).length == 0)
             {
                 _f_updateRealTimeStockPrice(gStockAllInfoObj);   
             }

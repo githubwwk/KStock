@@ -128,8 +128,7 @@ exports.showStockAnalysisDateList = function(req, res)
                             stockId = stockObj.stockInfo.stockId;                                
                         }/* if-else */   
 
-                        /* Generate Today GS an GSP */
-                        srtpAllObj[stockId] = {};
+                        /* Generate Today GS an GSP */                        
                         try {
                             srtpAllObj[stockId] = twStockRTP.gStockRealTimePrice[stockId];
                             let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                            
@@ -146,7 +145,8 @@ exports.showStockAnalysisDateList = function(req, res)
                             }
                         } catch(err){
                                 console.log("WARNING - gStockRealTimePrice uninit!" + err); 
-                                let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];                                 
+                                let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];    
+                                srtpAllObj[stockId] = {};                             
                                 srtpAllObj[stockId].currentPrice = stockDailyInfo.result_StockInfo.CP;
                                 srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
                                 srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;                                    
@@ -253,7 +253,9 @@ exports.showStockMonitor = function(req, res)
                             srtpAllObj[stockId].GSP = ((currentGP/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
                         }
                     } catch(err){
-                        console.log("WARNING - gStockRealTimePrice uninit!" + err);                         
+                        console.log("WARNING - gStockRealTimePrice uninit!" + err);             
+                        let stockDailyInfo = twStockDailyInfo.gStockDailyInfo[stockId];      
+                        srtpAllObj[stockId] = {};       
                         srtpAllObj[stockId].currentPrice = stockDailyInfo.result_StockInfo.CP;
                         srtpAllObj[stockId].GS = stockDailyInfo.result_StockInfo.GS;    
                         srtpAllObj[stockId].GSP = stockDailyInfo.result_StockInfo.GSP;                           
