@@ -43,7 +43,7 @@ exports.default = function(req, res){
 };
 
 //**********************************************************
-//  For Analysis
+//  Gen GS/GSP/CP rtp stock object for user UI.
 //**********************************************************
 function _f_genStockRTPAllObj(stockId)
 {
@@ -72,8 +72,18 @@ function _f_genStockRTPAllObj(stockId)
              }
              srtpObj.currentPrice = currentCP;
          }else{
-             currentGP = srtpObj.currentPrice - stockDailyInfo.result_StockInfo.CP;
-             currentGSP = ((currentGS/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+             if (srtpObj.gGS != undefined){
+                currentGS = srtpObj.gGS;    
+             }else{
+                currentGS = srtpObj.currentPrice - stockDailyInfo.result_StockInfo.CP;
+             }
+
+             if (srtpObj.gGSP != undefined)
+             {
+                currentGSP = srtpObj.gGSP;
+             }else {
+                currentGSP = ((currentGS/stockDailyInfo.result_StockInfo.CP)*100).toFixed(1);
+             }
                                 
              srtpObj.GS = currentGS;
              srtpObj.GSP = currentGSP;
@@ -91,14 +101,23 @@ function _f_genStockRTPAllObj(stockId)
     } catch(err){
          console.log("WARNING - gStockRealTimePrice uninit!" + err); 
          let stockDailyInfo = twStockDailyInfo.getStockPriceArray(stockId);    
-         srtpObj = {};                             
-         srtpObj.currentPrice = stockDailyInfo.result_StockInfo.CP;
-         srtpObj.GS = stockDailyInfo.result_StockInfo.GS;    
-         srtpObj.GSP = stockDailyInfo.result_StockInfo.GSP;                                    
+         srtpObj = {};                       
+         if (stockDailyInfo != undefined){      
+            srtpObj.currentPrice = stockDailyInfo.result_StockInfo.CP;
+            srtpObj.GS = stockDailyInfo.result_StockInfo.GS;    
+            srtpObj.GSP = stockDailyInfo.result_StockInfo.GSP;                                    
+         }else{
+            srtpObj.currentPrice = 'ERR';
+            srtpObj.GS = 'ERR';
+            srtpObj.GSP = 'ERR';
+         }
     } /* try-catch */ 
     return srtpObj;
 }
 
+//**********************************************************
+//  For Analysis
+//**********************************************************
 exports.showStockAnalysisDateList = function(req, res)
 {
    function exec(callback_exec)

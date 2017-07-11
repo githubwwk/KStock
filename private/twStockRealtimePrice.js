@@ -67,6 +67,8 @@ function _f_stock_google_finance_data_reconstruct(stockRtpObj)
         result.datetime = new moment(stockRtpObj.lt_dts).format("YYYY-MM-DD"); 
         result.GSP = stockRtpObj.cp;   /* 漲跌幅 */                     
         result.GS = stockRtpObj.c_fix; /* 漲跌 */
+        result.gGSP = stockRtpObj.cp;   /* 漲跌幅 */                     
+        result.gGS = stockRtpObj.c_fix; /* 漲跌 */        
         console.log("Parse Google Finance:" + result.stockId); 
     }catch(err){
         console.log('ERROR - stockRealTimePrice getDatafromWeb()' + err);
@@ -571,7 +573,8 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
 
              /* 量太小不看 */
              if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03 < 500){
-                console.log("INFO - RTVMA_03 is less than 500." + stockId);
+                console.log("INFO - Stock ID: " + stockId);
+                console.log("INFO - RTVMA_03 is less than 500. TVMA03=" + stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03);                
                 continue; 
              }              
           } 
