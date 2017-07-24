@@ -237,6 +237,11 @@ function _f_showStockDailyInfo(stockObj, no)
           var price_delta_html = '<font color=\"red\"><b>' + 'Error' + '</b></font>';                                                           
     }
 
+    if (stockObj.stockInfo.market == undefined)
+    {
+      stockObj.stockInfo.market = 'N/A';
+    }
+
     TV_times = (stockObj.result_TV.RTV/stockObj.result_TV.RTVMA_05).toFixed(1);
     temp_html = '<tr>' + 
                 '<td>#' + no + '</td>' + 
@@ -247,23 +252,27 @@ function _f_showStockDailyInfo(stockObj, no)
                        '<td>' + cp_html + '</td>' + 
                        '<td>' + GS + '</td>' + 
                        '<td>' + GSP + '</td>' + 
+                       /* 
                        '<td>' + type + '</td>' +                                                        
+                       */
                        '<td>' + parseFloat(stockObj.result_MA.MA60).toFixed(2) + '</td>' + 
                        /*
                        '<td>' + stockObj.stockDailyInfo.MA.MA20 + '</td>' + 
                        '<td>' + stockObj.stockDailyInfo.MA.MA10 + '</td>' + 
                        '<td>' + stockObj.stockDailyInfo.MA.MA5 + '</td>' + 
                        */
+                       /*
                        '<td><span class="badge" style="font-size : 8px;">' + TV_times + '</span></td>' +  
                        '<td>' + Math.round(stockObj.result_TV.RTV) + '</td>' + 
                        '<td>' + Math.round(stockObj.result_TV.RTVMA_05) + '</td>' +                             
-
+                       /*
                        /*  
                        '<td>' + stockObj.stockInfo.YR + '</td>' + 
                        '<td>' + stockObj.stockInfo.PRE + '</td>' + 
                        '<td>' + stockObj.stockInfo.PBR + '</td>' + 
                        */
                        '<td>' + dataDateStr + '</td>' +   
+                       '<td>' + stockObj.stockInfo.market + '</td>' +   
                        '<td>' + fin_report_btn_html + '</td>' +                     
                        '<td>' + remove_btn_html + dispersion_info_btn_html + price_chart_info_btn_html + '</td>' + 
                        '</tr>';       
@@ -397,20 +406,21 @@ function showStockDailyInfo(stock_info_list)
         <th>(當時)收盤價</th>         
         <th>(當時)漲跌</th>
         <th>(當時)漲跌幅</th>
-        <th>Type</th>              
+<!--    <th>Type</th> -->             
         <th>MA60</th>
 <!--    <th>MA20</th> -->
 <!--    <th>MA10</th> -->
 <!--    <th>MA5</th> -->
-        <th>成交量比</th>
-        <th>成交量</th>
-        <th>成交量MA5</th>  
+<!--    <th>成交量比</th> -->
+<!--    <th>成交量</th> -->
+<!--    <th>成交量MA5</th>  --> 
         <th>加入時間</th>
 <!--              
         <th>殖利率</th>
         <th>本益比</th>
         <th>股價淨值比</th>       
--->        
+-->     
+        <th>市場</th>   
         <th>財報</th>
         <th>Action</th>
       </tr>

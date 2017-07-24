@@ -32,8 +32,9 @@ var stockAnalyzeAPIs = [{'api' : stockAnalyze_01, 'enable' : true},
                         {'api' : stockAnalyze_05, 'enable' : true},
                         {'api' : stockAnalyze_06, 'enable' : true},
                         {'api' : stockAnalyze_07, 'enable' : true},
-                        {'api' : stockAnalyze_08, 'enable' : true},];
-                        //{'api' : stockAnalyze_09, 'enable' : true}];
+                        {'api' : stockAnalyze_08, 'enable' : true},
+                        {'api' : stockAnalyze_09, 'enable' : true}
+                        ];
 
 //******************************************
 // Global Variable
@@ -379,8 +380,8 @@ function stockAnalyze_02(stockInfoObj)
     let result_TV = stockInfoObj.result_TV;
     let cp = stockInfoObj.result_StockInfo.CP;
 
-    if (((cp > result_MA.MA60_list[0]) && (result_MA.MA1_list[1] <= result_MA.MA60_list[1]) && (result_TV.RTV > 1000)) ||
-         ((cp < result_MA.MA60_list[0]) && (result_MA.MA1_list[1] >= result_MA.MA60_list[1]) && (result_TV.RTV > 1000)))
+    if (((cp > result_MA.MA60_list[0]) && (result_MA.MA1_list[1] <= result_MA.MA60_list[1]) && (result_TV.RTV > 800)) ||
+         ((cp < result_MA.MA60_list[0]) && (result_MA.MA1_list[1] >= result_MA.MA60_list[1]) && (result_TV.RTV > 800)))
     {
         if (gStockDailyAnalyzeResult[type] == undefined)
         {
@@ -621,16 +622,38 @@ function stockAnalyze_08(stockInfoObj)
        gStockDailyAnalyzeResult[result_type] = [];
     }
 
-    if(stockId == '3532'){
-        console.log("@");
-    }
-
     if ((cp >= result_MA.MAX) || (cp <= result_MA.MIN))
     {
        gStockDailyAnalyzeResult[result_type].push(gStockDailyInfo[stockId]);
     }
 }
 
+//******************************************
+// stockAnalyze_09()
+// Through MA60 and MA100
+//******************************************
+function stockAnalyze_09(stockInfoObj)
+{
+    let type = 'stockDaily_A09';
+    let stockId = stockInfoObj.stockId;
+    let result_MA = stockInfoObj.result_MA;
+    let result_TV = stockInfoObj.result_TV;
+    let cp = stockInfoObj.result_StockInfo.CP;
+
+    if ((cp > result_MA.MA60) && 
+        (cp > result_MA.MA100) && 
+        (result_MA.MA100 > result_MA.MA60) && 
+        (result_MA.MA1_list[1] <= result_MA.MA100) && 
+        (result_TV.RTV > 500))
+    {
+        if (gStockDailyAnalyzeResult[type] == undefined)
+        {
+            gStockDailyAnalyzeResult[type] = [];
+        }        
+        gStockDailyAnalyzeResult[type].push(gStockDailyInfo[stockId]);        
+    } /* if */
+
+}
 
 //******************************************
 // readDataDbFile()
@@ -748,12 +771,13 @@ function _f_genMA(stockId, date_list, data_dict)
 {
     let posi = 0;
     let result = {};
+    let price_MA100 = 0;
     let price_MA60 = 0;
     let price_MA20 = 0;
     let price_MA10 = 0;
     let price_MA5 = 0;    
     let MA_LIST_LEN = 60;
-    let check_max_MA_days = 60;
+    let check_max_MA_days = 100;
     let MAX = 0;
     let MIN = 0;
 
@@ -769,6 +793,10 @@ function _f_genMA(stockId, date_list, data_dict)
     {
         try {
             let price = data_dict[date_list[posi+i]].CP;
+
+            if (i < 100) {
+                price_MA100 += price;
+            }
 
             if (i < 60) {
                 price_MA60 += price;
@@ -792,6 +820,7 @@ function _f_genMA(stockId, date_list, data_dict)
         }/* try-catch */
     } /* for */
 
+    let MA100 = price_MA100/100;
     let MA60 = price_MA60/60;
     let MA20 = price_MA20/20;
     let MA10 = price_MA10/10;
@@ -862,12 +891,19 @@ function _f_genMA(stockId, date_list, data_dict)
         }
     }
 
+    result.MA100 = MA100.toFixed(4);
     result.MA60 = MA60.toFixed(4);
     result.MA20 = MA20.toFixed(4);
     result.MA10 = MA10.toFixed(4);
     result.MA5 = MA5.toFixed(4);
     result.MAX = MAX;
     result.MIN = MIN;
+
+/*
+    console.log("stockId:" + stockId);
+    console.log("MA100:" + result.MA100);
+    console.log("MA60:" + result.MA60);
+*/
 
     let temp_MA_list = [];
     temp_MA_list.push(MA60);

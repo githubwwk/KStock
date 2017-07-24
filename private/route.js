@@ -103,9 +103,16 @@ function _f_genStockRTPAllObj(stockId)
          let stockDailyInfo = twStockDailyInfo.getStockPriceArray(stockId);    
          srtpObj = {};                       
          if (stockDailyInfo != undefined){      
-            srtpObj.currentPrice = stockDailyInfo.result_StockInfo.CP;
-            srtpObj.GS = stockDailyInfo.result_StockInfo.GS;    
-            srtpObj.GSP = stockDailyInfo.result_StockInfo.GSP;                                    
+             if (stockDailyInfo.result_StockInfo == undefined){
+                 console.log("ERROR - _f_genStockRTPAllObj() stockDailyInfo.result_StockInfo is undefined. " + stockId);
+                 srtpObj.currentPrice = 'ERR';
+                 srtpObj.GS = 'ERR';
+                 srtpObj.GSP = 'ERR';                 
+             }else {
+                srtpObj.currentPrice = stockDailyInfo.result_StockInfo.CP;
+                srtpObj.GS = stockDailyInfo.result_StockInfo.GS;    
+                srtpObj.GSP = stockDailyInfo.result_StockInfo.GSP;                                    
+             }
          }else{
             srtpObj.currentPrice = 'ERR';
             srtpObj.GS = 'ERR';
@@ -167,7 +174,12 @@ exports.showStockAnalysisDateList = function(req, res)
                     analyze_category = 'stockDaily_A08';
                     render_file = 'stockInfoAnalyzeResult';
                     description = '60日突破新高、跌破新低';
-                break;                                                                                 
+                break;        
+                case 'A09':                    
+                    analyze_category = 'stockDaily_A09';
+                    render_file = 'stockInfoAnalyzeResult';
+                    description = '穿過MA60&MA100';
+                break;                                                                                           
                 default:
                     console.log("ERROR - Invalid Type:" + req.query.type);
                     res.send(503);
