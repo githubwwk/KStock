@@ -198,8 +198,17 @@ exports.showStockAnalysisDateList = function(req, res)
                 /* get all stockId of dataObj */        
                 let srtpAllObj = {};
 
-                /* Extract realtime stock price for this category */
-                for(let stockDailyResultObj of analysisResultDataObj)
+                /* Extract realtime stock price for this category */    
+                let analysisResultDataObj_to_user = [];  
+                for(let i=0 ; i<analysisResultDataObj.length ; i++)
+                {
+                    /* Only procide 10 days data to user. */
+                    if((analysisResultDataObj.length - i) < 10){
+                       analysisResultDataObj_to_user.push(analysisResultDataObj[i]);     
+                    }
+                }
+
+                for(let stockDailyResultObj of analysisResultDataObj_to_user)
                 {
                     for(let stockObj of JSON.parse(stockDailyResultObj.data))
                     {
@@ -221,7 +230,7 @@ exports.showStockAnalysisDateList = function(req, res)
                     description : description,
                     monitor_list : montiorNameList,
                     srtpAllObj : srtpAllObj,
-                    analysisResultDataObj : analysisResultDataObj 
+                    analysisResultDataObj : analysisResultDataObj_to_user 
                 });	
             } /* if-else */
         });	
