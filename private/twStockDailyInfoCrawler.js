@@ -251,7 +251,7 @@ function _f_genMATV(stockId, date_list, data_dict)
 {
     let result = {};
 
-    if(date_list.lenght < 60)
+    if(date_list.lenght < 120)
     {
         return null;
     }
@@ -264,14 +264,16 @@ function _f_genMATV(stockId, date_list, data_dict)
          let temp_RTVMA10 = 0;  /* For realtime check TV, include last date. */
          let temp_RTVMA05 = 0;  /* For realtime check TV, include last date. */
          let temp_RTVMA03 = 0;  /* For realtime check TV, include last date. */
-
+         
          let tv_list = [];
-         for (let i=0; i<=60 ; i++)
+         let tv_list_cal_max_min = [];
+         for (let i=0; i<=120 ; i++)
          {
              /* Get MAX and min during 60 days */             
              let tv;
              if(gAllStocksObj.otcStockIdList.indexOf(stockId) > -1)
              {
+
                 /* OTC TV already div 1000 */ 
                 tv = Math.round(data_dict[date_list[i]].TV);
                 data_dict[date_list[i]].TV = data_dict[date_list[i]].TV*1000;
@@ -285,11 +287,11 @@ function _f_genMATV(stockId, date_list, data_dict)
                  //console.dir(data_dict[date_list[i]]);
                  continue;
              }
+             if (i < 60){
+                 tv_list_cal_max_min.push(tv);
+             }   
              tv_list.push(tv);
-         }
-         tv_list.sort(function(a, b){
-             return a - b;
-         });
+         }/* for */
 
          for (let i=0; i<=10 ; i++)
          {
@@ -331,9 +333,9 @@ function _f_genMATV(stockId, date_list, data_dict)
          result.RTV = Math.round(data_dict[date_list[0]].TV/1000); /* last (Today, after close market) TV */
 
          /* MAX and min during 60 days */
-         result.TV_MAX = tv_list[tv_list.length-1];
-         result.TV_min = tv_list[0];
-
+         result.TV_MAX = Math.max.apply(null, tv_list_cal_max_min); /* 60 days */
+         result.TV_min = Math.min.apply(null, tv_list_cal_max_min); /* 60 days */
+         result.tv_list = tv_list;
     } catch(err){
           console.log("ERROR - _f_genMATV()" + err);
           result = null;

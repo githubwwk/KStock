@@ -59,8 +59,8 @@ function btn_pricechart_info(item)
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
   let market = g_stock_info_id_dict[stockId].stockInfo.market;
-  let no = '#' + g_stock_info_id_dict[stockId].no;
-  let title = no + ' ' + market + ' ' + stockName + ' (' + stockId + ')';  
+  let no = '#' + g_stock_info_id_dict[stockId].no;   
+  let title = no + ' (' + market + ':' + stockId + ')' + ' ' + stockName ;
 
   var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
   let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>';  
@@ -74,9 +74,10 @@ function btn_pricechart_info(item)
           let stock_price_obj = {};          
           stock_price_obj.MA1_list = result.MA1_list;
           stock_price_obj.MA60_list = result.MA60_list;
-          let stockRtpObj = result.stockRtpObj;
-
+          stock_price_obj.tv_list = result.tv_list;
           debugger;
+          let stockRtpObj = result.stockRtpObj;
+          
           let price_info_html = '<h4>價格:' + stockRtpObj.currentPrice + 
                                 '  漲跌:' + stockRtpObj.GS + ' (' + stockRtpObj.GSP +'%)</h4>';
 
@@ -87,15 +88,13 @@ function btn_pricechart_info(item)
               price_info_html = '<font color=\"red\">' + price_info_html + '</font>';
           }
           $('#price-modal-title').append(price_info_html); 
-
-          stock_price_obj.MA1_list.reverse();
-          stock_price_obj.MA60_list.reverse();
          
           if(_f_isDuringOpeningtime() && (stockRtpObj.currentPrice != undefined))
           {
-            stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);
+            /* Add to head */
+            stock_price_obj.MA1_list.unshift(stockRtpObj.currentPrice);
           }          
-          show_stockprice_chart(stock_price_obj, 'ar_price_chart');           
+          show_stock_price_value_chart(stock_price_obj, 'ar_price_chart');           
     });	
   }catch (err){
     alert('Error!' + err);

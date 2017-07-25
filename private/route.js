@@ -466,6 +466,8 @@ exports.getStockPrice = function(req, res)
     let stockDailyInfoObj = twStockDailyInfo.getStockPriceArray(stockId);
     let stockRtpObj = twStockRTP.getStockRealTimePrice(stockId);
     let result = {};
+    
+    result.tv_list = stockDailyInfoObj.result_TV.tv_list;
     result.MA1_list = stockDailyInfoObj.result_MA.MA1_list;
     result.MA60_list = stockDailyInfoObj.result_MA.MA60_list;
     result.stockRtpObj = stockRtpObj

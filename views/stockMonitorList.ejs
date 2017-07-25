@@ -75,7 +75,7 @@ function btn_pricechart_info(item)
     market = '';
   }
   let no = '#' + g_stock_info_id_dict[stockId].no;
-  let title = no + ' ' + market + ' ' + stockName + ' (' + stockId + ')';
+  let title = no + ' (' + market + ':' + stockId + ')' + ' ' + stockName ;
 
   //$('#price-modal-title').text(title);
   var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
@@ -90,6 +90,7 @@ function btn_pricechart_info(item)
           let stock_price_obj = {};          
           stock_price_obj.MA1_list = result.MA1_list;
           stock_price_obj.MA60_list = result.MA60_list;
+          stock_price_obj.tv_list = result.tv_list;
           let stockRtpObj = result.stockRtpObj;
           let price_info_html = '<h4>價格:' + stockRtpObj.currentPrice + 
                                 '  漲跌:' + stockRtpObj.GS + ' (' + stockRtpObj.GSP +'%)</h4>';
@@ -103,11 +104,11 @@ function btn_pricechart_info(item)
 
           try
           {            
-              stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);           
+              /* Add to head */
+              stock_price_obj.MA1_list.unshift(stockRtpObj.currentPrice);           
           }catch(err){}
-          stock_price_obj.MA1_list.reverse();
-          stock_price_obj.MA60_list.reverse();
-          show_stockprice_chart(stock_price_obj, 'ar_price_chart');           
+ 
+          show_stock_price_value_chart(stock_price_obj, 'ar_price_chart');           
     });	
   }catch (err){
     alert('媽啦~Error!' + err);
