@@ -76,9 +76,21 @@ function btn_pricechart_info(item)
           stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
 
+          debugger;
+          let price_info_html = '<h4>價格:' + stockRtpObj.currentPrice + 
+                                '  漲跌:' + stockRtpObj.GS + ' (' + stockRtpObj.GSP +'%)</h4>';
+
+          if(String(stockRtpObj.GS).indexOf('-') > -1)
+          {
+              price_info_html = '<font color=\"green\">' + price_info_html + '</font>';
+          }else{
+              price_info_html = '<font color=\"red\">' + price_info_html + '</font>';
+          }
+          $('#price-modal-title').append(price_info_html); 
+
           stock_price_obj.MA1_list.reverse();
           stock_price_obj.MA60_list.reverse();
-          debugger;
+         
           if(_f_isDuringOpeningtime() && (stockRtpObj.currentPrice != undefined))
           {
             stock_price_obj.MA1_list.push(stockRtpObj.currentPrice);
@@ -87,7 +99,9 @@ function btn_pricechart_info(item)
     });	
   }catch (err){
     alert('Error!' + err);
-  }	    
+  }	  
+
+
 } /* btn_dispersion_info */
 
 function btn_dispersion_info(item)
@@ -225,8 +239,7 @@ function btn_dispersion_info(item)
           window.open('https://stock.cnyes.com/market/TSE:3032:STOCK', '_blank');
         });   
         
-        $("#btn_previous_stock_price_chart").click(function() {  
-            debugger;        
+        $("#btn_previous_stock_price_chart").click(function() {              
             console.log("btn_previous_stock_price_chart+++");
             let currentStockId = gCurrentPriceChartStockId;             
             let index = gStockIdIndexDict[currentStockId];                      

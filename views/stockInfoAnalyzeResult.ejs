@@ -98,6 +98,18 @@ function btn_pricechart_info(item)
           stock_price_obj.MA1_list = result.MA1_list;
           stock_price_obj.MA60_list = result.MA60_list;
           let stockRtpObj = result.stockRtpObj;
+
+          let price_info_html = '價格:' + stockRtpObj.currentPrice + 
+                                '  漲跌:' + stockRtpObj.GS + ' (' + stockRtpObj.GSP +'%)';
+          if(String(stockRtpObj.GS).indexOf('-') > -1)
+          {              
+              price_info_html = '<h4><font color="green">' + price_info_html + '</font></4>';
+          }else{
+              price_info_html = '<h4><font color="red">' + price_info_html + '</font></h4>';
+          }
+                                
+          $('#price-modal-title').append(price_info_html); 
+
           try {            
                   stock_price_obj.MA1_list.push(parseFloat(stockRtpObj.currentPrice).toFixed(2));          
           }catch(err){}
