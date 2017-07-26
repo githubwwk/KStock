@@ -465,6 +465,15 @@ exports.getStockPrice = function(req, res)
     let stockId = req.query.stockId;
     let stockDailyInfoObj = twStockDailyInfo.getStockPriceArray(stockId);
     let stockRtpObj = twStockRTP.getStockRealTimePrice(stockId);
+    
+    /* Handle OTC category */
+    if (stockRtpObj == undefined){
+        stockRtpObj = {};
+        stockRtpObj.currentPrice = stockDailyInfoObj.result_StockInfo.CP;
+        stockRtpObj.GS = stockDailyInfoObj.result_StockInfo.GS;
+        stockRtpObj.GSP = stockDailyInfoObj.result_StockInfo.GSP;
+    }
+
     let result = {};
     
     result.tv_list = stockDailyInfoObj.result_TV.tv_list;

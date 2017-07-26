@@ -222,36 +222,37 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
 		        }
 		    ],
 		    yAxis : [
-		        {
-					type : 'value',		
-					name : 'Price',			
-		            max : '0',            
-                    min : '0',		            
-				},
+		        
 	            {
 					type : 'value',
 					name : 'Value',					
 		            max : '0',            
                     min : '0',		            
-		        }						
+				},
+                {
+					type : 'value',		
+					name : 'Price',			
+		            max : '0',            
+                    min : '0',		            
+				},												
 		    ],
 		    series : [
 		        {
 		            name:'Price',
 					type:'line',
-                    //yAxisIndex: 0,										           
+                    yAxisIndex: 1,										           
 		            data:[] /* Value */
 		        },  
 				{
 		            name:'MA60',
 					type:'line',
-					//yAxisIndex: 0,					           
+					yAxisIndex: 1,					           
 		            data:[] /* Value */
 				},  
                 {
 		            name:'Value',
 					type:'bar',
-					yAxisIndex: 1,					           
+					yAxisIndex: 0,					           
 		            data:[] /* Value */
 		        },  						
 		    ]
@@ -305,27 +306,28 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
 		let price_min_temp = parseInt(yAxis_min) - 1;
 		let margin = (price_max_temp - price_min_temp) * 0.1;
 		
-		let margin_max = Math.round((price_max_temp + margin*2) + 1);
+		let margin_max = Math.round((price_max_temp + margin*1) + 1);
 		let margin_min = Math.round(((price_min_temp - margin*3) > 0)? (price_min_temp - margin*3):0);
 
-        option.yAxis[0].max = margin_max;
-		option.yAxis[0].min = margin_min;
+        option.yAxis[1].max = margin_max;
+		option.yAxis[1].min = margin_min;
 		console.log("yAxis_max:" + margin_max);
 		console.log("yAxis_min" + margin_min);
 
 		let yAxis_1_temp = Math.max.apply(null, stock_price_obj.tv_list) * 3;
-debugger;
+        let yAxis_max_temp = 0;
 		if (yAxis_1_temp > 100000){
-           option.yAxis[1].max = Math.round(yAxis_1_temp / 100000) * 100000;
+           yAxis_max_temp = Math.round(yAxis_1_temp / 100000) * 100000;
 		}else if(yAxis_1_temp > 10000){
-           option.yAxis[1].max = Math.round(yAxis_1_temp / 10000) * 10000;
+           yAxis_max_temp = Math.round(yAxis_1_temp / 10000) * 10000;
 		}else if(yAxis_1_temp > 1000){
-           option.yAxis[1].max = Math.round(yAxis_1_temp / 1000) * 1000;  
+           yAxis_max_temp = Math.round(yAxis_1_temp / 1000) * 1000;  
 		}else if(yAxis_1_temp > 100){ 
-           option.yAxis[1].max = Math.round(yAxis_1_temp / 100) * 100;
+           yAxis_max_temp = Math.round(yAxis_1_temp / 100) * 100;
 		}else if(yAxis_1_temp > 10){
-           option.yAxis[1].max = Math.round(yAxis_1_temp / 10) * 10;
+           yAxis_max_temp = Math.round(yAxis_1_temp / 10) * 10;
 		}		
-        option.yAxis[1].min = 0;
+		option.yAxis[0].max = yAxis_max_temp;
+        option.yAxis[0].min = 0;
         myChart.setOption(option);  	
 }
