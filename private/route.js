@@ -10,6 +10,8 @@ var twStockDailyInfo = require('./twStockDailyInfoCrawler.js');
 var twStockDispersion = require('./twStockDispersion.js');
 var twStockTradingRecord = require('./twStockTrdingRecord.js');
 var wait = require('wait.for');
+var pako = require('pako');
+
 //=====================================
 // API
 //=====================================
@@ -99,7 +101,7 @@ function _f_genStockRTPAllObj(stockId)
              srtpObj.GSP = 'NA';
          } /* if */
     } catch(err){
-         console.log("WARNING - gStockRealTimePrice uninit!" + err); 
+         //console.log("WARNING - gStockRealTimePrice uninit!" + err); 
          let stockDailyInfo = twStockDailyInfo.getStockPriceArray(stockId);    
          srtpObj = {};                       
          if (stockDailyInfo != undefined){      
@@ -125,6 +127,28 @@ function _f_genStockRTPAllObj(stockId)
 //**********************************************************
 //  For Analysis
 //**********************************************************
+function shrinkAnalysisResultDataObj(analysisResultDataObjList)
+{
+    //let analysisResultDataObjList_light = [];
+    
+    for(let stockDailyResultObj of analysisResultDataObjList)
+    {
+        let stock_data_list = JSON.parse(stockDailyResultObj.data);
+        let temp_data_list = [];
+        for (let stock_data of stock_data_list)
+        {            
+            delete stock_data.result_MA.MA60_list;
+            delete stock_data.result_MA.MA1_list;
+            delete stock_data.result_TV.tv_list;
+
+            //console.dir(stock_data);
+            temp_data_list.push(stock_data);
+        }
+        stockDailyResultObj.data = JSON.stringify(temp_data_list);
+    }
+    return analysisResultDataObjList;
+}
+
 exports.showStockAnalysisDateList = function(req, res)
 {
    function exec(callback_exec)
@@ -187,7 +211,7 @@ exports.showStockAnalysisDateList = function(req, res)
         }
        
         let montiorNameList = wait.for(db.stockMonitor_GetMonitorNameList);
-
+ 
         db.stockDailyAnalyzeResult_Find(analyze_category, '', function(err, analysisResultDataObj){  
 
             if (err != null)
@@ -200,11 +224,13 @@ exports.showStockAnalysisDateList = function(req, res)
 
                 /* Extract realtime stock price for this category */    
                 let analysisResultDataObj_to_user = [];  
+                let data_list_max_len_to_user = 5;
                 for(let i=0 ; i<analysisResultDataObj.length ; i++)
                 {
                     /* Only procide 10 days data to user. */
-                    if((analysisResultDataObj.length - i) < 10){
-                       analysisResultDataObj_to_user.push(analysisResultDataObj[i]);     
+                    if((analysisResultDataObj.length - i) <= data_list_max_len_to_user){
+                       analysisResultDataObj_to_user.push(analysisResultDataObj[i]);  
+                       //console.dir(JSON.parse(analysisResultDataObj[i].data));                        
                     }
                 }
 
@@ -219,18 +245,25 @@ exports.showStockAnalysisDateList = function(req, res)
                         }  
 
                         /* Generate GS, GSP and CP */
-                        srtpAllObj[stockId] = _f_genStockRTPAllObj(stockId);
-                    
+                        srtpAllObj[stockId] = _f_genStockRTPAllObj(stockId);                      
                     } /* for */
                 } /* for */    
                 
+                let analysisResultDataObj_light = shrinkAnalysisResultDataObj(analysisResultDataObj_to_user);
+                /* Konrad try to zip response object, but size from 5M to 1M has to spend 3 second in zip process. */
+                console.log("DEBUG - analysisResultDataObj_to_user Len:" +JSON.stringify(analysisResultDataObj_light).length);
+                //console.log("DEBUG - srtpAllObj Len:" +JSON.stringify(srtpAllObj).length);
+                //console.log("DEBUG - montiorNameList Len:" +JSON.stringify(montiorNameList).length);
+                //var binaryString = pako.deflate(JSON.stringify(analysisResultDataObj_to_user), { to: 'string' });
+                //console.log("DEBUG - binaryString Len:" + binaryString.length);
+
                 res.render( render_file, {
                     title : 'KStock Server',
                     analyze_category : analyze_category,
                     description : description,
                     monitor_list : montiorNameList,
                     srtpAllObj : srtpAllObj,
-                    analysisResultDataObj : analysisResultDataObj_to_user 
+                    analysisResultDataObj : analysisResultDataObj_light 
                 });	
             } /* if-else */
         });	

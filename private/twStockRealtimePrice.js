@@ -519,7 +519,7 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
   for (let stockId of tse_otc_stockid_list)
   {       
       if (stockRealTimePrice[stockId] == undefined) {
-          console.log("ERROR - stockRealTimePrice[stockId] is undefined. " + stockId);
+          //console.log("ERROR - stockRealTimePrice[stockId] is undefined. " + stockId);
           continue;
       }
 

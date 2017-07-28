@@ -83,8 +83,7 @@ function btn_pricechart_info(item)
   $('#price-modal-title').html('');
   $('#price-modal-title').append(stock_url);
 
-  try { 
-      $('#PRICE_Modal').modal('show');  
+  try {      
       $.get(URL, { stockId: stockId}, function(data){	       
           let result = JSON.parse(data);
           let stock_price_obj = {};          
@@ -108,7 +107,8 @@ function btn_pricechart_info(item)
               stock_price_obj.MA1_list.unshift(stockRtpObj.currentPrice);           
           }catch(err){}
  
-          show_stock_price_value_chart(stock_price_obj, 'ar_price_chart');           
+          show_stock_price_value_chart(stock_price_obj, 'ar_price_chart');  
+          $('#PRICE_Modal').modal('show');           
     });	
   }catch (err){
     alert('媽啦~Error!' + err);

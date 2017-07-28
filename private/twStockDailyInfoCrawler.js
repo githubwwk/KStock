@@ -972,9 +972,13 @@ function _f_stockDailyChecker(market, stockId)
     {
         if(stockAnalyzeAPIobj.enable)
         {            
-            stockAnalyzeAPIobj.api(gStockDailyInfo[stockId]);
+            stockAnalyzeAPIobj.api(gStockDailyInfo[stockId]);            
         }
     }
+    /* Remove useless object for shrink object size */
+    delete gStockDailyInfo[stockId].result_MA.MA20_list;
+    delete gStockDailyInfo[stockId].result_MA.MA5_list;
+    delete gStockDailyInfo[stockId].result_MA.MA10_list;
 
 }/* stockDailyChecker() - END */
 
