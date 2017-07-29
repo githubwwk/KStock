@@ -121,83 +121,6 @@ function btn_dispersion_info(item)
   }	    
 } /* btn_dispersion_info */
 
-  function btn_add_monitor(item) 
-  { 
-      var stockId = item.value;
-      console.log("Add Stock:" + stockId);
-      var URLs = "add_stock_monitor";
-            
-      let bootbox_prompt_init = {};
-      bootbox_prompt_init.title = "加入監控名單 ";
-      bootbox_prompt_init.inputType = 'select';
-      bootbox_prompt_init.inputOptions = [];
-      let options = {};
-      options.text = '加入新名單...';
-      options.value = 'AddNewMonitorName';
-      bootbox_prompt_init.inputOptions.push(options);
-
-      g_monitor_list.sort();      
-
-      for (let monitorName of g_monitor_list)
-      {
-           let options = {};
-           options.text = monitorName;
-           options.value = monitorName;
-           bootbox_prompt_init.inputOptions.push(options);
-      } 
-      bootbox_prompt_init.callback = bootbox_Cb;
-
-      function bootbox_Cb(result){
-           console.log("INFO - [Monitor List]:" + result);
-           
-          function __f_send_to_server(monitorName)
-          {
-                var compose = {};
-                compose.stockInfo = {};              
-                compose.stockInfo = g_stock_info_id_dict[stockId];                
-                compose.monitor_name = monitorName; /* select value is monitor name */                
-                $.ajax({
-                      url: URLs,
-                      data: JSON.stringify(compose),
-                      type:"POST",
-                      dataType:'json',
-                      contentType: "application/json; charset=utf-8",
-
-                      success: function(res){                                        
-                          g_monitor_list = res;          		
-                          bootbox.alert("Success!");
-                      },
-                      error:function(xhr, ajaxOptions, thrownError){
-                          bootbox.alert("Fail!" + xhr.status + ' ' + thrownError);
-
-                      }
-                }); /* ajax */
-          }
-
-           if((result != '') && (result != null)){
-                //debugger;
-                if (result == 'AddNewMonitorName')
-                {
-                   bootbox.prompt({
-                      title: "新增Monitor名稱",
-                      inputType: 'textarea',
-                      callback: function (result) {  
-                          //debugger;                                                
-                          __f_send_to_server(result);
-                      }
-                   });
-                }else
-                {
-                    __f_send_to_server(result);
-                }
-            }else{                
-                 bootbox.alert("請選擇一個Monitor Name");
-            }
-      } /*function - bootbox_cb */
-
-      bootbox.prompt(bootbox_prompt_init);
-
-  }/* btn_add_monitor() */
   
   var g_stock_date;
   var g_stock_info_id_dict = {}; 
@@ -327,8 +250,6 @@ function btn_dispersion_info(item)
                var web_link = 'https://stock.cnyes.com/market/TSE:' + stockId + ':STOCK';
                gCurrentPageStockUrlList.push(web_link);
 
-               //var type = (stockInfo.stockDailyInfo.type == 'P->N')?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
-               //var type = (stockObj.result_StockInfo.GSP < 0)?'<font color=\"green\">跌</font>':'<font color=\"red\">漲</font>';
                var GS = (stockObj.result_StockInfo.GS < 0) ?
                         '<font color=\"green\">' + stockObj.result_StockInfo.GS + '</font>' :
                         '<font color=\"red\">' + stockObj.result_StockInfo.GS + '</font>';
@@ -338,7 +259,7 @@ function btn_dispersion_info(item)
                         '<font color=\"red\">' + stockObj.result_StockInfo.GSP + '%</font>';
 
                var add_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_add_btn_' + stockId + '" value="' +
-                                 stockId + '" onclick="btn_add_monitor(this)"><span class="glyphicon glyphicon-plus"></span></button>';
+                                 stockId + '" onclick="monitor_add_stock(this)"><span class="glyphicon glyphicon-plus"></span></button>';
 
                var dispersion_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_dsps_btn_' + 
                                               stockId + '" value="' + stockId + 
@@ -356,11 +277,7 @@ function btn_dispersion_info(item)
                try {
                     //debugger;
                     var currentPrice = g_stock_all_obj[stockId].currentPrice;    
-                    /*                                   
-                    var today_cp_html = '<span class="label label-default" style="display:block">' + 
-                                        currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
-                                        g_stock_all_obj[stockId].GS + '</span>';                                        
-                    */        
+     
                     var today_cp_html = '<button type="button" class="btn btn-xs" style="font-size : 8px;">' + 
                                         currentPrice + '<br>' + '('  + g_stock_all_obj[stockId].GSP +'%) '+ 
                                         g_stock_all_obj[stockId].GS + '</button>';   
@@ -475,24 +392,11 @@ function btn_dispersion_info(item)
         <th align="right">現價</th>         
         <th align="right">Delta</th>    
         <th>(當時)收盤價</th>         
-<!--    <th>(當時)漲跌</th> -->
         <th>(當時)漲跌幅</th>
-<!--    <th>Type</th> -->            
-<!--    <th>MA60</th> -->
-<!--    <th>MA20</th> -->
-<!--    <th>MA10</th> -->
-<!--    <th>MA5</th> -->
         <th>成交量比</th>
         <th>成交量</th>
         <th>成交量MA5</th>  
-        <th>市場</th>  
-<!--              
-        <th>殖利率</th>
-        <th>本益比</th>
-        <th>股價淨值比</th>       
-     
-        <th>加入時間</th>
--->   
+        <th>市場</th>   
         <th>財報</th>
         <th>Action</th>
       </tr>

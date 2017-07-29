@@ -90,87 +90,14 @@ function btn_dispersion_info(item)
     alert('Error!');
   }	    
 }
-
-  function btn_add_monitor(item) 
-  { 
-      var stockId = item.value;
-      console.log("Add Stock:" + stockId);
-      var URLs = "add_stock_monitor";
-            
-      let bootbox_prompt_init = {};
-      bootbox_prompt_init.title = "加入監控名單 ";
-      bootbox_prompt_init.inputType = 'select';
-      bootbox_prompt_init.inputOptions = [];
-      let options = {};
-      options.text = '加入新名單...';
-      options.value = 'AddNewMonitorName';
-      bootbox_prompt_init.inputOptions.push(options);
-
-      g_monitor_name_list.sort();      
-
-      for (let monitorName of g_monitor_name_list)
-      {
-           let options = {};
-           options.text = monitorName;
-           options.value = monitorName;
-           bootbox_prompt_init.inputOptions.push(options);
-      } 
-      bootbox_prompt_init.callback = bootbox_Cb;
-
-      function bootbox_Cb(result){
-           console.log("INFO - [Monitor List]:" + result);
-           
-          function __f_send_to_server(monitorName)
-          {
-                var compose = {};
-                compose.stockInfo = {};              
-                compose.stockInfo = g_stock_info_id_dict[stockId];                
-                compose.monitor_name = monitorName; /* select value is monitor name */
-                //debugger;
-                $.ajax({
-                      url: URLs,
-                      data: JSON.stringify(compose),
-                      type:"POST",
-                      dataType:'json',
-                      contentType: "application/json; charset=utf-8",
-
-                      success: function(res){              
-                          //debugger;          
-                          g_monitor_name_list = res;          		
-                          bootbox.alert("Success!");
-                      },
-                      error:function(xhr, ajaxOptions, thrownError){
-                          bootbox.alert("Fail!" + xhr.status + ' ' + thrownError);
-
-                      }
-                }); /* ajax */
-          }
-
-           if((result != '') && (result != null)){
-                //debugger;
-                if (result == 'AddNewMonitorName')
-                {
-                   bootbox.prompt({
-                      title: "新增Monitor名稱",
-                      inputType: 'textarea',
-                      callback: function (result) {  
-                          //debugger;                                                
-                          __f_send_to_server(result);
-                      }
-                   });
-                }else
-                {
-                    __f_send_to_server(result);
-                }
-            }else{                
-                 bootbox.alert("請選擇一個Monitor Name");
-            }
-      } /*function - bootbox_cb */
-
-      bootbox.prompt(bootbox_prompt_init);
-
-  }/* btn_add_monitor() */
   
+function btn_show_dispersion_chart(item)
+{
+    let stockId = item.value;
+    let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
+    show_dispersion_chart(stockId, stockName, );
+}
+
   var g_current_del_type;
   var g_stock_info_id_dict = {}; 
   var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>;
@@ -302,7 +229,7 @@ function btn_dispersion_info(item)
                         '<font color=\"red\">' + stockObj.result_StockInfo.GSP + '%</font>';
 
                var add_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_add_btn_' + stockId + '" value="' +
-                                 stockId + '" onclick="btn_add_monitor(this)"><span class="glyphicon glyphicon-plus"></span></button>';
+                                 stockId + '" onclick="monitor_add_stock(this)"><span class="glyphicon glyphicon-plus"></span></button>';
 
                var dispersion_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_dsps_btn_' + stockId + '" value="' +
                          stockId + '" onclick="btn_dispersion_info(this)"><span class="glyphicon glyphicon-info-sign"></span></button>';

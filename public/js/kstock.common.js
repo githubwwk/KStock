@@ -289,3 +289,120 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
         option.yAxis[0].min = 0;
         myChart.setOption(option);  	
 }
+
+ function monitor_add_stock(item) 
+  { 
+      var stockId = item.value;
+      console.log("Add Stock:" + stockId);
+      var URLs = "add_stock_monitor";
+            
+      let bootbox_prompt_init = {};
+      bootbox_prompt_init.title = "加入監控名單 ";
+      bootbox_prompt_init.inputType = 'select';
+      bootbox_prompt_init.inputOptions = [];
+      let options = {};
+      options.text = '加入新名單...';
+      options.value = 'AddNewMonitorName';
+      bootbox_prompt_init.inputOptions.push(options);
+
+      g_monitor_list.sort();      
+
+      for (let monitorName of g_monitor_list)
+      {
+           let options = {};
+           options.text = monitorName;
+           options.value = monitorName;
+           bootbox_prompt_init.inputOptions.push(options);
+      } 
+      bootbox_prompt_init.callback = bootbox_Cb;
+
+      function bootbox_Cb(result){
+           console.log("INFO - [Monitor List]:" + result);
+           
+          function __f_send_to_server(monitorName)
+          {
+                var compose = {};
+                compose.stockInfo = {};              
+                compose.stockInfo = g_stock_info_id_dict[stockId];                
+                compose.monitor_name = monitorName; /* select value is monitor name */                
+                $.ajax({
+                      url: URLs,
+                      data: JSON.stringify(compose),
+                      type:"POST",
+                      dataType:'json',
+                      contentType: "application/json; charset=utf-8",
+
+                      success: function(res){                                        
+                          g_monitor_list = res;          		
+                          bootbox.alert("Success!");
+                      },
+                      error:function(xhr, ajaxOptions, thrownError){
+                          bootbox.alert("Fail!" + xhr.status + ' ' + thrownError);
+
+                      }
+                }); /* ajax */
+          }
+
+           if((result != '') && (result != null)){
+                //debugger;
+                if (result == 'AddNewMonitorName')
+                {
+                   bootbox.prompt({
+                      title: "新增Monitor名稱",
+                      inputType: 'textarea',
+                      callback: function (result) {  
+                          //debugger;                                                
+                          __f_send_to_server(result);
+                      }
+                   });
+                }else
+                {
+                    __f_send_to_server(result);
+                }
+            }else{                
+                 bootbox.alert("請選擇一個Monitor Name");
+            }
+      } /*function - bootbox_cb */
+
+      bootbox.prompt(bootbox_prompt_init);
+
+  }/* btn_add_monitor() */
+
+function monitor_remove_stock(item)
+{
+    var stockId = item.value;
+    console.log("Remove Stock:" + stockId);
+    var URLs = "remove_stock_monitor";
+    
+    bootbox.confirm("Remove out monitor list", function(result) {            	
+        if (result == true){                	
+            var compose = {};
+            compose.stockId = stockId;
+            compose.name = $( "#stock_monitor_sel option:selected").text();
+    		$.ajax({
+		           url: URLs,
+		           data: JSON.stringify(compose),
+		           type:"POST",
+		           dataType:'json',
+		           contentType: "application/json; charset=utf-8",
+
+		           success: function(res){
+                    
+                    /* Reinit g_monitor_list_all and table data. */
+                    let monitor_name = $( "#stock_monitor_sel option:selected").text();   
+                    g_monitor_list_all = res;
+                    for(let monitor of g_monitor_list_all)
+                    {              
+                       g_monitor_list_all_lookup_dict[monitor.name] = monitor;  
+                    }   
+                    let monitor = g_monitor_list_all_lookup_dict[monitor_name];
+                    showStockDailyInfo(monitor.monitorList);                    
+		                bootbox.alert("Success!");                    		                                                        
+		           },
+		           error:function(xhr, ajaxOptions, thrownError){                         
+		                bootbox.alert("Fail!" + xhr.status + ' ' + thrownError);                
+		           }
+		     }); /* ajax */
+		} /* if */    
+	}); /* bootbox */   
+}/* monitor_remove_item */

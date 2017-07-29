@@ -106,45 +106,6 @@ function btn_dispersion_info(item)
   }	    
 }
 
-function btn_remove_monitor(item)
-{
-    var stockId = item.value;
-    console.log("Remove Stock:" + stockId);
-    var URLs = "remove_stock_monitor";
-    
-    bootbox.confirm("Remove out monitor list", function(result) {            	
-        if (result == true){                	
-            var compose = {};
-            compose.stockId = stockId;
-            compose.name = $( "#stock_monitor_sel option:selected").text();
-    		$.ajax({
-		           url: URLs,
-		           data: JSON.stringify(compose),
-		           type:"POST",
-		           dataType:'json',
-		           contentType: "application/json; charset=utf-8",
-
-		           success: function(res){
-                    
-                    /* Reinit g_monitor_list_all and table data. */
-                    let monitor_name = $( "#stock_monitor_sel option:selected").text();   
-                    g_monitor_list_all = res;
-                    for(let monitor of g_monitor_list_all)
-                    {              
-                       g_monitor_list_all_lookup_dict[monitor.name] = monitor;  
-                    }   
-                    let monitor = g_monitor_list_all_lookup_dict[monitor_name];
-                    showStockDailyInfo(monitor.monitorList);                    
-		                bootbox.alert("Success!");                    		                                                        
-		           },
-		           error:function(xhr, ajaxOptions, thrownError){                         
-		                bootbox.alert("Fail!" + xhr.status + ' ' + thrownError);                
-		           }
-		     }); /* ajax */
-		} /* if */    
-	}); /* bootbox */   
-}/* btn_remove_monitor */
-
 function _f_showStockDailyInfo(stockObj, no)
 {            
    var stockId = stockObj.stockId;                  
@@ -183,7 +144,7 @@ function _f_showStockDailyInfo(stockObj, no)
             '<font color=\"red\">' + stockObj.result_StockInfo.GSP + '%</font>';
 
    var remove_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_rm_btn_' + stockId + '" value="' +
-                         stockId + '" onclick="btn_remove_monitor(this)"><span class="glyphicon glyphicon-trash"></span></button>';
+                         stockId + '" onclick="monitor_remove_stock(this)"><span class="glyphicon glyphicon-trash"></span></button>';
 
    var dispersion_info_btn_html = '<button type="button" class="btn btn-default btn-xs" id="stock_dsps_btn_' + stockId + '" value="' +
                          stockId + '" onclick="btn_dispersion_info(this)"><span class="glyphicon glyphicon-info-sign"></span></button>';
