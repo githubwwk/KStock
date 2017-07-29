@@ -3,12 +3,13 @@
 <head>
 
     <title>Stock Dispersion</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">       
+<!--
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">       
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	<script src="./js_external/echart/echarts-all.js"></script>
 	<script src="./js_external/bootbox/bootbox.min.js"></script>    
 	<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script> 
-
+-->
 <style type="text/css">
 
 .container {  
@@ -54,7 +55,8 @@ function init_dispersion_chart(stock_dispersion)
 		            saveAsImage : {show: true}
 		        }
 		    },
-		    calculable : false,
+			calculable : false,
+			animation : false,
 		    xAxis : [
 		        {
 		            type : 'category',

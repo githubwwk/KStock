@@ -23,10 +23,10 @@ function _f_genTDCCRequestHeader(stockId, dateStr)
         path: '/smWeb/QryStock.jsp',
         method: "POST",           
         headers: {
-                    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Content-Length': Buffer.byteLength(postData),
-                    'Content-Type':'application/x-www-form-urlencoded',
-                    'Cookie':'JSESSIONID=0000rMN_6sUGAYpN8YuoPVcUNNY:19tmdfpi3; _gat=1; _ga=GA1.3.526792085.1488808524; _gid=GA1.3.984653124.1494424839'
+                  'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                  'Content-Length': Buffer.byteLength(postData),
+                  'Content-Type':'application/x-www-form-urlencoded',
+                  'Cookie':'JSESSIONID=0000rMN_6sUGAYpN8YuoPVcUNNY:19tmdfpi3; _gat=1; _ga=GA1.3.526792085.1488808524; _gid=GA1.3.984653124.1494424839'
                 }                
         };
 
@@ -99,8 +99,6 @@ function getDatafromWeb(request_header, dateStr, callback)
             let table_list = $("td"); 
             for (var i = 0; i < table_list.length; i++){
                 var table = table_list[i];
-                // now have option.text, option.value
-                //console.log(option.children[0].data);
                 data_options.push(table.children[0].data);
             }                
             let result = {};
@@ -134,8 +132,6 @@ function getDatafromWeb(request_header, dateStr, callback)
 
 exports.getStockDispersion = function(stockId, callback)
 {   
-    // console.log(tw_date);
-
     function exec(callback_exec)
     {    
         var date_options;
@@ -159,8 +155,7 @@ exports.getStockDispersion = function(stockId, callback)
             let request_header = _f_genTDCCRequestHeader(stockId, dateStr);             
             //while(true) 
             {
-                try { 
-                    //var result_data = wait.for(getDatafromWeb, request_header); 
+                try {                    
                     getDatafromWeb(request_header, dateStr, function(err, result){
                         if (err != null)
                         {         
@@ -190,7 +185,6 @@ exports.getStockDispersion = function(stockId, callback)
             wait.for(sleepForMs, 50);                
          }/* for */         
 
-         //console.log("DEBUG - [Data Len]:" + data_list.length + "  " + date_options.length);
          let cnt = 0;
          while(true)
          {
@@ -208,7 +202,6 @@ exports.getStockDispersion = function(stockId, callback)
          data_list.sort(function(a, b){
              return a.date > b.date;
          });
-         //console.dir(data_list);
 
          return callback_exec(null, data_list);
     }
