@@ -1,3 +1,5 @@
+ /* Copyright (c) 2017 konrad.wei@gmail.com */
+
 "use strict"
 var moment = require('moment');
 var wait = require('wait.for');
@@ -5,6 +7,16 @@ var cheerio = require('cheerio');
 var iconv = require('iconv-lite');
 const querystring = require('querystring');   
 const https = require('https');
+
+//******************************************
+// Global Variable
+//******************************************
+
+let single_debug = false;
+
+//******************************************
+// Function
+//******************************************
 
 function _f_genTDCCRequestHeader(stockId, dateStr)
 {
@@ -78,6 +90,53 @@ function sleepForMs (ms,sleepCallback) {
   }, ms);
 }
 
+/**************************************/
+/*
+序	持股/單位數分級	人　　數	股　　數/單位數	佔集保庫存數比例 (%)
+1	1-999	29,717	4,075,589	0.25
+2	1,000-5,000	45,705	82,639,406	5.22
+3	5,001-10,000	4,482	33,038,488	2.08
+4	10,001-15,000	1,349	16,663,521	1.05
+5	15,001-20,000	778	13,904,441	0.87
+6	20,001-30,000	725	17,910,193	1.13
+7	30,001-40,000	336	11,770,709	0.74
+8	40,001-50,000	218	9,910,391	0.62
+9	50,001-100,000	414	29,458,935	1.86
+10	100,001-200,000	258	37,443,691	2.36
+11	200,001-400,000	183	52,274,369	3.30
+12	400,001-600,000	84	40,992,834	2.59
+13	600,001-800,000	56	39,499,141	2.49
+14	800,001-1,000,000	36	32,083,251	2.02
+15	1,000,001以上
+*/
+/**************************************/
+function getDispersionDataByType(type, raw_str)
+{
+    let dispersionObj = {};
+    let data_options = [];
+    let str = raw_str;
+
+    let pattern = '<td align="center">' + type + '</td>'; /* '<td align="center">15</td>' */
+    let start_posi = str.indexOf(pattern);
+    let end_posi = str.indexOf('</tr>', start_posi);
+    let table_html = str.substring(start_posi, end_posi);
+    table_html = table_html.trim();
+    var $ = cheerio.load(table_html, {decodeEntities: false});
+
+    /* get Data Option */
+    let table_list = $("td"); 
+    for (var i = 0; i < table_list.length; i++){
+         var table = table_list[i];
+         data_options.push(table.children[0].data);
+    }  
+    dispersionObj.type = table_list[0].children[0].data;       /* Type */
+    dispersionObj.range = table_list[1].children[0].data;      /* 持股/單位數分級 */
+    dispersionObj.personNr = table_list[2].children[0].data;   /* 人數 */
+    dispersionObj.stockUnit = table_list[3].children[0].data;  /* 股數/單位數 */
+    dispersionObj.proportion = table_list[4].children[0].data; /* 佔集保庫存數比例 (%) */
+
+    return data_options;
+}
 
 function getDatafromWeb(request_header, dateStr, callback)
 {
@@ -89,23 +148,17 @@ function getDatafromWeb(request_header, dateStr, callback)
         res.on('data', (d) => {
             let buffer = new Buffer(d);
             let str = iconv.decode(buffer, 'big5');
-            let start_posi = str.indexOf('<td align="center">15</td>');
-            let end_posi = str.indexOf('</tr>', start_posi);
-            let table_html = str.substring(start_posi, end_posi);
-            table_html = table_html.trim();
-            var $ = cheerio.load(table_html, {decodeEntities: false});
+   
+            data_options = getDispersionDataByType('2', str);
 
-            /* get Data Option */
-            let table_list = $("td"); 
-            for (var i = 0; i < table_list.length; i++){
-                var table = table_list[i];
-                data_options.push(table.children[0].data);
-            }                
             let result = {};
             result.date = dateStr;
             result.data = data_options;
             return callback(null, result);
         });
+
+
+        
     });
 
     req.setTimeout(5000, function(){
@@ -209,10 +262,12 @@ exports.getStockDispersion = function(stockId, callback)
     wait.launchFiber(exec, callback);
 };
 
-/*
-exports.getStockDispersion('5269', function(err, result)
+
+if (single_debug)
 {
-    console.log("DEBUG - Get Result:");
-    console.dir(result);
-});
-*/
+    exports.getStockDispersion('2454', function(err, result)
+    {
+        console.log("DEBUG - Get Result:");
+        console.dir(result);
+    });
+}

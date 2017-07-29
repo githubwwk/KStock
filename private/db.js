@@ -1,3 +1,5 @@
+/* Copyright (c) 2017 konrad.wei@gmail.com */
+
 "use strict"
 var mongoose = require('mongoose');
 

@@ -1,4 +1,4 @@
-
+/* Copyright (c) 2017 konrad.wei@gmail.com */
 
 exports.shortSellReasonList;  ///< 放空 
 exports.shortSellErrList;     ///< 放空 

@@ -1,3 +1,5 @@
+/* Copyright (c) 2017 konrad.wei@gmail.com */
+
 "use strict"
 var request = require('request');
 var moment = require('moment');
@@ -5,11 +7,19 @@ var wait = require('wait.for');
 var iconv = require('iconv-lite');
 var utility = require('./utility.js');
 
+let singal_test = false;
+
 //******************************************
 // Global Variable
 //******************************************
 var gtwStockTwseProfitReady = false; 
 var gtwStockTwseProfitObjDict = {}; 
+var gtwStockIdList_TSE = [];
+var gtwStockIdList_OTC = [];
+
+var gtwStockIdDict_TSE = {};  /* TSE Dict */
+var gtwStockIdDict_OTC = {};  /* OTC Dict */
+
 //******************************************
 // getDatafromWeb()
 //******************************************
@@ -76,31 +86,6 @@ function getDatafromWeb_OTC(callback)
 }
 
 function initStockProfitObj_TSE(raw_data)
-{
-    let twStockTwseProfitObjDict_temp = {};
-
-    if (raw_data.data == undefined){
-        throw 'Invalid Raw Data.';
-    }
-
-    for (let dataObj of raw_data.data)
-    {        
-        let stockProfitObj = {};
-
-        /* Price-to-Earning Ratio (PER): 本益比 */
-        /* Yield rate: 殖利率 */
-        /* Price-Book Ratio: 股價淨值比 */
-        stockProfitObj.stockId = dataObj[0].replace(/\s/g,'');
-        stockProfitObj.YR = dataObj[2];
-        stockProfitObj.PER = dataObj[4];        
-        stockProfitObj.PBR = dataObj[5]; 
-        twStockTwseProfitObjDict_temp[stockProfitObj.stockId] = stockProfitObj;
-    }
-
-    return twStockTwseProfitObjDict_temp;
-}
-
-function initStockProfitObj_TSE(raw_data)
 {    
     if (raw_data.data == undefined){
         throw 'Invalid Raw Data.';
@@ -114,11 +99,16 @@ function initStockProfitObj_TSE(raw_data)
         /* Yield rate: 殖利率 */
         /* Price-Book Ratio: 股價淨值比 */
         stockProfitObj.stockId = dataObj[0].replace(/\s/g,'');
+        stockProfitObj.stockName = dataObj[1];
         stockProfitObj.YR = dataObj[2];
         stockProfitObj.PER = dataObj[4];        
         stockProfitObj.PBR = dataObj[5]; 
-       
+        stockProfitObj.market = 'TSE';
+
         gtwStockTwseProfitObjDict[stockProfitObj.stockId] = stockProfitObj;
+        
+        gtwStockIdDict_TSE[stockProfitObj.stockId] = stockProfitObj;
+        gtwStockIdList_TSE.push(stockProfitObj.stockId);
     }
 
     return true;
@@ -139,12 +129,16 @@ function initStockProfitObj_OTC(raw_data)
         /* Price-Book Ratio: 股價淨值比 */
         /* stock dividend: 股利 */
         stockProfitObj.stockId = dataObj[0].replace(/\s/g,'');        
+        stockProfitObj.stockName = dataObj[1];        
         stockProfitObj.PER = dataObj[2];        
         stockProfitObj.DIVD = dataObj[3]; 
         stockProfitObj.PBR = dataObj[5]; 
         stockProfitObj.YR = dataObj[4];
+        stockProfitObj.market = 'OTC';
        
         gtwStockTwseProfitObjDict[stockProfitObj.stockId] = stockProfitObj;
+        gtwStockIdDict_OTC[stockProfitObj.stockId] = stockProfitObj;
+        gtwStockIdList_OTC.push(stockProfitObj.stockId);
     }
 
     return true;
@@ -159,6 +153,26 @@ exports.getStockProfit = function(stockId)
     return gtwStockTwseProfitObjDict[stockId];
 }
 
+exports.isReady = function()
+{
+    return gtwStockTwseProfitReady;
+}
+
+exports.getTwStockIdList = function()
+{
+    let result = {};
+    result.stockIdList = gtwStockIdList_TSE;
+    result.otcStockIdList = gtwStockIdList_OTC;
+    return result;
+}
+
+function writeStockIdLocalDBFile()
+{
+    utility.writeDbFile('otcStockId.db', 'stock_id' , gtwStockIdList_OTC);
+    utility.writeDbFile('tseStockId.db', 'stock_id' , gtwStockIdList_TSE);
+    utility.writeDbFile('otcStockIdDict.db', 'stock_id' , gtwStockIdDict_OTC);
+    utility.writeDbFile('tseStockIdDict.db', 'stock_id' , gtwStockIdDict_TSE);
+}
 
 //******************************************
 // main()
@@ -181,6 +195,9 @@ exports.init = function()
 
             gtwStockTwseProfitReady = true; 
             console.log("INFO - twStockProfit is Ready.");             
+
+            writeStockIdLocalDBFile();
+
             return callback(null);
        }catch(err){
             gtwStockTwseProfitReady = false;
@@ -192,4 +209,7 @@ exports.init = function()
 
 } /* exports.getTwsePRE() */
 
-//exports.init('');
+if (singal_test)
+{
+   exports.init('');
+}

@@ -1,3 +1,5 @@
+/* Copyright (c) 2017 konrad.wei@gmail.com */
+
 "use strict"
 var schedule = require('node-schedule');
 var request = require('request');
@@ -10,10 +12,12 @@ var utility = require("./utility.js");
 var db = require('./db.js');
 var stockInfoCrawler = require('./twStockDailyInfoCrawler.js');
 var otcStockDailyInfoCrawler = require("./twOTCStockDailyInfoCrawler.js");
+var stockIdDB = require('./twStockIdDb.js');
 
 //**************************************************
 // Option
 //**************************************************
+let single_debug = false;
 let g_debug_mode = false;
 let g_local_db_dir = './db/'
 if(g_debug_mode)
@@ -324,35 +328,6 @@ function _f_genLocalDbFileName(dateTime)
 }
 
 //******************************************
-// _f_initStockIdList()
-//******************************************
-function _f_initStockIdList()
-{
-    let result = wait.for(db.twseStockPRE_Find, '2017-04-14');
-    let stock_list = JSON.parse(result[0].data);
-    let stockid_list = [];
-    for(let stock of stock_list)
-    {
-        stockid_list.push(stock.stockId);
-    } /* for */
-
-    let otcStockObj = otcStockDailyInfoCrawler.getOtcStockList();
-    let otcStockIdList = [];
-    for(let stock of otcStockObj)
-    {
-        otcStockIdList.push(stock.stockId);                
-    }
-
-    let retObj = {};
-    retObj.stockIdList = stockid_list;    
-    retObj.otcStockIdList = otcStockIdList;  
-    retObj.stockIdList.sort();
-    retObj.otcStockIdList.sort();        
-    return retObj;
-
-} /* _f_initStockIdList */
-
-//******************************************
 // _f_isDuringOpeningtime()
 //******************************************
 function _f_isDuringOpeningtime()
@@ -573,8 +548,10 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
 
              /* 量太小不看 */
              if (stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03 < 500){
+                /*
                 console.log("INFO - Stock ID: " + stockId);
                 console.log("INFO - RTVMA_03 is less than 500. TVMA03=" + stockInfoCrawler.gStockDailyInfo[stockId].result_TV.RTVMA_03);                
+                */
                 continue; 
              }              
           } 
@@ -630,28 +607,10 @@ function _f_analyze_realtime_stock(stockInfoObj, stockRealTimePrice)
             _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                                                 
           }           
           /*************************************************/
+          /*
           console.log(stockId + " CP:" + current_cp + ' min:' + DURATION_MIN + ' max:' + DURATION_MAX);
           console.log(stockId + " CP:" + current_cp + ' MA60:' + MA60);
-
-          /* Check MA5 through MA20 real-time */
-/*          
-          let MA20 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA20);  
-          let MA5 =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA5);  
-          let MA20_2nd =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA20);  
-          let MA5_2dn =  parseFloat(stockInfoCrawler.gStockDailyInfo[stockId].result_MA.MA5);            
-          (MA20*20) - (MA20_2nd*20)
-          if((yesterday_cp > MA60) && (current_cp <= MA60))
-          {
-             let type = 'MA60_Through_DOWN';
-             if (parseInt(stockRealTimePrice[stockId].tv) > 1000)
-             {          
-                _f_add_stock_info(stockId, type, stockRealTimePrice, srtpObj, analyzeResult);                      
-             }              
-          }    
-*/
-      //} catch(err){
-      //    console.log("ERROR - Compare TVMA Error! (" + stockId + ')' + err);
-      //} /* try-catch */           
+          */
   } /* for */
 
   let result = {}; 
@@ -749,8 +708,9 @@ exports.init = function()
     console.log("INFO - twStockRealTimePrice init()");
     function exec(callback)
     {
-        let market = '';
-        gStockAllInfoObj = _f_initStockIdList();   
+        let market = '';        
+        gStockAllInfoObj = stockIdDB.getStockIdDB();           
+        
         //gStockAllInfoObj.stockIdList = ['6220']; /* For Test only */
         
         while(true)
@@ -768,4 +728,7 @@ exports.init = function()
     wait.launchFiber(exec, function(){});
 };
 
-exports.init();
+if (single_debug)
+{
+    exports.init();
+}

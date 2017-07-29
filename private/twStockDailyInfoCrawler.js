@@ -1,4 +1,6 @@
-﻿"use strict"
+﻿/* Copyright (c) 2017 konrad.wei@gmail.com */
+
+"use strict"
 var request = require('request');
 var fs = require("fs-extra");
 var moment = require('moment');
@@ -10,6 +12,11 @@ var fs = require("fs-extra");
 var db = require("./db.js");
 var utility = require("./utility.js");
 var otcStockDailyInfoCrawler = require("./twOTCStockDailyInfoCrawler.js");
+var stockIdDB = require('./twStockIdDb.js');
+
+//******************************************
+// Variable
+//******************************************
 
 let single_debug = false;
 
@@ -47,6 +54,10 @@ var gStockDailyAnalyzeResult = {};
 exports.gStockDailyAnalyzeResult; /* For store Analyze Result Stock ID */
 
 var gAllStocksObj;  /* From PRE data, stock name, PRE.... */
+
+//******************************************
+// Funcionts
+//******************************************
 
 //******************************************
 // _f_stock_data_reconstruct()
@@ -521,6 +532,7 @@ function stockAnalyze_05(stockInfoObj)
    // if (stockId == '1434')
     if(true)
     {
+        /*
         console.log("[bias]:" + bias0 + ' ' + bias1 + ' ' + bias2);        
         console.log("[MA5 M]:" + MA5_m_5_days + ' ' + MA5_m_15_days + ' ' + MA5_m_30_days); 
         console.log("[CP]:" + cp);       
@@ -528,6 +540,7 @@ function stockAnalyze_05(stockInfoObj)
         console.log("[min]:" + result_MA.MIN);
         console.log("[RTV]:" + result_TV.RTV);
         console.log("[RTVMA_03]:" + result_TV.RTVMA_03);
+        */
     }
 
 
@@ -982,46 +995,6 @@ function _f_stockDailyChecker(market, stockId)
 
 }/* stockDailyChecker() - END */
 
-
-function _f_initStockIdList()
-{
-    let result = wait.for(db.twseStockPRE_Find, '2017-04-14');
-    let stock_list = JSON.parse(result[0].data);
-    let stockid_list = [];
-    let stockObjDict = {};
-    for(let stock of stock_list)
-    {
-        stockid_list.push(stock.stockId);
-        stock.market = 'TSE';
-        stockObjDict[stock.stockId] = stock;
-    } /* for */
-
-    let otcStockObj = otcStockDailyInfoCrawler.getOtcStockList();
-
-    let otcStockIdList = [];
-    let otcStockObjDict = {};
-    for(let stock of otcStockObj)
-    {
-        otcStockIdList.push(stock.stockId);
-        stock.market = 'OTC';
-        otcStockObjDict[stock.stockId] = stock;
-    }
-
-    //console.dir(otcStockIdList);
-    //console.dir(otcStockObjDict);
-    otcStockIdList.sort();
-    stockid_list.sort();
-    
-    let retObj = {};
-    retObj.stockIdList = stockid_list;
-    retObj.stockObjDict = stockObjDict;
-    retObj.otcStockIdList = otcStockIdList;
-    retObj.otcStockObjDict = otcStockObjDict;
-    return retObj;
-
-} /* _f_initStockIdList */
-
-
 function _f_writeAnalyzeResultToDb(analyzeResultDict)
 {
     for (let typename in gStockDailyAnalyzeResult)
@@ -1064,7 +1037,8 @@ exports.init = function()
 {
     function exec(callback_fiber)
     {
-         gAllStocksObj = _f_initStockIdList();
+         //gAllStocksObj = _f_initStockIdList();
+         gAllStocksObj = stockIdDB.getStockIdDB();
          let stockid_list = gAllStocksObj.stockIdList;
          let market = '';
 

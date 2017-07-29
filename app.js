@@ -8,6 +8,7 @@ var schedulerTask = require('./private/schedulerTask.js');
 var stockRTPirce = require('./private/twStockRealTimePrice.js');
 var stockInfoCrawler = require('./private/twStockDailyInfoCrawler.js');
 var stockTwseProfit = require('./private/twStockTwseProfit.js');
+var stockIdDB = require('./private/twStockIdDb.js');
 
 //*************************************************** 
 //  App.js - Code
@@ -59,9 +60,11 @@ app.listen(80);
 /******************/
 
 //schedulerTask.init();
+stockTwseProfit.init();  /* Should first run to get stock Id list. */
+stockIdDB.init();
 stockRTPirce.init();
 stockInfoCrawler.init();
-stockTwseProfit.init();
+
 /******************/
 
 //console.log(os.platform());
