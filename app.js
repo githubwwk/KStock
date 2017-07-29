@@ -7,6 +7,7 @@ var route = require('./private/route.js');
 var schedulerTask = require('./private/schedulerTask.js');
 var stockRTPirce = require('./private/twStockRealTimePrice.js');
 var stockInfoCrawler = require('./private/twStockDailyInfoCrawler.js');
+var stockTwseProfit = require('./private/twStockTwseProfit.js');
 
 //*************************************************** 
 //  App.js - Code
@@ -57,9 +58,10 @@ app.listen(80);
 
 /******************/
 
-schedulerTask.init();
+//schedulerTask.init();
 stockRTPirce.init();
 stockInfoCrawler.init();
+stockTwseProfit.init();
 /******************/
 
 //console.log(os.platform());

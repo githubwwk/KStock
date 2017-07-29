@@ -1,7 +1,7 @@
 "use strict"
 var moment = require('moment');
 var stockRTPirce = require('./twStockRealTimePrice.js');
-var twStockTwsePRE = require('./twStockTwsePRE.js');
+var twStockTwseProfit = require('./twStockTwseProfit.js');
 var utility = require('./utility.js');
 var db = require('./db.js');
 var schedule = require('node-schedule');
@@ -13,12 +13,12 @@ var schedule = require('node-schedule');
 //**************************************************
 // Function
 //**************************************************
-
+/*
 function updateTwStockTwsePRE()
 {    
     var dateStr = moment().format('YYYY-MM-DD');    
     utility.timestamp('updateTwStockTwsePRE()+++');
-    twStockTwsePRE.getTwsePRE(dateStr, function(err, result){
+    twStockTwseProfit.getTwsePRE(dateStr, function(err, result){
     	 if(err != null){
     	 	  console.log("ERROR - getTwsePRE fail." + err);
     	 	  return;
@@ -30,15 +30,14 @@ function updateTwStockTwsePRE()
        resultDbObj.data = JSON.stringify(result.stock_list);
        db.twseStockPRE_Update(result.date, resultDbObj);
        utility.timestamp('updateTwStockTwsePRE()---');
-    });
-        
+    });        
 }
-
+*/
 
 
 exports.init = function()
 {        
-    updateTwStockTwsePRE();
+    //updateTwStockTwsePRE();
 
     //stockRTPirce.updateRealTimeStockPrice(); 
 

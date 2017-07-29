@@ -9,8 +9,10 @@ var twStockRTP = require('./twStockRealTimePrice.js');
 var twStockDailyInfo = require('./twStockDailyInfoCrawler.js');
 var twStockDispersion = require('./twStockDispersion.js');
 var twStockTradingRecord = require('./twStockTrdingRecord.js');
+var stockTwseProfit = require('./twStockTwseProfit.js');
 var wait = require('wait.for');
 var pako = require('pako');
+
 
 //=====================================
 // API
@@ -136,7 +138,9 @@ function shrinkAnalysisResultDataObj(analysisResultDataObjList)
         let stock_data_list = JSON.parse(stockDailyResultObj.data);
         let temp_data_list = [];
         for (let stock_data of stock_data_list)
-        {            
+        {      
+            /* Remove useless object element. */      
+            /* User price chart will get by getStockPrice() */ 
             delete stock_data.result_MA.MA60_list;
             delete stock_data.result_MA.MA1_list;
             delete stock_data.result_TV.tv_list;
@@ -224,7 +228,7 @@ exports.showStockAnalysisDateList = function(req, res)
 
                 /* Extract realtime stock price for this category */    
                 let analysisResultDataObj_to_user = [];  
-                let data_list_max_len_to_user = 5;
+                let data_list_max_len_to_user = 10;
                 for(let i=0 ; i<analysisResultDataObj.length ; i++)
                 {
                     /* Only procide 10 days data to user. */
@@ -251,7 +255,7 @@ exports.showStockAnalysisDateList = function(req, res)
                 
                 let analysisResultDataObj_light = shrinkAnalysisResultDataObj(analysisResultDataObj_to_user);
                 /* Konrad try to zip response object, but size from 5M to 1M has to spend 3 second in zip process. */
-                console.log("DEBUG - analysisResultDataObj_to_user Len:" +JSON.stringify(analysisResultDataObj_light).length);
+                //console.log("DEBUG - analysisResultDataObj_to_user Len:" +JSON.stringify(analysisResultDataObj_light).length);
                 //console.log("DEBUG - srtpAllObj Len:" +JSON.stringify(srtpAllObj).length);
                 //console.log("DEBUG - montiorNameList Len:" +JSON.stringify(montiorNameList).length);
                 //var binaryString = pako.deflate(JSON.stringify(analysisResultDataObj_to_user), { to: 'string' });
@@ -498,7 +502,8 @@ exports.getStockPrice = function(req, res)
     let stockId = req.query.stockId;
     let stockDailyInfoObj = twStockDailyInfo.getStockPriceArray(stockId);
     let stockRtpObj = twStockRTP.getStockRealTimePrice(stockId);
-    
+    let stockProfit = stockTwseProfit.getStockProfit(stockId);
+
     /* Handle OTC category */
     if (stockRtpObj == undefined){
         stockRtpObj = {};
@@ -512,6 +517,8 @@ exports.getStockPrice = function(req, res)
     result.tv_list = stockDailyInfoObj.result_TV.tv_list;
     result.MA1_list = stockDailyInfoObj.result_MA.MA1_list;
     result.MA60_list = stockDailyInfoObj.result_MA.MA60_list;
-    result.stockRtpObj = stockRtpObj
+    result.stockRtpObj = stockRtpObj;
+    result.stockProfit = stockProfit;
+
     res.end(JSON.stringify(result));     
 };

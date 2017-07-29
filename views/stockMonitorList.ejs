@@ -39,14 +39,7 @@ tr:nth-child(even) {background-color: #f2f2f2}
   <title> <%=title%></title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<!--  
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>   
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>      
-  <script src="./js_external/echart/echarts-all.js"></script>
-  <script src="./js_external/bootbox/bootbox.min.js"></script>
-  <script type="text/javascript" src="./js/kstock.chart.js"></script>  
--->   
- 
+
 <script type="text/javascript">
 
 var g_stock_all_rtp_obj = <%- JSON.stringify(srtpAllObj) %>; /* realtime stock price */
@@ -84,34 +77,11 @@ function btn_pricechart_info(item)
   $('#price-modal-title').append(stock_url);
 
   try {      
-      $.get(URL, { stockId: stockId}, function(data){	       
-          let result = JSON.parse(data);
-          let stock_price_obj = {};          
-          stock_price_obj.MA1_list = result.MA1_list;
-          stock_price_obj.MA60_list = result.MA60_list;
-          stock_price_obj.tv_list = result.tv_list;
-          let stockRtpObj = result.stockRtpObj;
-          let price_info_html = '<h4>價格:' + stockRtpObj.currentPrice + 
-                                '  漲跌:' + stockRtpObj.GS + ' (' + stockRtpObj.GSP +'%)</h4>';
-          if(String(stockRtpObj.GS).indexOf('-') > -1)
-          {
-              price_info_html = '<font color=\"green\">' + price_info_html + '</font>';
-          }else{
-              price_info_html = '<font color=\"red\">' + price_info_html + '</font>';
-          }                                
-          $('#price-modal-title').append(price_info_html); 
-
-          try
-          {            
-              /* Add to head */
-              stock_price_obj.MA1_list.unshift(stockRtpObj.currentPrice);           
-          }catch(err){}
- 
-          show_stock_price_value_chart(stock_price_obj, 'ar_price_chart');  
-          $('#PRICE_Modal').modal('show');           
+      $.get(URL, { stockId: stockId}, function(data){	                 
+          showStockPriceChart('#price-modal-title', 'ar_price_chart', '#PRICE_Modal', JSON.parse(data));    
     });	
   }catch (err){
-    alert('媽啦~Error!' + err);
+    alert('Error!' + err);
   }	    
 } /* btn_dispersion_info */
 
