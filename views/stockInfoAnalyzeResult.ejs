@@ -56,8 +56,7 @@ function _f_isDuringOpeningtime()
 function btn_pricechart_info(item)
 {  
   var stockId = item.value;
-  gCurrentPriceChartStockId = stockId;
-	let URL = '/get_stock_price';
+  gCurrentPriceChartStockId = stockId;	
   $('#dispersion_chart').empty();	  
   let stockName = g_stock_info_id_dict[stockId].stockInfo.stockName;
   let market = g_stock_info_id_dict[stockId].stockInfo.market;
@@ -71,6 +70,7 @@ function btn_pricechart_info(item)
   $('#price_modal_stock_add_monitor_btn').val(stockId);
 
   try {         
+      let URL = '/get_stock_price';
       $.get(URL, { stockId: stockId}, function(data){	    
           showStockPriceChart('#price-modal-title', 'ar_price_chart', '#PRICE_Modal', JSON.parse(data));    
     });	

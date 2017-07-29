@@ -93,14 +93,16 @@ function showStockPriceChart(title_element, show_div_name, modal_elment, stock_i
 }
 
 function init_stock_price_chart_title(title_element, stock_info_result_obj)
-{
-	let result = stock_info_result_obj;
-    let stock_price_obj = {};          
-    stock_price_obj.MA1_list = result.MA1_list;
-    stock_price_obj.MA60_list = result.MA60_list;
-    stock_price_obj.tv_list = result.tv_list;
-    let stockRtpObj = result.stockRtpObj;          
-    let stockProfit = result.stockProfit; 
+{	
+	let stock_price_obj = {};          
+	
+    stock_price_obj.MA1_list = stock_info_result_obj.MA1_list;
+    stock_price_obj.MA60_list = stock_info_result_obj.MA60_list;
+	stock_price_obj.tv_list = stock_info_result_obj.tv_list;
+	stock_price_obj.date_list = stock_info_result_obj.date_list;
+
+    let stockRtpObj = stock_info_result_obj.stockRtpObj;          
+    let stockProfit = stock_info_result_obj.stockProfit; 
           
     /* Add price information */
     let price_info_html = '價格:' + stockRtpObj.currentPrice + 
@@ -127,24 +129,19 @@ function init_stock_price_chart_title(title_element, stock_info_result_obj)
 
     try {            
          /* Add to head */ 
-		 stock_price_obj.MA1_list.unshift(parseFloat(stockRtpObj.currentPrice).toFixed(2));          
-		 show_stock_price_value_chart(stock_price_obj, show_div_name);
+		 stock_price_obj.MA1_list.unshift(parseFloat(stockRtpObj.currentPrice).toFixed(2));          		
 	}catch(err){}
 	
 	return stock_price_obj;
 }
 
 function init_stock_price_chart_content(stock_price_obj, show_div_name)
-{
-   show_stock_price_value_chart(stock_price_obj, show_div_name);
-}
-
-function show_stock_price_value_chart(stock_price_obj, show_div_name)
-{    
+{  
     stock_price_obj.MA1_list.reverse();
     stock_price_obj.MA60_list.reverse();
 	stock_price_obj.tv_list.reverse();
-		  	
+	stock_price_obj.date_list.reverse();
+
     var chart = document.getElementById(show_div_name);
     if (chart == null){
         let err = "ERROR! getElementById() Null:" + show_div_name;
@@ -218,15 +215,24 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
 		
         /* Set value to chart data */		
 		let yAxis_max = '0';
-		let yAxis_min = '0';		
-		debugger;
+		let yAxis_min = '0';				
 		let shift_MA60 = stock_price_obj.MA1_list.length - stock_price_obj.MA60_list.length;	
 		let shift_tv_list_len = stock_price_obj.MA1_list.length - stock_price_obj.tv_list.length;
 		for(let i=0 ; i<stock_price_obj.MA1_list.length ; i++)
 	    { 
 			item = stock_price_obj.MA1_list[i];			
-	        //console.log("Time:" + item.Time + " Humi:" + item.Humi + " Temp:" + item.Temp );
-	        option.xAxis[0].data.push(i);			
+			//console.log("Time:" + item.Time + " Humi:" + item.Humi + " Temp:" + item.Temp );
+			//debugger;
+			if (stock_price_obj.date_list[i] == undefined)
+			{
+				console.log("ERROR - stock_price_obj.MA1_list.length:" + stock_price_obj.MA1_list.length);
+				console.log("ERROR - undefined data_list element." + i);
+				console.log("ERROR - undefined data_list element." + stock_price_obj.date_list[i]);
+				console.log("ERROR - undefined data_list element." + stock_price_obj.date_list[i-1]);
+				option.xAxis[0].data.push('');			
+			}else {
+				option.xAxis[0].data.push(stock_price_obj.date_list[i]);			
+			}
 			option.series[0].data.push(item);	
 			
 			/* MA60 */
@@ -287,7 +293,8 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
 		}		
 		option.yAxis[0].max = yAxis_max_temp;
         option.yAxis[0].min = 0;
-        myChart.setOption(option);  	
+		myChart.setOption(option);  	
+		debugger;
 }
 
 /******************************************************/

@@ -978,7 +978,7 @@ function _f_stockDailyChecker(market, stockId)
     }
     gStockDailyInfo[stockId].result_MA = result_MA;
     gStockDailyInfo[stockId].result_TV = result_TV;
-    //gStockDailyInfo[stockId].result_CPTVserial = result_CPTVserial;
+    gStockDailyInfo[stockId].date_list = date_list;    
     gStockDailyInfo[stockId].result_StockInfo = result_StockInfo;
 
     for (let stockAnalyzeAPIobj of stockAnalyzeAPIs)

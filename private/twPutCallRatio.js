@@ -181,7 +181,7 @@ function loadTwPutCallRatio(s_year, s_month, e_year, e_month)
                     get_from_web_flag = true;
                 }
 
-                let db_folder = 'twse_pcr';
+                let db_folder = 'twse_put_call_ratio';
                 let file_name = '/pcr_' + check_key + '.db';
                 let db_file = './db/' + db_folder + '/' + file_name;
                 create_db_folder(db_folder);

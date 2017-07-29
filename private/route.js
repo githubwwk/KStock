@@ -146,7 +146,7 @@ function shrinkAnalysisResultDataObj(analysisResultDataObjList)
             delete stock_data.result_MA.MA60_list;
             delete stock_data.result_MA.MA1_list;
             delete stock_data.result_TV.tv_list;
-
+            delete stock_data.date_list;
             //console.dir(stock_data);
             temp_data_list.push(stock_data);
         }
@@ -519,8 +519,10 @@ exports.getStockPrice = function(req, res)
     result.tv_list = stockDailyInfoObj.result_TV.tv_list;
     result.MA1_list = stockDailyInfoObj.result_MA.MA1_list;
     result.MA60_list = stockDailyInfoObj.result_MA.MA60_list;
+    result.date_list = stockDailyInfoObj.date_list;
     result.stockRtpObj = stockRtpObj;
     result.stockProfit = stockProfit;
+    
 
     res.end(JSON.stringify(result));     
 };
