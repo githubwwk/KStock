@@ -61,6 +61,7 @@ function btn_pricechart_info(item)
   let stock_url = '<a target=\"_blank\" href=\"' + web_link + '\">' + title + '</a>';  
   $('#price-modal-title').html('');
   $('#price-modal-title').append(stock_url);
+  $('#price_modal_stock_add_monitor_btn').val(stockId);
 
   try {        
       $.get(URL, { stockId: stockId}, function(data){	       
@@ -101,7 +102,7 @@ function btn_show_dispersion_chart(item)
   var g_current_del_type;
   var g_stock_info_id_dict = {}; 
   var g_stock_all_obj = <%- JSON.stringify(srtpAllObj) %>;
-  var g_monitor_name_list = <%- JSON.stringify(monitor_name_list)%>;
+  var g_monitor_list = <%- JSON.stringify(monitor_name_list)%>;
   var g_realtime_analyze_result_obj = <%- JSON.stringify(RTAnalyzeResult) %>; 
   var gAnalyzeTypeList = Object.keys(g_realtime_analyze_result_obj);
  
@@ -396,13 +397,14 @@ function btn_show_dispersion_chart(item)
         <h4 class="modal-title" id="price-modal-title"></h4>
       </div>
       <div class="modal-body" >
+        <button type="button" class="btn btn-default" id="price_modal_stock_add_monitor_btn" value="" onclick="monitor_add_stock(this)"><span class="glyphicon glyphicon-plus"></span></button>          
         <div class="btn-group"  style="margin:0 auto;">
           <button type="button" class="btn btn-default" id="btn_previous_stock_price_chart"><span class="glyphicon glyphicon-arrow-left"></span></button>
           <button type="button" class="btn btn-default" id="btn_next_stock_price_chart"><span class="glyphicon glyphicon-arrow-right"></span></button> 
         </div>
         <div id="ar_price_chart" style="width: 580px; height: 400px;"></div>      
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer">        
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>

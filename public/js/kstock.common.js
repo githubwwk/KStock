@@ -290,6 +290,11 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
         myChart.setOption(option);  	
 }
 
+/******************************************************/
+// monitor_add_stock()
+//  - Add stock to monitor list
+//  - variable g_monitor_list: defined in caller file
+/******************************************************/
  function monitor_add_stock(item) 
   { 
       var stockId = item.value;
@@ -305,6 +310,8 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
       options.value = 'AddNewMonitorName';
       bootbox_prompt_init.inputOptions.push(options);
 
+	  /* Konrad: It is worse coding style. */
+	  /* Defined in ejs. Such as stockInfoAnalyzeResult.ejs */ 
       g_monitor_list.sort();      
 
       for (let monitorName of g_monitor_list)
@@ -368,6 +375,11 @@ function show_stock_price_value_chart(stock_price_obj, show_div_name)
 
   }/* btn_add_monitor() */
 
+/******************************************************/
+// monitor_remove_stock()
+//  - Remove stock from monitor list
+//  - variable g_monitor_list: defined in caller file
+/******************************************************/
 function monitor_remove_stock(item)
 {
     var stockId = item.value;
